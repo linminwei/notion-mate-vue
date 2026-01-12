@@ -1,30 +1,26 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
-<template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+﻿<template>
+  <a-config-provider 
+    :locale="zhCN"
+    :theme="{
+      algorithm: appStore.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    }"
+  >
+    <router-view />
+  </a-config-provider>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+<script setup lang="ts">
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import { theme } from 'ant-design-vue'
+import { useAppStore } from '@/stores/app'
+
+const appStore = useAppStore()
+</script>
+
+<style>
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 </style>

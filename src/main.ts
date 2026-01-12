@@ -1,12 +1,19 @@
-import { createApp } from 'vue'
-import './style.css'
-import App from './App.vue'
-// 导入Ant Design全部组件
+﻿import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import Antd from 'ant-design-vue'
-// 导入Ant Design全局样式
 import 'ant-design-vue/dist/reset.css'
+import App from './App.vue'
+import router from './router'
+import { permission, role } from './directives/permission'
 
 const app = createApp(App)
-// 全局注册Ant Design
+
+app.use(createPinia())
+app.use(router)
 app.use(Antd)
+
+// 注册权限指令
+app.directive('permission', permission)
+app.directive('role', role)
+
 app.mount('#app')
