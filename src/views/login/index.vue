@@ -16,66 +16,70 @@
         <!-- 品牌 Logo -->
         <div class="brand-area">
           <div class="brand-logo-circle">
-            <apple-filled />
+            <!-- 替换为数据库图标，象征数据源 -->
+            <database-outlined />
           </div>
-          <span class="brand-name">AdminOS</span>
-          <span class="brand-badge">PRO</span>
+          <span class="brand-name">Notion Mate</span>
+          <span class="brand-badge">AI</span>
         </div>
 
-        <!-- 中间：悬浮功能演示区 (新增功能) -->
+        <!-- 中间：悬浮功能演示区 (根据需求定制) -->
         <div class="feature-showcase">
-          <!-- Widget 1: 实时数据 -->
+          <!-- Widget 1: 投资理财 (保留原有结构，修改内容) -->
           <div class="glass-widget widget-analytics">
             <div class="widget-icon primary-bg"><line-chart-outlined /></div>
             <div class="widget-content">
-              <span class="widget-label">Total Revenue</span>
-              <span class="widget-value">$1,249,300</span>
-              <span class="widget-trend positive">+14.5% this week</span>
+              <span class="widget-label">Investment Assets</span>
+              <span class="widget-value">¥1,249,300</span>
+              <span class="widget-trend positive">+14.5% All Time</span>
             </div>
           </div>
 
-          <!-- Widget 2: 系统状态 -->
+          <!-- Widget 2: 同步引擎状态 (体现 MySQL <-> Notion) -->
           <div class="glass-widget widget-status">
             <div class="widget-row">
               <div class="status-dot pulsing"></div>
-              <span class="status-text">System Optimal</span>
+              <span class="status-text">MySQL ⇄ Notion</span>
             </div>
+            <!-- 模拟数据流传输的动画条 -->
             <div class="status-graph">
               <div class="graph-bar" style="height: 40%"></div>
-              <div class="graph-bar" style="height: 70%"></div>
-              <div class="graph-bar" style="height: 50%"></div>
-              <div class="graph-bar" style="height: 85%"></div>
+              <div class="graph-bar" style="height: 80%"></div>
+              <div class="graph-bar active" style="height: 100%"></div>
               <div class="graph-bar" style="height: 60%"></div>
-              <div class="graph-bar active" style="height: 95%"></div>
+              <div class="graph-bar" style="height: 30%"></div>
+              <div class="graph-bar" style="height: 50%"></div>
             </div>
           </div>
 
-          <!-- Widget 3: 用户卡片 -->
-          <div class="glass-widget widget-user">
-            <div class="user-avatar-group">
-              <div class="avatar" v-for="i in 3" :key="i">
-                <user-outlined />
-              </div>
-              <div class="avatar add-btn">+</div>
+          <!-- Widget 3: 生活娱乐 (音乐/影视/待办) -->
+          <div class="glass-widget widget-life">
+            <div class="life-icons">
+              <div class="life-icon-item music"><customer-service-outlined /></div>
+              <div class="life-icon-item movie"><play-circle-outlined /></div>
+              <div class="life-icon-item task"><check-square-outlined /></div>
             </div>
-            <div class="user-text">Team Active</div>
+            <div class="life-text">
+              <span>Life OS Active</span>
+              <small>Music · Movies · Tasks</small>
+            </div>
           </div>
         </div>
 
         <!-- 营销 Slogan -->
         <div class="slogan-area">
-          <h2 class="slogan-title">Mastery.</h2>
-          <h2 class="slogan-title text-gradient">Redefined.</h2>
+          <h2 class="slogan-title">All In One.</h2>
+          <h2 class="slogan-title text-gradient">Intelligence.</h2>
           <p class="slogan-desc">
-            不仅仅是管理系统。<br>
-            更是你掌控全局的艺术。
+            打破数据孤岛。<br>
+            连接 MySQL 与 Notion，智能接管你的生活娱乐、工作待办与投资理财。
           </p>
         </div>
 
         <!-- 底部版权 -->
         <div class="visual-footer">
           <div class="footer-line"></div>
-          <p>Designed by Apple Design Team in California</p>
+          <p>Powered by Notion Mate Intelligent System</p>
         </div>
       </div>
     </aside>
@@ -84,17 +88,7 @@
     <main class="form-side">
       <!-- 顶部工具栏 -->
       <div class="top-actions">
-        <a-dropdown>
-          <a-button type="text" class="icon-btn">
-            <global-outlined />
-          </a-button>
-          <template #overlay>
-            <a-menu>
-              <a-menu-item>简体中文</a-menu-item>
-              <a-menu-item>English</a-menu-item>
-            </a-menu>
-          </template>
-        </a-dropdown>
+        <!-- 移除了语言切换 Dropdown -->
         <a-button type="text" class="icon-btn" @click="toggleTheme">
           <template #icon>
             <transition name="fade-scale" mode="out-in">
@@ -146,7 +140,7 @@
           </a-form-item>
 
           <div class="form-actions">
-            <a-checkbox v-model:checked="formState.remember">记住我</a-checkbox>
+            <!-- 移除了“记住我” Checkbox -->
             <a class="forgot-link">忘记密码？</a>
           </div>
 
@@ -189,8 +183,11 @@ import {
   BulbOutlined,
   BulbFilled,
   AppleFilled,
-  GlobalOutlined,
-  LineChartOutlined
+  LineChartOutlined,
+  DatabaseOutlined, // 新增
+  CustomerServiceOutlined, // 新增：音乐
+  PlayCircleOutlined, // 新增：影视
+  CheckSquareOutlined // 新增：待办
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
@@ -203,8 +200,7 @@ const loading = ref(false)
 
 const formState = reactive({
   username: 'admin',
-  password: 'admin123',
-  remember: true
+  password: 'admin123'
 })
 
 const rules: Record<string, Rule[]> = {
@@ -386,7 +382,7 @@ const handleLogin = async () => {
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Widget 1: Analytics */
+/* Widget 1: Analytics (Investment) */
 .widget-analytics {
   top: 0;
   right: 10%;
@@ -408,11 +404,11 @@ const handleLogin = async () => {
 .widget-value { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
 .widget-trend { font-size: 11px; color: #34d399; font-weight: 500; margin-top: 2px; }
 
-/* Widget 2: Status */
+/* Widget 2: Status (Sync Engine) */
 .widget-status {
   top: 80px;
   left: 0;
-  width: 180px;
+  width: 200px; /* 稍微加宽以容纳文字 */
   height: 100px;
   animation: float-card 9s infinite ease-in-out reverse;
   animation-delay: -2s;
@@ -427,29 +423,32 @@ const handleLogin = async () => {
 .graph-bar { width: 6px; background: rgba(255,255,255,0.2); border-radius: 4px; transition: height 0.3s; }
 .graph-bar.active { background: #22c55e; }
 
-/* Widget 3: User Team */
-.widget-user {
+/* Widget 3: Life OS (Was User Team) */
+.widget-life {
   bottom: 10px;
   right: 20%;
-  width: 160px;
+  width: 180px;
   padding: 16px;
   animation: float-card 10s infinite ease-in-out;
   animation-delay: -5s;
   z-index: 1;
 }
-.user-avatar-group { display: flex; margin-bottom: 8px; }
-.avatar {
+.life-icons { display: flex; gap: 8px; margin-bottom: 12px; }
+.life-icon-item {
   width: 32px; height: 32px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  border: 2px solid rgba(255,255,255,0.1);
-  margin-left: -10px;
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
 }
-.avatar:first-child { margin-left: 0; background: #6366f1; }
-.add-btn { background: rgba(255,255,255,0.1); font-size: 16px; }
-.user-text { font-size: 12px; color: rgba(255,255,255,0.7); }
+.life-icon-item.music { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.life-icon-item.movie { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.life-icon-item.task { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+.life-text { display: flex; flex-direction: column; }
+.life-text span { font-size: 13px; font-weight: 600; color: #fff; }
+.life-text small { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
 
 @keyframes float-card {
   0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -493,7 +492,7 @@ const handleLogin = async () => {
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.4;
   font-weight: 400;
-  max-width: 400px;
+  max-width: 480px; /* 稍微加宽以容纳更多文字 */
   text-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
@@ -604,7 +603,7 @@ const handleLogin = async () => {
 
 .form-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end; /* 修改为右对齐，因为只有“忘记密码”了 */
   align-items: center;
   margin-bottom: 32px;
 }
