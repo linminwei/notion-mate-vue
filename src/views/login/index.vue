@@ -277,7 +277,8 @@ const handleLogin = async () => {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   font-size: 16px;
-  --visual-side-padding: clamp(24px, 4vw, 60px);
+  /* 调整：减小默认 padding，防止小屏幕过宽 */
+  --visual-side-padding: clamp(24px, 3vw, 50px);
 }
 
 body {
@@ -293,6 +294,7 @@ body {
   display: flex;
   width: 100vw;
   height: 100vh;
+  /* 兼容移动端浏览器地址栏 */
   height: 100dvh;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
@@ -307,6 +309,8 @@ body {
   background: #000;
   color: #fff;
   perspective: 1000px;
+  /* 修复：添加最小宽度，防止被挤压得太小 */
+  min-width: 400px;
 }
 
 /* 动态网格背景 */
@@ -402,6 +406,8 @@ body {
   letter-spacing: -0.02em;
   line-height: 1;
   padding-bottom: 2px;
+  /* 修复：品牌名也不允许换行 */
+  white-space: nowrap;
 }
 
 /* AI Badge */
@@ -451,14 +457,16 @@ body {
   justify-content: space-between;
   width: 100%;
   flex: 1;
-  gap: clamp(40px, 5vw, 100px); /* 左右间距 */
+  /* 修复：gap 改为响应式，避免小屏幕挤压 */
+  gap: clamp(20px, 4vw, 100px);
   position: relative;
   z-index: 5;
+  /* 修复：在高度极小的屏幕上防止内容溢出 */
+  min-height: 0;
 }
 
 /* Feature Showcase (修改为静态布局) */
 .feature-showcase {
-  /* 移除绝对定位，改为 Flex 子项 */
   position: relative;
   width: auto;
   flex-shrink: 0;
@@ -467,9 +475,12 @@ body {
   justify-content: center;
   align-items: flex-end; /* 右对齐 */
   gap: clamp(16px, 3vh, 40px);
-  padding-right: 0; /* 不再需要额外的 padding，由容器控制 */
-  pointer-events: auto; /* 恢复交互 */
+  padding-right: 0;
+  pointer-events: auto;
   z-index: 10;
+  /* 优化：允许缩放以适应屏幕 */
+  transform-origin: right center;
+  transition: transform 0.3s ease;
 }
 
 .widget-wrapper {
@@ -485,7 +496,6 @@ body {
 .features-grid-wrapper {
   margin-top: 30px;
   margin-right: -10px;
-  /* 无悬浮动画 */
 }
 
 .glass-widget {
@@ -512,7 +522,8 @@ body {
 /* Widget 1: Investment Assets - 恢复悬浮动画 */
 .wrapper-analytics {
   margin-right: 0;
-  width: clamp(160px, 13vw, 200px);
+  /* 优化宽度范围 */
+  width: clamp(150px, 12vw, 200px);
   animation: float-card 8s infinite ease-in-out;
 }
 .widget-icon {
@@ -536,7 +547,8 @@ body {
 /* Widget 2: Status - 恢复悬浮动画 */
 .wrapper-status {
   margin-right: clamp(20px, 3vw, 40px);
-  width: clamp(150px, 11vw, 190px);
+  /* 优化宽度范围 */
+  width: clamp(140px, 10vw, 190px);
   animation: float-card 9s infinite ease-in-out reverse;
   animation-delay: -2s;
 }
@@ -553,7 +565,8 @@ body {
 /* Widget 3: Life - 恢复悬浮动画 */
 .wrapper-life {
   margin-right: 0;
-  width: clamp(140px, 11vw, 170px);
+  /* 优化宽度范围 */
+  width: clamp(130px, 10vw, 170px);
   animation: float-card 10s infinite ease-in-out;
   animation-delay: -5s;
 }
@@ -585,14 +598,14 @@ body {
 
 /* ========= 核心优化：Slogan 区域 ========= */
 .slogan-area {
-  /* 修改为 Flex 子项，移除之前的绝对/固定宽限制 */
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
-  /* max-width: 65%;  移除这个限制，由 flex 控制 */
   padding-left: 4px;
+  /* 防止文字撑破容器 */
+  min-width: 0;
 }
 
 /* --- 新增：胶囊标签 --- */
@@ -629,21 +642,23 @@ body {
 /* 标题样式 */
 .slogan-title {
   font-family: "SF Pro Display", -apple-system, sans-serif;
-  font-size: clamp(80px, 11vw, 150px);
+  /* 修复：将字体下限调小至 32px，防止在强制不换行时溢出 */
+  /* 同时减小 vw 比例，从 6vw 降为 5.5vw */
+  font-size: clamp(32px, 5.5vw, 110px);
   font-weight: 800;
-  line-height: 1.05; /* 更紧凑的行高 */
+  line-height: 1.05;
   margin-bottom: 0;
   letter-spacing: -0.04em;
   color: #fff;
   text-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  /* 初始状态：透明且下移 */
   opacity: 0;
   transform: translateY(30px);
+  /* 修复：强制不换行 */
+  white-space: nowrap;
 }
 
 /* 动态流体渐变 - 优化配色 */
 .text-gradient {
-  /* 使用高对比度、高饱和度的颜色组合 */
   background-image: linear-gradient(
       110deg,
       #ffffff 0%,
@@ -657,13 +672,9 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-
-  /* 修复 G 字母遮挡：增加行高和底部内边距，确保 descenders 不被切断 */
   line-height: 1.2;
   padding-bottom: 0.2em;
-  margin-bottom: -0.1em; /* 补偿 padding 带来的位移 */
-
-  /* 更强的辉光 */
+  margin-bottom: -0.1em;
   filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.4));
   animation: gradient-flow 5s linear infinite;
 }
@@ -688,13 +699,12 @@ body {
 .desc-content {
   position: relative;
   z-index: 2;
-  /* 去掉厚重的背景，改用更轻盈的 padding */
   padding: 0;
 }
 
 /* 核心描述文本 */
 .main-desc {
-  font-size: clamp(16px, 1.4vw, 18px);
+  font-size: clamp(14px, 1.2vw, 18px); /* 稍微减小下限 */
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.7);
   font-weight: 400;
@@ -739,27 +749,13 @@ body {
 }
 
 /* 错峰入场动画 */
-.slide-in-1 {
-  animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-.slide-in-2 {
-  animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  animation-delay: 0.1s;
-}
-.slide-in-3 {
-  animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  animation-delay: 0.2s;
-}
-.slide-in-4 {
-  animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  animation-delay: 0.4s;
-}
+.slide-in-1 { animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.slide-in-2 { animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.1s; }
+.slide-in-3 { animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.2s; }
+.slide-in-4 { animation: slide-up-fade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.4s; }
 
 @keyframes slide-up-fade {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* 底部版权 */
@@ -785,6 +781,7 @@ body {
   position: relative;
   transition: background 0.3s ease;
   justify-content: center;
+  min-width: 320px; /* 防止表单区太窄 */
 }
 :global(.dark) .form-side { background: #000; }
 .top-actions { position: absolute; top: 30px; right: 30px; display: flex; gap: 16px; z-index: 10; }
@@ -819,19 +816,53 @@ body {
 :global(.dark) .social-btn { background: #fff; color: #000; }
 .social-btn:hover { opacity: 0.85; transform: scale(1.01); }
 
-/* 响应式调整 */
+/* ================= 响应式调整 (重点修复区域) ================= */
+
+/* 1. 针对常见的笔记本屏幕 (1280px - 1440px) 优化 */
+@media (max-width: 1440px) {
+  .slogan-title {
+    /* 强制减小字体，并使用 nowrap 防止换行 */
+    font-size: 5vw;
+    white-space: nowrap;
+  }
+  .feature-showcase {
+    /* 整体缩小右侧装饰，留出空间 */
+    transform: scale(0.9);
+    transform-origin: center right;
+  }
+  .desc-card {
+    margin-top: 32px;
+  }
+}
+
+/* 2. 针对较窄的桌面屏幕/iPad Pro 横屏 (1024px - 1280px) */
+@media (max-width: 1280px) {
+  .hero-content {
+    /* 空间不足时，减小间距 */
+    gap: 20px;
+  }
+  .feature-showcase {
+    /* 进一步缩小 */
+    transform: scale(0.8);
+  }
+  .slogan-title {
+    /* 改为 vw 单位，确保自适应而不固定像素，防止 48px 在窄屏下溢出 */
+    font-size: 4.5vw;
+  }
+}
+
+/* 3. 针对平板竖屏和移动端 (原有逻辑优化) */
 @media (max-width: 900px) {
   .split-container { flex-direction: column; height: auto; min-height: 100dvh; overflow-y: auto; }
-  .visual-side { flex: 0 0 40vh; padding: 30px; overflow: hidden; }
-  /* 修改移动端显示逻辑 */
+  .visual-side { flex: 0 0 40vh; padding: 30px; overflow: hidden; min-width: auto; } /* 重置 min-width */
+
   .hero-content { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
-  .feature-showcase { display: none; } /* 移动端暂时隐藏复杂组件，保持简洁 */
+  .feature-showcase { display: none; } /* 移动端隐藏复杂组件 */
 
   .slogan-area { max-width: 100%; align-items: center; text-align: center; padding-left: 0; }
-  .slogan-title { font-size: 56px; letter-spacing: -2px; opacity: 1; transform: none; animation: none; }
+  .slogan-title { font-size: 56px; letter-spacing: -2px; opacity: 1; transform: none; animation: none; white-space: normal; /* 移动端可以允许换行，或者缩小字号 */ }
   .slogan-header { opacity: 1; transform: none; margin-bottom: 16px; }
 
-  /* 移动端描述区调整 */
   .desc-card { margin-top: 16px; display: block; opacity: 1; transform: none; animation: none; max-width: 100%; text-align: center; }
   .main-desc { margin-bottom: 16px; font-size: 15px; }
   .features-grid { margin: 0 auto; }
@@ -841,10 +872,14 @@ body {
   .form-container { padding-top: 40px; }
 }
 
+/* 4. 针对高度较小的屏幕 (如笔记本 1366x768) */
 @media (max-height: 800px) {
-  /* 调整小屏幕高度适配 */
-  .feature-showcase { gap: 8px; transform: scale(0.9); transform-origin: center right; }
-  .widget-wrapper { transform: none; } /* 移除单个缩放，改用整体缩放 */
-  .slogan-title { font-size: 60px; }
+  .feature-showcase { gap: 10px; transform: scale(0.85); transform-origin: center right; }
+  .slogan-title { font-size: clamp(32px, 5vw, 60px); } /* 减小字体 */
+  .desc-card { margin-top: 20px; }
+  .visual-side { padding: 20px 30px; } /* 减小内边距 */
+  .brand-area { height: 36px; margin-bottom: 10px;} /* 压缩头部 */
+  .brand-logo-circle { width: 36px; height: 36px; font-size: 20px; }
+  .brand-name { font-size: 18px; }
 }
 </style>
