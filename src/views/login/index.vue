@@ -42,7 +42,10 @@
 
               <div class="desc-content">
                 <p class="main-desc">
-                  打破数据孤岛。深度连接 <span class="highlight">MySQL</span> 与 <span class="highlight">Notion</span>，构建你的第二大脑。
+                  Notion 与 MySQL 的完美协奏。
+                </p>
+                <p class="main-desc">
+                  从理财投资到影视娱乐，智能托管您的每一比特数据。
                 </p>
               </div>
             </div>
@@ -646,7 +649,8 @@ body {
   /* 同时减小 vw 比例，从 6vw 降为 5.5vw */
   font-size: clamp(32px, 5.5vw, 110px);
   font-weight: 800;
-  line-height: 1.05;
+  /* 调整：减小行高，使标题更紧凑 */
+  line-height: 0.95;
   margin-bottom: 0;
   letter-spacing: -0.04em;
   color: #fff;
@@ -672,7 +676,8 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-  line-height: 1.2;
+  /* 调整：减小因为渐变可能导致的额外行距 */
+  line-height: 1.0;
   padding-bottom: 0.2em;
   margin-bottom: -0.1em;
   filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.4));
@@ -705,10 +710,12 @@ body {
 /* 核心描述文本 */
 .main-desc {
   font-size: clamp(14px, 1.2vw, 18px); /* 稍微减小下限 */
-  line-height: 1.6;
+  /* 调整：行高减小，更紧凑 */
+  line-height: 1.4;
   color: rgba(255, 255, 255, 0.7);
   font-weight: 400;
-  margin-bottom: 24px;
+  /* 调整：大幅减小段落间距 */
+  margin-bottom: 12px;
 }
 .highlight {
   color: #fff;
