@@ -661,12 +661,12 @@ body {
 .text-gradient {
   background-image: linear-gradient(
       110deg,
-      #ffffff 0%,
-      #e0f2fe 10%,
-      #38bdf8 30%,
-      #a855f7 50%,
-      #ec4899 70%,
-      #ffffff 90%
+      #ffffff 0%,    /* 起始纯白 */
+      #ffffff 10%,   /* 核心修改：大幅增加白色区域占比，使其更明显 */
+      #e0f2fe 15%,   /* 过渡到极淡蓝 */
+      #a855f7 50%,   /* 紫色 */
+      #ec4899 65%,   /* 粉色 */
+      #ffffff 100%   /* 结尾回归纯白 */
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
