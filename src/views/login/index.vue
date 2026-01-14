@@ -817,20 +817,21 @@ body {
   justify-content: center;
   position: relative;
   padding-left: 4px;
-  min-width: 0;
+  min-width: 0; /* Important: allows flex item to shrink below content size */
 }
 .slogan-title {
   font-family: "SF Pro Display", -apple-system, sans-serif;
-  font-size: clamp(32px, 5.5vw, 110px);
+  font-size: clamp(28px, 4vw, 85px); /* Adjusted: Reduced max size further */
   font-weight: 800;
-  line-height: 0.95;
+  line-height: 1.1; /* Adjusted: Slightly looser line height */
   margin-bottom: 0;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em; /* Adjusted: Less aggressive tracking */
   color: #fff;
   text-shadow: 0 10px 30px rgba(0,0,0,0.3);
   opacity: 0;
   transform: translateY(30px);
-  white-space: nowrap;
+  white-space: nowrap; /* Fixed: Prevent wrapping */
+  max-width: 100%; /* Safety check */
 }
 .text-gradient {
   background-image: linear-gradient(
@@ -847,7 +848,7 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-  line-height: 1.0;
+  line-height: 1.1; /* Match parent */
   padding-bottom: 0.2em;
   margin-bottom: -0.1em;
   filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.5));
@@ -914,14 +915,14 @@ body {
 
 /* Response Adjustments */
 @media (max-width: 1440px) {
-  .slogan-title { font-size: 5vw; white-space: nowrap; }
+  .slogan-title { font-size: 3.5vw; } /* Reduced from 4vw */
   .feature-showcase { transform: scale(0.9); transform-origin: center right; }
   .desc-card { margin-top: 32px; }
 }
 @media (max-width: 1280px) {
   .hero-content { gap: 20px; }
   .feature-showcase { transform: scale(0.8); }
-  .slogan-title { font-size: 4.5vw; }
+  .slogan-title { font-size: 3vw; } /* Reduced from 3.5vw */
 }
 @media (max-width: 900px) {
   .split-container { flex-direction: column; height: auto; min-height: 100dvh; overflow-y: auto; }
