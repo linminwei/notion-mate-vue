@@ -110,8 +110,6 @@
                     <div class="node-halo halo-white"></div>
                     <div class="node-housing">
                       <img src="/public/notion.png" class="notion-n" alt="Notion" onerror="this.style.display='none'">
-                      <!-- Fallback text if image fails -->
-                      <span v-if="true" class="notion-fallback">N</span>
                     </div>
                     <div class="node-label-pill">Notion</div>
                   </div>
