@@ -1,34 +1,25 @@
 ﻿<template>
-  <!-- 修复核心：直接在此处绑定 dark-mode 类，确保样式切换 100% 触发 -->
   <div class="split-container" :class="{ 'dark-mode': appStore.isDark }">
-    <!-- 左侧：品牌与视觉沉浸区 -->
     <aside class="visual-side">
-      <!-- 动态网格背景层 -->
       <div class="mesh-background">
         <div class="mesh-orb orb-1"></div>
         <div class="mesh-orb orb-2"></div>
         <div class="mesh-orb orb-3"></div>
       </div>
-      <!-- 噪点纹理层 -->
       <div class="noise-overlay"></div>
 
-      <!-- 磨砂玻璃前景 -->
       <div class="glass-foreground">
-        <!-- 品牌 Logo -->
         <div class="brand-area">
           <div class="brand-logo-circle">
             <database-outlined />
           </div>
           <span class="brand-name">Notion Mate</span>
-          <!-- 黑金流光 AI Badge -->
           <div class="brand-badge-wrapper">
             <span class="brand-badge">AI</span>
           </div>
         </div>
 
-        <!-- 核心内容区域 -->
         <div class="hero-content">
-          <!-- Slogan -->
           <div class="slogan-area">
             <div class="title-wrapper">
               <h2 class="slogan-title slide-in-2">All In One.</h2>
@@ -43,15 +34,12 @@
             </div>
           </div>
 
-          <!-- 右侧：Bento Grid 组件展示区 -->
           <div class="feature-showcase floating-group">
             <div class="bento-grid">
 
-              <!-- 1. 双向同步引擎 (UI Enhanced Flow) -->
               <div class="glass-widget widget-sync grid-span-2">
                 <div class="card-grid-bg"></div>
 
-                <!-- 头部状态栏 -->
                 <div class="sync-status-row">
                   <div class="status-indicator">
                     <div class="status-dot pulsing"></div>
@@ -66,9 +54,7 @@
                   </div>
                 </div>
 
-                <!-- 视觉流交互区 -->
                 <div class="sync-flow-container">
-                  <!-- 左侧节点: MySQL -->
                   <div class="node-wrapper">
                     <div class="node-glow blue-glow"></div>
                     <div class="impact-ring blue-impact"></div>
@@ -77,31 +63,26 @@
                     </div>
                   </div>
 
-                  <!-- 中间连接线 -->
                   <div class="connection-track">
                     <div class="track-base"></div>
                     <div class="track-stream"></div>
 
-                    <!-- 双向数据流 - MySQL to Notion -->
                     <div class="packet-stream stream-right">
                       <div class="packet packet-1"></div>
                       <div class="packet packet-2"></div>
                     </div>
 
-                    <!-- 双向数据流 - Notion to MySQL -->
                     <div class="packet-stream stream-left">
                       <div class="packet packet-3"></div>
                       <div class="packet packet-4"></div>
                     </div>
 
-                    <!-- 中心交换枢纽 -->
                     <div class="exchange-hub">
                       <div class="hub-core"></div>
                       <div class="hub-shockwave"></div>
                     </div>
                   </div>
 
-                  <!-- 右侧节点: Notion -->
                   <div class="node-wrapper">
                     <div class="node-glow green-glow"></div>
                     <div class="impact-ring green-impact"></div>
@@ -112,7 +93,6 @@
                 </div>
               </div>
 
-              <!-- 2. 音乐组件 -->
               <div class="glass-widget widget-music-reimagined grid-span-2">
                 <div class="sonic-aura"></div>
                 <div class="music-layout">
@@ -142,7 +122,6 @@
                 </div>
               </div>
 
-              <!-- 3. 理财组件 -->
               <div class="glass-widget widget-finance-pro grid-span-1">
                 <div class="finance-bg-glow"></div>
                 <div class="finance-content-pro">
@@ -163,17 +142,13 @@
                 </div>
               </div>
 
-              <!-- 4. 待办组件 (UI 重构: Minimal Mode) -->
               <div class="glass-widget widget-task-minimal grid-span-1">
-                <!-- 头部 -->
                 <div class="min-header">
                   <span class="min-title">待办事项</span>
                   <div class="min-badge">2</div>
                 </div>
 
-                <!-- 列表 -->
                 <div class="min-list">
-                  <!-- 任务 1: 当前 -->
                   <div class="min-item active">
                     <div class="min-check"></div>
                     <div class="min-content">
@@ -182,7 +157,6 @@
                     </div>
                   </div>
 
-                  <!-- 任务 2: 已完成 -->
                   <div class="min-item">
                     <div class="min-check checked"><check-outlined /></div>
                     <div class="min-content">
@@ -193,7 +167,6 @@
                 </div>
               </div>
 
-              <!-- 5. 影视组件 -->
               <div class="glass-widget widget-movie-pro grid-span-2">
                 <div class="cinema-backdrop"></div>
                 <div class="cinema-noise"></div>
@@ -221,7 +194,6 @@
           </div>
         </div>
 
-        <!-- 底部版权 -->
         <div class="visual-footer">
           <div class="footer-line"></div>
           <p>Powered by Notion Mate Intelligent System</p>
@@ -229,9 +201,7 @@
       </div>
     </aside>
 
-    <!-- 右侧：功能交互区 -->
     <main class="form-side">
-      <!-- 顶部工具栏 -->
       <div class="top-actions">
         <a-button type="text" class="icon-btn" @click="toggleTheme">
           <template #icon>
@@ -243,7 +213,6 @@
         </a-button>
       </div>
 
-      <!-- 登录表单容器 -->
       <div class="form-container">
         <div class="form-header">
           <h1 class="welcome-text">欢迎回来 👋</h1>
@@ -1237,4 +1206,99 @@ body {
 .tech-svg, .notion-n, .node-housing > svg, .node-housing > img { width: 24px !important; height: 24px !important; min-width: 24px; min-height: 24px; object-fit: contain; display: block; }
 .tech-svg { color: #38bdf8; }
 .notion-n { fill: #fff; }
+
+/* =================================================================
+   UI 重构：错误验证样式 (Error Validation Redesign)
+   ================================================================= */
+
+/* 定义“摇头”动画 - 模仿 Apple 密码错误效果 */
+@keyframes shake-horizontal {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+/* 1. 输入框容器错误状态 */
+:deep(.ant-form-item-has-error .ant-input-affix-wrapper) {
+  /* 触发摇头动画 */
+  animation: shake-horizontal 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+
+  /* 亮色模式：淡红背景 + 红色边框 */
+  background-color: rgba(255, 59, 48, 0.04) !important;
+  border-color: #ff3b30 !important;
+
+  /* 移除原本生硬的 Shadow，改为柔和的红色漫射光 */
+  box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.1) !important;
+}
+
+/* 2. 输入框内部图标变红 (如 UserOutlined, LockOutlined) */
+:deep(.ant-form-item-has-error .ant-input-prefix) {
+  color: #ff3b30 !important;
+  transition: color 0.3s;
+}
+
+/* 3. 错误提示文字样式优化 */
+:deep(.ant-form-item-explain-error) {
+  color: #ff3b30;
+  font-size: 13px;
+  font-weight: 500;
+
+  /* 修复：顶部保持 6px，底部增加 12px 以推开下方元素 */
+  margin-top: 6px;
+  margin-bottom: 12px;
+
+  margin-left: 4px; /* 轻微缩进，对齐输入框内容 */
+
+  /* 增加一个小圆点或图标装饰 */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  animation: slide-down-error 0.3s ease-out forwards;
+}
+
+/* 错误文字出现动画 */
+@keyframes slide-down-error {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 错误文字前的警示小图标 (CSS 绘制) */
+:deep(.ant-form-item-explain-error)::before {
+  content: '!';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* =================================================================
+   Dark Mode 适配 (暗黑模式下的错误状态)
+   ================================================================= */
+.dark-mode :deep(.ant-form-item-has-error .ant-input-affix-wrapper) {
+  /* 暗色模式：深红背景，避免刺眼 */
+  background-color: rgba(255, 69, 58, 0.15) !important;
+  border-color: #ff453a !important;
+  box-shadow: 0 0 0 4px rgba(255, 69, 58, 0.15) !important;
+}
+
+.dark-mode :deep(.ant-form-item-has-error .ant-input-prefix) {
+  color: #ff453a !important;
+}
+
+.dark-mode :deep(.ant-form-item-explain-error) {
+  color: #ff453a;
+}
+
+.dark-mode :deep(.ant-form-item-explain-error)::before {
+  background: #ff453a;
+  color: #000; /* 图标文字反色，提高对比度 */
+}
 </style>
