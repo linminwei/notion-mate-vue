@@ -57,8 +57,7 @@
                     <div class="status-ring"></div>
                   </div>
                   <div class="status-text-group">
-                    <span class="status-text">SYNC ENGINE ACTIVE</span>
-                    <span class="status-sub">BIDIRECTIONAL STREAM</span>
+                    <span class="status-text">双向同步</span>
                   </div>
                   <div class="latency-badge">
                     <div class="ping-signal"></div>
@@ -147,7 +146,7 @@
                 <div class="finance-bg-glow"></div>
                 <div class="finance-content-pro">
                   <div class="fin-header">
-                    <span class="fin-label">NET WORTH</span>
+                    <span class="fin-label">投资理财</span>
                     <div class="fin-badge">+12.5%</div>
                   </div>
                   <div class="fin-main-number">
@@ -167,7 +166,7 @@
               <div class="glass-widget widget-task-minimal grid-span-1">
                 <!-- 头部 -->
                 <div class="min-header">
-                  <span class="min-title">Upcoming</span>
+                  <span class="min-title">待办事项</span>
                   <div class="min-badge">2</div>
                 </div>
 
@@ -246,7 +245,7 @@
       <!-- 登录表单容器 -->
       <div class="form-container">
         <div class="form-header">
-          <h1 class="welcome-text">欢迎回来</h1>
+          <h1 class="welcome-text">欢迎回来 👋</h1>
           <p class="subtitle-text">请登录您的账户以继续</p>
         </div>
 
