@@ -1,5 +1,6 @@
 ﻿<template>
-  <div class="split-container">
+  <!-- 修复核心：直接在此处绑定 dark-mode 类，确保样式切换 100% 触发 -->
+  <div class="split-container" :class="{ 'dark-mode': appStore.isDark }">
     <!-- 左侧：品牌与视觉沉浸区 -->
     <aside class="visual-side">
       <!-- 动态网格背景层 -->
@@ -399,6 +400,7 @@ body {
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
   background-color: #fff;
+  transition: background-color 0.3s ease;
 }
 
 /* ================= 左侧视觉区 (Shadow Enhanced & Rim Light) ================= */
@@ -1094,41 +1096,109 @@ body {
   min-width: 320px;
   z-index: 1; /* 确保层级低于左侧区域 */
 }
-:global(.dark) .form-side { background: #000; }
+
+/* =================================================================
+   Dark Mode Styles - Robust Implementation
+   ================================================================= */
+
+/* 1. 确保根容器也变黑 */
+.dark-mode.split-container {
+  background-color: #000;
+}
+
+/* 2. 强制右侧表单区域背景变黑，文字变白 */
+.dark-mode .form-side {
+  background: #000 !important;
+  color: #fff;
+}
+
+/* 3. 顶部切换按钮在暗黑模式下变白 */
+.dark-mode .icon-btn {
+  color: #f5f5f7;
+}
+
+/* 4. 欢迎语文字变白 */
+.dark-mode .welcome-text {
+  color: #fff;
+}
+
+/* 5. 输入框适配 */
+/* 输入框外层容器变深色背景 */
+.dark-mode :deep(.ant-input-affix-wrapper) {
+  background-color: #1c1c1e;
+  border-color: #2c2c2e;
+}
+/* 输入框 hover 状态 */
+.dark-mode :deep(.ant-input-affix-wrapper:hover) {
+  background-color: #2c2c2e;
+}
+
+/* 输入框聚焦状态：强制白色阴影 */
+.dark-mode :deep(.ant-input-affix-wrapper-focused) {
+  background-color: #1c1c1e;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25) !important; /* 白色光圈 */
+  border-color: #0071e3 !important; /* 保持原先的蓝色边框 */
+}
+
+/* 输入框内部文字变白 */
+.dark-mode :deep(input.ant-input),
+.dark-mode :deep(input.ant-input-password) {
+  color: #fff !important;
+}
+
+/* 6. 忘记密码链接 - 强制保持蓝色 */
+.dark-mode .forgot-link {
+  color: #0071e3 !important;
+}
+
+/* 7. 分割线变暗 */
+.dark-mode .divider::before,
+.dark-mode .divider::after {
+  background: #38383a;
+}
+
+/* 8. 社交登录按钮反色 (白底黑字) */
+.dark-mode .social-btn {
+  background: #fff;
+  color: #000;
+}
+
+/* 9. 输入框 Input Icon 适配 */
+.dark-mode :deep(.ant-input-prefix) {
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .top-actions { position: absolute; top: 30px; right: 30px; display: flex; gap: 16px; z-index: 10; }
 .icon-btn { font-size: 18px; color: #1d1d1f; }
-:global(.dark) .icon-btn { color: #f5f5f7; }
 .form-container { width: 100%; max-width: 440px; margin: auto; padding: 0 40px; }
 .form-header { margin-bottom: 40px; }
 .welcome-text { font-size: 32px; font-weight: 700; color: #1d1d1f; margin: 0 0 12px; letter-spacing: -0.5px; }
-:global(.dark) .welcome-text { color: #fff; }
 .subtitle-text { color: #86868b; font-size: 16px; }
+
 .apple-input :deep(.ant-input), .apple-input :deep(.ant-input-password) { background: transparent !important; }
 .apple-input :deep(.ant-input-prefix) { margin-right: 12px; color: #86868b; }
+
 :deep(.ant-input-affix-wrapper) { background-color: #f5f5f7; border: 1px solid transparent; border-radius: 12px; padding: 12px 16px; box-shadow: none; transition: all 0.3s; }
-:global(.dark) :deep(.ant-input-affix-wrapper) { background-color: #1c1c1e; }
 :deep(.ant-input-affix-wrapper:hover) { background-color: #e8e8ed; }
-:global(.dark) :deep(.ant-input-affix-wrapper:hover) { background-color: #2c2c2e; }
-/* 优化聚焦状态 */
+
 :deep(.ant-input-affix-wrapper-focused) {
   background-color: #fff;
   border-color: #0071e3;
   box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
 }
-:global(.dark) :deep(.ant-input-affix-wrapper-focused) { background-color: #1c1c1e; box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2); border-color: #0a84ff; }
 
 .form-actions { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 32px; }
+.forgot-link { color: #0071e3; cursor: pointer; font-size: 14px; font-weight: 500; }
+
 .apple-btn { height: 52px; border-radius: 14px; font-size: 17px; font-weight: 600; box-shadow: none; transition: transform 0.1s ease, background-color 0.2s; }
 .primary-btn { background: #0071e3; }
 .primary-btn:hover { background: #0077ED; transform: scale(1.01); }
 .primary-btn:active { transform: scale(0.98); }
 .divider { display: flex; align-items: center; margin: 32px 0; color: #86868b; font-size: 13px; }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e5e5ea; }
-:global(.dark) .divider::before, :global(.dark) .divider::after { background: #38383a; }
 .divider span { padding: 0 16px; }
 .social-login { display: flex; gap: 16px; }
 .social-btn { background: #000; color: #fff; border: 1px solid transparent; transition: all 0.2s; }
-:global(.dark) .social-btn { background: #fff; color: #000; }
 .social-btn:hover { opacity: 0.85; transform: scale(1.01); }
 
 /* Response Adjustments */
