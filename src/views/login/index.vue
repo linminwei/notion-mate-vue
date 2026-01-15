@@ -230,7 +230,7 @@
             <a-input
                 v-model:value="formState.username"
                 size="large"
-                placeholder="Apple ID 或用户名"
+                placeholder="用户名"
                 class="apple-input"
             >
               <template #prefix>
@@ -276,7 +276,15 @@
 
         <div class="social-login">
           <a-button block class="apple-btn social-btn apple-id-btn">
-            <apple-filled /> 使用 Apple ID 登录
+            <font-awesome-icon icon="fa-solid fa-user-plus" />注册新账号
+          </a-button>
+        </div>
+
+        <p></p>
+
+        <div class="social-login">
+          <a-button block class="apple-btn social-btn apple-id-btn">
+            <font-awesome-icon icon="fa-solid fa-mobile" />手机号登录
           </a-button>
         </div>
       </div>
@@ -1167,8 +1175,26 @@ body {
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e5e5ea; }
 .divider span { padding: 0 16px; }
 .social-login { display: flex; gap: 16px; }
-.social-btn { background: #000; color: #fff; border: 1px solid transparent; transition: all 0.2s; }
+
+/* Modified Social Button Styles */
+.social-btn {
+  background: #000;
+  color: #fff;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  /* Add flexbox to ensure perfect vertical alignment */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .social-btn:hover { opacity: 0.85; transform: scale(1.01); }
+
+/* Added Spacing to the Icon */
+.social-btn svg {
+  margin-right: 12px; /* Increased spacing */
+  font-size: 18px;    /* Visual balance */
+}
 
 /* Response Adjustments */
 @media (max-width: 1440px) {
