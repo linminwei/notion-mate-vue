@@ -1,5 +1,4 @@
 ﻿import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import { message } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import router from '@/router'
 import type { Result } from '@/types'
@@ -28,7 +27,6 @@ service.interceptors.response.use(
   (response: AxiosResponse<Result>) => {
     const res = response.data
     if (res.code !== 200) {
-      message.error(res.message || '请求失败')
       if (res.code === 40100 || res.code === 40101 || res.code === 40102) {
         const userStore = useUserStore()
         userStore.logout()
@@ -39,8 +37,7 @@ service.interceptors.response.use(
     return res as any
   },
   (error) => {
-    message.error(error.message || '网络错误')
-    return Promise.reject(error)
+      return Promise.reject(error)
   }
 )
 

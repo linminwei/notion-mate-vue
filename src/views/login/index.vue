@@ -300,8 +300,8 @@ import {
   StarFilled,
   CheckOutlined
 } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
 import type { Rule } from 'ant-design-vue/es/form'
+import {AppleAlert} from "@/components/common/AppleAlert.ts";
 
 const router = useRouter()
 const route = useRoute()
@@ -331,11 +331,11 @@ const handleLogin = async () => {
         username: formState.username,
         password: formState.password
       })
-      message.success({ content: '欢迎回来', key: 'login' })
       const redirect = route.query.redirect as string
       router.push(redirect || '/')
+      AppleAlert.success("登录成功",'欢迎回来:'+userStore.userInfo.nickname)
     } catch (error: any) {
-      message.error(error.message || '账号或密码错误')
+      AppleAlert.error("登录失败",error.message)
     } finally {
       loading.value = false
     }
