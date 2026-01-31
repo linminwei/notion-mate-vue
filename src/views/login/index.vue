@@ -26,10 +26,8 @@
       <nav class="ray-nav">
         <div class="nav-left">
           <div class="ray-logo" @click="viewMode = 'landing'">
-            <svg viewBox="0 0 24 24" fill="none" class="logo-svg">
-              <path d="M4 22L20 2L12 22H4Z" fill="#FF6363"/>
-            </svg>
-            <span class="logo-text">Raycast</span>
+            <img src="/Notion_Mate_Dark.png" class="logo-svg">
+            <span class="logo-text">Notion Mate</span>
           </div>
         </div>
 
@@ -62,12 +60,12 @@
         <header class="hero-section">
           <div class="hero-inner">
             <h1 class="hero-title">
-              <span class="line reveal-1">第二大脑，</span>
-              <span class="line reveal-2 glow-text">开启自动驾驶。</span>
+              <span class="line reveal-1">Notion 的超级伴侣</span>
+              <span class="line reveal-2 glow-text">数据自由流转</span>
             </h1>
             <p class="hero-sub reveal-3">
-              无缝同步豆瓣书影音、实时聚合财务流水、智能驱动生产力。<br class="desktop-br">
-              Notion Mate 让数据在 Notion 与 MySQL 间自由流转，构建您的数字生命体。
+              打破平台壁垒，管理您的每一比特数据。<br class="desktop-br">
+              智能聚合生活娱乐、财务与生产力数据，全方位管理您的数字人生。
             </p>
           </div>
         </header>
@@ -76,8 +74,8 @@
         <section class="extensions-section reveal-4">
           <div class="ext-header">
             <div class="ext-titles">
-              <h2 class="ext-title">打破边界，无缝协作。</h2>
-              <p class="ext-sub">告别频繁切换窗口的烦恼。在同一个入口，连接您所有的工具与服务。</p>
+              <h2 class="ext-title">万千功能，一呼百应。</h2>
+              <p class="ext-sub">告别数据孤岛。在同一个入口，连接您所有的数据。</p>
             </div>
             <div class="ext-tags">
               <span class="ext-tag active">生产力</span>
@@ -209,7 +207,7 @@
         </section>
       </div>
 
-      <!-- 视图 4: Integrations Page (集成页) -->
+      <!-- 视图 2: Integrations Page (集成页 - 独立页面) -->
       <div v-else-if="viewMode === 'store'" key="store" class="store-view">
         <div class="store-bg-glow"></div>
 
@@ -220,9 +218,12 @@
             <div class="cloud-row row-top">
               <div class="store-app-icon icon-blur-2"><thunderbolt-filled /></div>
               <div class="store-app-icon icon-blur-1 icon-figma"><bg-colors-outlined /></div>
+
+              <!-- 修复后的 Notion 图标容器 -->
               <div class="store-app-icon icon-focus icon-notion">
-                <span class="notion-n">N</span>
+                <img src="/notion.png" class="notion-n" alt="Notion">
               </div>
+
               <div class="store-app-icon icon-blur-1 icon-spotify"><customer-service-filled /></div>
               <div class="store-app-icon icon-blur-2 icon-vscode"><code-filled /></div>
             </div>
@@ -237,26 +238,31 @@
           <div class="store-hero-text">
             <h1 class="store-title">原生集成</h1>
             <p class="store-subtitle">
-              不仅仅是连接，更是智能管理。Notion Mate 内置全场景数据中枢，<br>
-              自动同步豆瓣书影音库、聚合个人财务流水、驱动生产力看板。<br>
-              无需第三方插件，让您的数据在 Notion 与 MySQL 间自由流转，构建完整的数字人生。
+              不仅仅是连接，更是智能数据中枢，构建自动化第二大脑
             </p>
           </div>
 
-          <!-- 搜索框已移除 -->
-
-          <!-- Top Picks Section -->
+          <!-- 核心功能推荐 (Top Picks) -->
           <div class="top-picks-section">
-            <h3 class="section-label">核心内置功能，即刻体验</h3>
             <div class="picks-grid">
 
-              <!-- Pick 1: Douban Sync -->
+              <!-- Pick 1: Notion (Modified) -->
+              <a href="https://www.notion.com/zh-cn" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-black">
+                  <img src="/notion.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">Notion</h3>
+                <p class="pick-desc">一款集笔记、任务管理、数据库和团队协作于一体的全平台工作空间应用，旨在提升个人和团队的生产力</p>
+                <!-- Removed author and button, now entire card is clickable -->
+              </a>
+
+              <!-- Pick 2: Book & Movie Sync -->
               <div class="pick-card">
-                <div class="pick-icon-wrapper bg-green-douban">
+                <div class="pick-icon-wrapper bg-black">
                   <read-outlined class="pick-icon" />
                 </div>
-                <h3 class="pick-name">豆瓣书影音同步</h3>
-                <p class="pick-desc">自动捕获豆瓣标记，构建您的精神角落。数据实时流转至 Notion 与 MySQL，沉淀为永久资产。</p>
+                <h3 class="pick-name">书影音自动化</h3>
+                <p class="pick-desc">自动获取书籍与影视元数据，构建个人专属媒体资料库。数据实时同步，让每一次阅读和观影都有迹可循。</p>
                 <div class="pick-author">
                   <div class="author-avatar-team"><img src="https://api.dicebear.com/7.x/initials/svg?seed=NM" alt="NM"></div>
                   <span class="author-name">Notion Mate Team</span>
@@ -264,27 +270,13 @@
                 <button class="install-btn">立即启用</button>
               </div>
 
-              <!-- Pick 2: Finance Manager (Replaced XKCD) -->
+              <!-- Pick 3: Finance & Productivity -->
               <div class="pick-card">
                 <div class="pick-icon-wrapper bg-orange-finance">
                   <bank-outlined class="pick-icon" />
                 </div>
-                <h3 class="pick-name">智能财务管家</h3>
-                <p class="pick-desc">自动聚合多渠道账单，生成可视化财务报表。数据实时同步至 MySQL，助您轻松掌控个人收支。</p>
-                <div class="pick-author">
-                  <div class="author-avatar-team"><img src="https://api.dicebear.com/7.x/initials/svg?seed=NM" alt="NM"></div>
-                  <span class="author-name">Notion Mate Team</span>
-                </div>
-                <button class="install-btn">立即启用</button>
-              </div>
-
-              <!-- Pick 3: Haystack (Productivity) -->
-              <div class="pick-card">
-                <div class="pick-icon-wrapper bg-yellow">
-                  <deployment-unit-outlined class="pick-icon text-black" />
-                </div>
-                <h3 class="pick-name">全能生产力剪藏</h3>
-                <p class="pick-desc">捕捉稍纵即逝的灵感。截图、链接、笔记，万物皆可剪藏，无缝融入您的 Notion 生产力工作流。</p>
+                <h3 class="pick-name">财务与生产力</h3>
+                <p class="pick-desc">统一管理个人收支与待办事项。支持 Notion 与 MySQL 双向数据同步，以数据驱动生活，提升个人效率。</p>
                 <div class="pick-author">
                   <div class="author-avatar-team"><img src="https://api.dicebear.com/7.x/initials/svg?seed=NM" alt="NM"></div>
                   <span class="author-name">Notion Mate Team</span>
@@ -298,21 +290,20 @@
         </div>
       </div>
 
-      <!-- 视图 2: Download Page (下载页) -->
+      <!-- 视图 3: Download Page (下载页 - 独立页面) -->
       <div v-else-if="viewMode === 'download'" key="download" class="download-view">
         <div class="download-bg-glow"></div>
 
         <div class="download-container">
           <!-- Hero Text -->
           <div class="download-header">
-            <h1 class="download-title">全平台覆盖，<br>体验始终如一。</h1>
+            <h1 class="download-title">跨越平台，如影随形</h1>
             <p class="download-subtitle">
-              专为速度而生的原生架构。配置、脚本与数据在所有设备间实时同步。<br class="desktop-br">
-              无论身处何地，Notion Mate 始终与您的思维同步。
+              为每一处平台打造的原生体验，尽享 Notion Mate 的极速快感
             </p>
           </div>
 
-          <!-- Primary Platform: Mac -->
+          <!-- Primary Platform: Mac (Enhanced Visual) -->
           <div class="primary-dl-card">
             <div class="primary-content">
               <div class="os-icon-large mac-icon"><apple-filled /></div>
@@ -332,7 +323,7 @@
             </div>
 
             <div class="primary-visual">
-              <!-- App Window Mock -->
+              <!-- Advanced UI Mockup - Notion Mate 功能演示 -->
               <div class="app-window-mock scale-in">
                 <div class="win-bar">
                   <search-outlined class="win-search-icon" />
@@ -360,7 +351,7 @@
             </div>
           </div>
 
-          <!-- Secondary Platforms Grid -->
+          <!-- Secondary Platforms Grid (Hover Effects) -->
           <div class="platforms-grid">
 
             <!-- Windows -->
@@ -398,6 +389,7 @@
               <div class="plat-icon-box linux-icon"><code-filled /></div>
               <div class="plat-details">
                 <h3>Linux</h3>
+                <!-- Invisible placeholder for alignment -->
                 <p style="opacity: 0; pointer-events: none;">Coming Soon</p>
               </div>
               <button class="plat-dl-btn disabled">敬请期待</button>
@@ -409,7 +401,7 @@
 
     </transition>
 
-    <!-- ================= 视图 3: Auth Page ================= -->
+    <!-- ================= 视图 4: Auth Page ================= -->
     <transition name="slide-up">
       <div v-if="viewMode === 'auth'" class="auth-container split-container">
         <aside class="visual-side">
@@ -723,11 +715,21 @@ const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back"
   font-size: 32px; color: #fff;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* 关键修复：确保方形图片被圆角容器裁剪 */
+  overflow: hidden;
 }
 
 /* Icon Specifics */
 .icon-focus { width: 96px; height: 96px; z-index: 10; font-size: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.4); background: #111; transform: scale(1.05); }
-.notion-n { font-family: "Segoe UI", serif; font-weight: 700; letter-spacing: -1px; }
+
+/* 修复 Notion 图标样式 */
+.notion-n {
+  width: 60%; /* 调整大小，不再填满 */
+  height: 60%;
+  object-fit: contain; /* 保持比例 */
+  display: block;
+  border-radius: 4px; /* 稍微给一点圆角 */
+}
 
 .icon-blur-1 { opacity: 0.6; transform: scale(0.9); filter: blur(0.5px); }
 .icon-blur-2 { opacity: 0.3; transform: scale(0.8); filter: blur(1.5px); }
@@ -786,6 +788,14 @@ const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back"
   text-align: center;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
+  text-decoration: none; /* 确保作为a标签时无下划线 */
+}
+
+/* 新增半透明卡片样式 */
+.glass-card {
+  background: rgba(20, 20, 20, 0.5); /* 半透明黑色 */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .pick-card:hover {
@@ -793,6 +803,11 @@ const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back"
   transform: translateY(-5px);
   box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
   background: #141414;
+}
+
+/* 针对 glass-card 的 hover 效果 */
+.glass-card:hover {
+  background: rgba(30, 30, 30, 0.7);
 }
 
 .pick-icon-wrapper {
@@ -811,6 +826,15 @@ const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back"
 .bg-orange-finance { background: #f97316; color: #fff; }
 
 .pick-icon { font-size: 36px; }
+
+/* 专门修复 pick-card 中图片类型图标的大小 */
+img.pick-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px; /* 稍微添加圆角以防图片过于尖锐 */
+}
+
 .pick-icon.text-black { color: #1a1a1a; }
 .pick-text-icon { font-family: 'Courier New', monospace; font-weight: 800; font-size: 20px; letter-spacing: -1px; }
 
