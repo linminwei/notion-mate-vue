@@ -33,7 +33,6 @@
 
         <div class="nav-center">
           <a href="#" class="nav-link" :class="{ active: viewMode === 'store' }" @click.prevent="viewMode = 'store'">集成</a>
-          <!-- 已移除 Pro, AI, 团队, 开发者, 定价 -->
           <a href="#" class="nav-link" :class="{ active: viewMode === 'changelog' }" @click.prevent="viewMode = 'changelog'">更新日志</a>
         </div>
 
@@ -83,7 +82,6 @@
 
           <div class="ext-grid-wrapper" ref="extGridRef" :class="{ 'mask-l': showMaskLeft, 'mask-r': showMaskRight }" @scroll="handleScroll">
             <div class="ext-cards-grid">
-
               <!-- Card: Linear -->
               <div class="ext-card card-linear">
                 <div class="card-top">
@@ -186,7 +184,6 @@
                   <div class="obsidian-shard"></div>
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -203,87 +200,49 @@
         </section>
       </div>
 
-      <!-- 视图 2: Integrations Page (集成页 - 独立页面) -->
+      <!-- 视图 2: Integrations Page (集成页) -->
       <div v-else-if="viewMode === 'store'" key="store" class="store-view">
         <div class="store-bg-glow"></div>
-
         <div class="store-content-wrapper">
-
-          <!-- 图标云 Hero 区域 -->
           <div class="store-icon-cloud">
             <div class="cloud-row row-top">
-              <div class="store-app-icon icon-blur-2 bg-green-douban">
-                <img src="/douban.png" class="notion-n" alt="douban">
-              </div>
-              <div class="store-app-icon icon-blur-1 icon-figma bg-black">
-                <img src="/apple-tv.png" class="notion-n" alt="apple-tv">
-              </div>
-
-              <!-- 修复后的 Notion 图标容器 -->
-              <div class="store-app-icon icon-focus icon-notion">
-                <img src="/notion.png" class="notion-n" alt="Notion">
-              </div>
-
-              <div class="store-app-icon icon-blur-1 icon-spotify bg-white">
-                <img src="/netflix.png" class="notion-n" alt="netflix">
-              </div>
-              <div class="store-app-icon icon-blur-2 icon-vscode bg-red">
-                <img src="/网易云.png" class="notion-n" alt="网易云">
-              </div>
+              <div class="store-app-icon icon-blur-2 bg-green-douban"><img src="/douban.png" class="notion-n" alt="douban"></div>
+              <div class="store-app-icon icon-blur-1 icon-figma bg-black"><img src="/apple-tv.png" class="notion-n" alt="apple-tv"></div>
+              <div class="store-app-icon icon-focus icon-notion"><img src="/notion.png" class="notion-n" alt="Notion"></div>
+              <div class="store-app-icon icon-blur-1 icon-spotify bg-white"><img src="/netflix.png" class="notion-n" alt="netflix"></div>
+              <div class="store-app-icon icon-blur-2 icon-vscode bg-red"><img src="/网易云.png" class="notion-n" alt="网易云"></div>
             </div>
             <div class="cloud-row row-bottom">
-              <div class="store-app-icon icon-blur-2 icon-google bg-white">
-                <img src="/notion-calendar.png" class="notion-n" alt="notion-calendar">
-              </div>
-              <div class="store-app-icon icon-blur-1 icon-arc bg-white">
-                <img src="/google-calendar.png" class="notion-n" alt="google-calendar">
-              </div>
-              <div class="store-app-icon icon-blur-2 icon-slack bg-white">
-                <img src="/wechat-pay.png" class="notion-n" alt="微信支付">
-              </div>
+              <div class="store-app-icon icon-blur-2 icon-google bg-white"><img src="/notion-calendar.png" class="notion-n" alt="notion-calendar"></div>
+              <div class="store-app-icon icon-blur-1 icon-arc bg-white"><img src="/google-calendar.png" class="notion-n" alt="google-calendar"></div>
+              <div class="store-app-icon icon-blur-2 icon-slack bg-white"><img src="/wechat-pay.png" class="notion-n" alt="微信支付"></div>
             </div>
           </div>
-
-          <!-- 标题区域：更新为中文营销文案 -->
           <div class="store-hero-text">
             <h1 class="store-title">原生集成</h1>
-            <p class="store-subtitle">
-              不仅仅是连接，更是智能数据中枢，构建自动化第二大脑
-            </p>
+            <p class="store-subtitle">不仅仅是连接，更是智能数据中枢，构建自动化第二大脑</p>
           </div>
-
-          <!-- 核心功能推荐 (Top Picks) -->
           <div class="top-picks-section">
             <div class="picks-grid">
-
-              <!-- Pick 1: Notion (Modified) -->
               <a href="https://www.notion.com/zh-cn" target="_blank" class="pick-card glass-card">
-                <div class="pick-icon-wrapper bg-white">
-                  <img src="/notion.png" class="pick-icon">
-                </div>
+                <div class="pick-icon-wrapper bg-white"><img src="/notion.png" class="pick-icon"></div>
                 <h3 class="pick-name">Notion</h3>
-                <p class="pick-desc">一款集笔记、任务管理、数据库和团队协作于一体的全平台工作空间应用，旨在提升个人和团队的生产力</p>
+                <p class="pick-desc">一款集笔记、任务管理、数据库和团队协作于一体的全平台工作空间应用。</p>
               </a>
-
               <a href="https://www.douban.com/" target="_blank" class="pick-card glass-card">
-                <div class="pick-icon-wrapper bg-green-douban">
-                  <img src="/douban.png" class="pick-icon">
-                </div>
+                <div class="pick-icon-wrapper bg-green-douban"><img src="/douban.png" class="pick-icon"></div>
                 <h3 class="pick-name">豆瓣</h3>
-                <p class="pick-desc">豆瓣网是一家基于用户对于图书、电影和音乐兴趣而搭建的社交网站</p>
+                <p class="pick-desc">豆瓣网是一家基于用户对于图书、电影和音乐兴趣而搭建的社交网站。</p>
               </a>
-
               <a href="https://www.apple.com/apple-books/" target="_blank" class="pick-card glass-card">
-                <div class="pick-icon-wrapper bg-ibook">
-                  <img src="/ibooks.png" class="pick-icon">
-                </div>
+                <div class="pick-icon-wrapper bg-ibook"><img src="/ibooks.png" class="pick-icon"></div>
                 <h3 class="pick-name">iBooks</h3>
-                <p class="pick-desc">苹果公司开发的内建应用，主要用于阅读和收听书籍及有声读物</p>
+                <p class="pick-desc">苹果公司开发的内建应用，主要用于阅读和收听书籍及有声读物。</p>
               </a>
 
               <a href="https://www.apple.com/apple-tv/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-black">
-                  <img src="/Apple%20TV.png" class="pick-icon">
+                  <img src="/apple-tv.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Apple TV</h3>
                 <p class="pick-desc">Apple TV是苹果公司推出的流媒体播放器</p>
@@ -362,120 +321,50 @@
               </a>
             </div>
           </div>
-
         </div>
       </div>
 
-      <!-- 视图 3: Download Page (下载页 - 独立页面) -->
+      <!-- 视图 3: Download Page (下载页) -->
       <div v-else-if="viewMode === 'download'" key="download" class="download-view">
         <div class="download-bg-glow"></div>
-
         <div class="download-container">
-          <!-- Hero Text -->
           <div class="download-header">
             <h1 class="download-title">跨越平台，如影随形</h1>
-            <p class="download-subtitle">
-              为每一处平台打造的原生体验，尽享 Notion Mate 的极速快感
-            </p>
+            <p class="download-subtitle">为每一处平台打造的原生体验，尽享 Notion Mate 的极速快感</p>
           </div>
-
-          <!-- Primary Platform: Mac (Enhanced Visual) -->
           <div class="primary-dl-card">
             <div class="primary-content">
               <div class="os-icon-large mac-icon"><apple-filled /></div>
               <div class="dl-info">
                 <h2 class="dl-os-name">macOS</h2>
                 <p class="dl-os-desc">支持 Apple Silicon 和 Intel 芯片</p>
-                <div class="dl-meta">
-                  <span class="version-badge">v1.68.0</span>
-                  <span class="req-text">需要 macOS 12+</span>
-                </div>
+                <div class="dl-meta"><span class="version-badge">v1.68.0</span><span class="req-text">需要 macOS 12+</span></div>
               </div>
               <div class="dl-actions">
-                <button class="dl-btn-primary">
-                  <span class="btn-txt">下载 Mac 版本</span>
-                </button>
+                <button class="dl-btn-primary"><span class="btn-txt">下载 Mac 版本</span></button>
               </div>
             </div>
-
             <div class="primary-visual">
-              <!-- Advanced UI Mockup - Notion Mate 功能演示 -->
               <div class="app-window-mock scale-in">
-                <div class="win-bar">
-                  <search-outlined class="win-search-icon" />
-                  <div class="win-search-text">搜索 Notion Mate...</div>
-                </div>
+                <div class="win-bar"><search-outlined class="win-search-icon" /><div class="win-search-text">搜索 Notion Mate...</div></div>
                 <div class="win-list">
-                  <div class="win-item active">
-                    <div class="item-left"><sync-outlined class="item-icon" /><span class="item-text">同步数据中心</span></div>
-                    <span class="item-key">↵</span>
-                  </div>
-                  <div class="win-item">
-                    <div class="item-left"><video-camera-filled class="item-icon" /><span class="item-text">管理书影音库</span></div>
-                  </div>
-                  <div class="win-item">
-                    <div class="item-left"><bank-outlined class="item-icon" /><span class="item-text">记录个人财务</span></div>
-                  </div>
-                  <div class="win-item">
-                    <div class="item-left"><bar-chart-outlined class="item-icon" /><span class="item-text">个人生产力看板</span></div>
-                  </div>
-                </div>
-                <div class="win-footer">
-                  <div class="footer-actions"><span class="k">⌘</span><span class="k">K</span> <span class="t">操作</span></div>
+                  <div class="win-item active"><div class="item-left"><sync-outlined class="item-icon" /><span class="item-text">同步数据中心</span></div><span class="item-key">↵</span></div>
+                  <div class="win-item"><div class="item-left"><video-camera-filled class="item-icon" /><span class="item-text">管理书影音库</span></div></div>
+                  <div class="win-item"><div class="item-left"><bank-outlined class="item-icon" /><span class="item-text">记录个人财务</span></div></div>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- Secondary Platforms Grid (Hover Effects) -->
           <div class="platforms-grid">
-
-            <!-- Windows -->
-            <div class="plat-item-card win-card">
-              <div class="plat-icon-box win-icon"><windows-filled /></div>
-              <div class="plat-details">
-                <h3>Windows</h3>
-                <p>Windows 10/11</p>
-              </div>
-              <button class="plat-dl-btn">下载</button>
-            </div>
-
-            <!-- iOS -->
-            <div class="plat-item-card ios-card">
-              <div class="plat-icon-box ios-icon"><apple-filled /></div>
-              <div class="plat-details">
-                <h3>iOS</h3>
-                <p>iPhone & iPad</p>
-              </div>
-              <button class="plat-dl-btn">App Store</button>
-            </div>
-
-            <!-- Android -->
-            <div class="plat-item-card android-card">
-              <div class="plat-icon-box android-icon"><android-filled /></div>
-              <div class="plat-details">
-                <h3>Android</h3>
-                <p>Android 10+</p>
-              </div>
-              <button class="plat-dl-btn">Google Play</button>
-            </div>
-
-            <!-- Linux -->
-            <div class="plat-item-card linux-card coming-soon">
-              <div class="plat-icon-box linux-icon"><code-filled /></div>
-              <div class="plat-details">
-                <h3>Linux</h3>
-                <!-- Invisible placeholder for alignment -->
-                <p style="opacity: 0; pointer-events: none;">Coming Soon</p>
-              </div>
-              <button class="plat-dl-btn disabled">敬请期待</button>
-            </div>
-
+            <div class="plat-item-card win-card"><div class="plat-icon-box win-icon"><windows-filled /></div><div class="plat-details"><h3>Windows</h3><p>Windows 10/11</p></div><button class="plat-dl-btn">下载</button></div>
+            <div class="plat-item-card ios-card"><div class="plat-icon-box ios-icon"><apple-filled /></div><div class="plat-details"><h3>iOS</h3><p>iPhone & iPad</p></div><button class="plat-dl-btn">App Store</button></div>
+            <div class="plat-item-card android-card"><div class="plat-icon-box android-icon"><android-filled /></div><div class="plat-details"><h3>Android</h3><p>Android 10+</p></div><button class="plat-dl-btn">Google Play</button></div>
+            <div class="plat-item-card linux-card coming-soon"><div class="plat-icon-box linux-icon"><code-filled /></div><div class="plat-details"><h3>Linux</h3><p style="opacity: 0; pointer-events: none;">Coming Soon</p></div><button class="plat-dl-btn disabled">敬请期待</button></div>
           </div>
         </div>
       </div>
 
-      <!-- ================= 视图 4: Changelog Page (更新日志页 - 新增) ================= -->
+      <!-- ================= 视图 4: Changelog Page (更新日志页 - 已修复) ================= -->
       <div v-else-if="viewMode === 'changelog'" key="changelog" class="changelog-view">
         <div class="changelog-bg-glow"></div>
 
@@ -565,31 +454,146 @@
 
     </transition>
 
-    <!-- ================= 视图 5: Auth Page ================= -->
-    <transition name="slide-up">
-      <div v-if="viewMode === 'auth'" class="auth-container split-container">
-        <aside class="visual-side">
-          <div class="mesh-background"><div class="mesh-orb orb-1"></div><div class="mesh-orb orb-2"></div><div class="mesh-orb orb-3"></div></div>
-          <div class="noise-overlay"></div>
-          <div class="glass-foreground">
-            <button class="back-to-home" @click="viewMode = 'landing'"><arrow-left-outlined /> 返回</button>
-            <div class="brand-area"><div class="brand-logo-circle"><database-outlined /></div><span class="brand-name">Notion Mate</span></div>
-            <div class="hero-content"><div class="title-wrapper"><h2 class="slogan-title">All In One.</h2><h2 class="slogan-title text-gradient">Intelligence.</h2></div></div>
-            <div class="visual-footer"><p>Powered by Notion Mate Intelligent System</p></div>
+    <!-- ================= 视图 5: Auth Page (全新重构) ================= -->
+    <!-- 独立层级，全屏覆盖 -->
+    <transition name="fade-slow">
+      <div v-if="viewMode === 'auth'" class="auth-wrapper-new">
+        <div class="auth-card-new">
+
+          <!-- 左侧：视觉区域 (带轮播) -->
+          <div class="auth-visual-side">
+            <!-- 轮播背景图层 -->
+            <div class="carousel-bg-wrapper">
+              <transition-group name="fade-slide">
+                <div v-for="(slide, index) in slides"
+                     :key="index"
+                     v-show="currentSlide === index"
+                     class="carousel-slide"
+                     :style="{ backgroundImage: `url(${slide.image})` }">
+                </div>
+              </transition-group>
+            </div>
+
+            <div class="visual-overlay"></div>
+
+            <!-- Logo Badge -->
+            <div class="auth-logo-badge">
+              <database-outlined class="badge-icon" />
+              <span>Notion Mate</span>
+            </div>
+
+            <!-- 返回按钮 (移至左侧视觉区右上角) -->
+            <button class="return-home-btn visual-home-btn" @click="viewMode = 'landing'">
+              <arrow-left-outlined class="btn-icon"/> 返回首页
+            </button>
+
+            <!-- Bottom Text Content (Dynamic) -->
+            <div class="visual-content">
+              <transition name="fade-text" mode="out-in">
+                <div :key="currentSlide" class="slide-text-group">
+                  <h2 class="visual-heading">{{ slides[currentSlide].title }}</h2>
+                  <p class="visual-desc">{{ slides[currentSlide].desc }}</p>
+                </div>
+              </transition>
+
+              <!-- Carousel Indicators -->
+              <div class="visual-dots">
+                <div v-for="(slide, index) in slides" :key="index"
+                     class="dot-wrapper" @click="setSlide(index)">
+                  <div class="dot-progress" :class="{ 'animating': currentSlide === index }"></div>
+                </div>
+              </div>
+            </div>
           </div>
-        </aside>
-        <main class="form-side">
-          <div class="form-container">
-            <div class="form-header"><h1 class="welcome-text">欢迎回来 👋</h1><p class="subtitle-text">请登录您的账户以继续</p></div>
-            <a-form layout="vertical" class="apple-form">
-              <a-form-item><a-input size="large" placeholder="用户名" class="apple-input"><template #prefix><user-outlined /></template></a-input></a-form-item>
-              <a-form-item><a-input-password size="large" placeholder="密码" class="apple-input"><template #prefix><lock-outlined /></template></a-input-password></a-form-item>
-              <a-button type="primary" size="large" block class="apple-btn primary-btn" @click="handleLogin">登 录</a-button>
-            </a-form>
-            <div class="divider"><span>或</span></div>
-            <div class="social-login-group"><a-button block class="apple-btn social-btn"><google-circle-filled /> Google</a-button><a-button block class="apple-btn social-btn"><apple-filled /> Apple</a-button></div>
+
+          <!-- 右侧：表单区域 -->
+          <div class="auth-form-side">
+
+            <div class="form-scroll-container">
+              <!-- 已移除关闭按钮 -->
+
+              <div class="form-header-new">
+                <h2 class="welcome-title">欢迎回到 Notion Mate</h2>
+                <p class="welcome-sub">请登录您的账户以继续</p>
+              </div>
+
+              <div class="form-fields-new">
+                <!-- Username Input -->
+                <div class="input-group">
+                  <label>用户名</label>
+                  <div class="input-wrapper" :class="{ 'has-error': errors.username }">
+                    <input
+                        type="text"
+                        placeholder="请输入用户名"
+                        v-model="formState.username"
+                        @blur="handleInputBlur('username')"
+                        @input="errors.username = ''"
+                    >
+                  </div>
+                  <transition name="slide-fade">
+                    <span class="error-message" v-if="errors.username">{{ errors.username }}</span>
+                  </transition>
+                </div>
+
+                <!-- Password Input -->
+                <div class="input-group">
+                  <label>密码</label>
+                  <div class="input-wrapper" :class="{ 'has-error': errors.password }">
+                    <input
+                        :type="showPassword ? 'text' : 'password'"
+                        placeholder="请输入密码"
+                        v-model="formState.password"
+                        @blur="handleInputBlur('password')"
+                        @input="errors.password = ''"
+                    >
+                    <span class="input-suffix-icon" @click="togglePassword">
+                      <eye-outlined v-if="showPassword" />
+                      <eye-invisible-outlined v-else />
+                    </span>
+                  </div>
+                  <transition name="slide-fade">
+                    <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
+                  </transition>
+                </div>
+
+                <!-- Forgot Password (Remember Me removed) -->
+                <div class="form-actions-row" style="justify-content: flex-end;">
+                  <a href="#" class="forgot-link">忘记密码？</a>
+                </div>
+
+                <!-- Login Button -->
+                <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
+                  <template v-if="!isLoading">登 录</template>
+                  <loading-outlined v-else class="spin-icon" />
+                </button>
+
+                <!-- Divider -->
+                <div class="auth-divider">
+                  <span>快速登录</span>
+                </div>
+
+                <!-- Social Buttons -->
+                <div class="social-row">
+                  <button class="social-btn-new">
+                    <google-circle-filled class="s-icon google" />
+                    通过 Google 登录
+                  </button>
+                  <button class="social-btn-new">
+                    <apple-filled class="s-icon apple" />
+                    通过 Apple 登录
+                  </button>
+                </div>
+
+                <!-- Register Footer -->
+                <div class="auth-footer-text">
+                  还没有账户？ <a href="#" class="register-link">立即注册</a>
+                </div>
+
+              </div>
+            </div>
           </div>
-        </main>
+
+        </div>
       </div>
     </transition>
 
@@ -597,7 +601,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import {
   DatabaseOutlined, CloseOutlined,
   AppleFilled, WindowsFilled, AndroidFilled, TabletFilled,
@@ -608,16 +612,121 @@ import {
   StepBackwardFilled, PlayCircleFilled, StepForwardFilled, CaretRightFilled,
   ThunderboltFilled, BgColorsOutlined, CodeFilled, CompassFilled, SlackCircleFilled,
   CalendarFilled, DeploymentUnitOutlined, SyncOutlined, VideoCameraFilled, BankOutlined, BarChartOutlined,
-  ReadOutlined
+  ReadOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined
 } from '@ant-design/icons-vue'
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
+import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
 
 const viewMode = ref('landing')
 const appStore = reactive({ isDark: true })
 const extGridRef = ref<HTMLElement | null>(null)
+const isLoading = ref(false)
 
 const showMaskLeft = ref(false)
 const showMaskRight = ref(false)
+
+/* ----------------- Form Logic (New) ----------------- */
+const formState = reactive({
+  username: '',
+  password: ''
+})
+const errors = reactive({
+  username: '',
+  password: ''
+})
+const showPassword = ref(false)
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
+const validateField = (field: 'username' | 'password') => {
+  if (field === 'username') {
+    errors.username = !formState.username.trim() ? '请输入用户名' : ''
+  }
+  if (field === 'password') {
+    errors.password = !formState.password.trim() ? '请输入密码' : ''
+  }
+}
+
+const handleInputBlur = (field: 'username' | 'password') => {
+  validateField(field)
+}
+
+const handleLogin = async () => {
+  validateField('username')
+  validateField('password')
+
+  if (errors.username || errors.password) {
+    return
+  }
+  isLoading.value = true
+  setTimeout(async () => {
+    try {
+      await userStore.login({username:formState.username,password:formState.password})
+      const redirect = route.query.redirect as string
+      await router.push(redirect || '/')
+      AppleAlert.success("登录成功","欢迎回来:" + userStore.userInfo?.nickname)
+    }catch (error: any){
+      AppleAlert.error("登录失败",error.message)
+    }finally {
+      isLoading.value = false
+    }
+  }, 800)
+}
+
+/* ----------------- Carousel Logic (New) ----------------- */
+const currentSlide = ref(0)
+let carouselTimer: any = null
+
+const slides = [
+  {
+    image: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop',
+    title: '高效构建知识库',
+    desc: '在一个统一的平台轻松追踪笔记、任务与数据流，告别繁琐的手动管理，让知识产生复利。'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
+    title: '无缝连接工作流',
+    desc: '深度集成 Spotify、Linear、Google Calendar 等您喜爱的工具，打破数据孤岛，实现自动化流转。'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop',
+    title: '数据可视化洞察',
+    desc: '通过强大的可视化仪表盘，将枯燥的原始数据转化为直观的图表与洞察，助力科学决策。'
+  }
+]
+
+const startCarousel = () => {
+  stopCarousel()
+  carouselTimer = setInterval(() => {
+    currentSlide.value = (currentSlide.value + 1) % slides.length
+  }, 5000) // Change slide every 5 seconds
+}
+
+const stopCarousel = () => {
+  if (carouselTimer) clearInterval(carouselTimer)
+}
+
+const setSlide = (index: number) => {
+  currentSlide.value = index
+  startCarousel() // Reset timer on manual interaction
+}
+
+// Start/Stop carousel based on viewMode
+watch(viewMode, (newVal) => {
+  if (newVal === 'auth') {
+    startCarousel()
+  } else {
+    stopCarousel()
+  }
+})
+/* ----------------- End Carousel Logic ----------------- */
+
 
 const handleScroll = () => {
   if (!extGridRef.value) return
@@ -643,6 +752,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('keydown', handleKeydown)
+  stopCarousel()
 })
 
 const switchToAuth = () => viewMode.value = 'auth'
@@ -650,8 +760,6 @@ const switchToDownload = () => viewMode.value = 'download'
 
 const scrollLeft = () => { if (extGridRef.value) extGridRef.value.scrollBy({ left: -360, behavior: 'smooth' }) }
 const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ left: 360, behavior: 'smooth' }) }
-
-const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back", "Successfully logged in") }, 1000) }
 </script>
 
 <style scoped>
@@ -826,21 +934,323 @@ const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back"
 .plat-action-btn { width: 100%; height: 40px; background: #fff; color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
 .plat-action-btn:hover { background: #e0e0e0; }
 
-/* ================= 5. Auth Split Container ================= */
-.auth-container { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 300; background: #fff; }
-.split-container { display: flex; width: 100%; height: 100vh; }
-.visual-side { flex: 1.2; position: relative; background: #000; overflow: hidden; }
-.glass-foreground { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; }
-.back-to-home { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 16px; border-radius: 20px; width: fit-content; cursor: pointer; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); }
-.brand-area { display: flex; align-items: center; gap: 12px; }
-.brand-logo-circle { width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.brand-name { font-size: 20px; font-weight: 600; }
-.form-side { flex: 1; display: flex; align-items: center; justify-content: center; background: #fff; color: #000; }
-.form-container { width: 100%; max-width: 400px; padding: 40px; }
-.apple-input { background: #f5f5f7; border: none; padding: 10px; border-radius: 8px; margin-bottom: 16px; }
-.apple-btn { background: #0071e3; color: #fff; height: 44px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; width: 100%; }
-.social-login-group { display: flex; gap: 12px; margin-top: 24px; }
-.social-btn { background: #000; color: #fff; }
+/* ================= 5. Auth Split Container (NEW & OPTIMIZED) ================= */
+.auth-wrapper-new {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+  z-index: 999;
+  background: #E6E6E6; /* Light gray background like image */
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; /* REMOVED PADDING */
+}
+
+.auth-card-new {
+  width: 100%; max-width: none; /* REMOVED MAX-WIDTH */
+  height: 100vh; /* FULL HEIGHT */
+  min-height: 600px;
+  background: #ffffff;
+  border-radius: 0; /* REMOVED RADIUS */
+  box-shadow: none; /* REMOVED SHADOW */
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Left Side: Visual */
+.auth-visual-side {
+  flex: 0.45; /* 增大左侧占比至 45% */
+  position: relative;
+  /* Background logic moved to inline style in template for carousel */
+  background-color: #000;
+  padding: 40px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  overflow: hidden;
+}
+
+.carousel-bg-wrapper {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0;
+}
+
+.carousel-slide {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background-size: cover; background-position: center;
+}
+
+/* Carousel Transitions */
+.fade-slide-enter-active, .fade-slide-leave-active { transition: opacity 1s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; }
+
+.visual-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%);
+  z-index: 1; pointer-events: none;
+}
+
+.auth-logo-badge {
+  position: relative; z-index: 2;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 50px;
+  display: inline-flex; align-items: center; gap: 8px;
+  width: fit-content;
+  color: #fff; font-weight: 600; font-size: 14px;
+}
+.badge-icon { font-size: 16px; }
+
+.visual-content { position: relative; z-index: 2; color: #fff; margin-bottom: 40px; display: flex; flex-direction: column; gap: 20px; }
+.slide-text-group { margin-bottom: 10px; }
+.visual-heading { font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.02em; }
+.visual-desc { font-size: 16px; opacity: 0.9; line-height: 1.6; max-width: 80%; }
+
+/* Text Transition */
+.fade-text-enter-active, .fade-text-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
+.fade-text-enter-from { opacity: 0; transform: translateY(10px); }
+.fade-text-leave-to { opacity: 0; transform: translateY(-10px); }
+
+/* --- Carousel Indicators with Progress Animation --- */
+.visual-dots { display: flex; gap: 10px; margin-top: 10px; }
+
+.dot-wrapper {
+  width: 48px; height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+
+.dot-progress {
+  width: 0;
+  height: 100%;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.dot-progress.animating {
+  animation: progressFill 5s linear forwards;
+}
+
+@keyframes progressFill {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+/* Right Side: Form */
+.auth-form-side {
+  flex: 0.55; /* 调整右侧占比为 55% */
+  width: auto; /* 移除固定 vw */
+  min-width: 500px;
+  max-width: none; /* 移除最大宽度限制，让其更舒展 */
+  background: #fff;
+  display: flex; flex-direction: column;
+  position: relative;
+  overflow-y: auto;
+  border-left: 1px solid rgba(0,0,0,0.05);
+}
+
+.form-scroll-container {
+  padding: 40px 100px; /* 增加内边距 */
+  width: 100%;
+  max-width: 560px; /* 调整最大宽度，保持聚焦 */
+  margin: 0 auto;
+  display: flex; flex-direction: column; justify-content: center; min-height: 100%;
+}
+
+.visual-home-btn {
+  position: absolute; top: 40px; right: 40px; /* Position inside visual side */
+  background: rgba(255,255,255,0.15); /* Glass effect */
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px; font-weight: 600; color: #fff;
+  cursor: pointer; transition: all 0.2s; z-index: 10;
+  display: flex; align-items: center; gap: 8px;
+}
+.visual-home-btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.3); }
+.btn-icon { font-size: 16px; }
+
+.return-home-btn {
+  /* Removed old positioning style, now using .visual-home-btn */
+}
+
+.close-auth-btn {
+  /* 已移除 */
+  display: none;
+}
+
+.form-header-new { margin-bottom: 40px; }
+/* Added white-space: nowrap and clamp() for responsive font sizing to prevent wrapping */
+.welcome-title {
+  font-size: clamp(24px, 2.8vw, 36px);
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.welcome-sub { color: #6b7280; font-size: 15px; }
+
+.form-fields-new { display: flex; flex-direction: column; gap: 24px; }
+
+.input-group { display: flex; flex-direction: column; gap: 8px; }
+.input-group label { font-size: 14px; font-weight: 600; color: #374151; }
+
+.input-wrapper {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB; /* Tailwind gray-200 equivalent */
+  border-radius: 16px; /* 更大的圆角 */
+  padding: 14px 16px;
+  display: flex; align-items: center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  height: 56px; /* 增加高度 */
+}
+.input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+/* Error state styles */
+.input-wrapper.has-error {
+  border-color: #ef4444; /* Tailwind red-500 */
+}
+.input-wrapper.has-error:focus-within {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.input-wrapper input {
+  border: none; outline: none; width: 100%; font-size: 15px; color: #1f2937; background: transparent;
+}
+.input-wrapper input::placeholder { color: #9ca3af; }
+.input-suffix-icon { color: #9ca3af; cursor: pointer; font-size: 20px; display: flex; align-items: center; }
+
+/* Error message below input */
+.error-message {
+  color: #ef4444;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 8px; /* Increased from -4px to 8px */
+  padding-left: 4px;
+  display: block;
+}
+
+/* Updated Animation classes for error slide-fade */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s ease-in;
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+
+.form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: -4px; }
+.remember-checkbox {
+  display: none; /* Hide via CSS as per new request logic, keeping structure or removing entirely if requested */
+}
+/* Just removing the block in HTML as per request */
+
+.forgot-link { color: #6b7280; font-size: 14px; text-decoration: none; font-weight: 500; }
+.forgot-link:hover { color: #2563eb; }
+
+.auth-btn-primary {
+  width: 100%; height: 56px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 28px; /* Pill shape */
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
+  margin-top: 12px;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06); /* Tailwind-like shadow */
+  display: flex; justify-content: center; align-items: center;
+}
+.auth-btn-primary:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.15);
+}
+.auth-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+.auth-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.spin-icon {
+  font-size: 24px;
+  color: #fff;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+.auth-divider {
+  position: relative; text-align: center; margin: 32px 0;
+}
+.auth-divider::before {
+  content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb;
+}
+.auth-divider span {
+  position: relative; background: #fff; padding: 0 16px; color: #9ca3af; font-size: 13px; font-weight: 500;
+}
+
+.social-row { display: flex; gap: 16px; }
+.social-btn-new {
+  flex: 1;
+  height: 56px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px; /* Increased gap */
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  white-space: nowrap; /* Prevent wrap */
+}
+.social-btn-new:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+.social-btn-new:active {
+  transform: translateY(0);
+  background: #f3f4f6;
+}
+.s-icon { font-size: 20px; }
+.s-icon.google { color: #EA4335; }
+.s-icon.apple { color: #000; }
+
+.auth-footer-text { text-align: center; font-size: 14px; color: #6b7280; margin-top: 32px; font-weight: 500; }
+.register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
+.register-link:hover { text-decoration: underline; }
+
+/* Responsive Auth */
+@media (max-width: 900px) {
+  .auth-wrapper-new { padding: 0; }
+  .auth-card-new { flex-direction: column; }
+  .auth-visual-side { display: none; } /* Hide visual on mobile if preferred, or adjust height */
+  .auth-form-side { width: 100%; min-width: auto; }
+  .form-scroll-container { padding: 40px; }
+  .visual-home-btn { display: none; } /* Or move it to form side for mobile */
+}
 
 /* ================= 6. Integrations Page (原 Store Page) ================= */
 .store-view {
@@ -1416,21 +1826,4 @@ img.pick-icon {
 .zoom-fade-enter-active, .zoom-fade-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .zoom-fade-enter-from { opacity: 0; transform: scale(0.95); }
 .zoom-fade-leave-to { opacity: 0; transform: scale(1.05); }
-
-/* 响应式 */
-@media (max-width: 900px) {
-  .picks-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 768px) {
-  .nav-center { display: none; }
-  .split-container { flex-direction: column; }
-  .visual-side { flex: 0.4; }
-  .platform-grid { grid-template-columns: repeat(2, 1fr); }
-  .hero-title { font-size: 48px; }
-  .store-title { font-size: 40px; }
-  .store-app-icon { width: 56px; height: 56px; font-size: 24px; }
-  .icon-focus { width: 72px; height: 72px; font-size: 32px; }
-  .picks-grid { grid-template-columns: 1fr; }
-}
 </style>
