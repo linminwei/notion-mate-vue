@@ -26,19 +26,15 @@
       <nav class="ray-nav">
         <div class="nav-left">
           <div class="ray-logo" @click="viewMode = 'landing'">
-            <img src="/Notion_Mate_Dark.png" class="logo-svg">
+            <img src="/notion-mate-dark.png" class="logo-svg">
             <span class="logo-text">Notion Mate</span>
           </div>
         </div>
 
         <div class="nav-center">
           <a href="#" class="nav-link" :class="{ active: viewMode === 'store' }" @click.prevent="viewMode = 'store'">集成</a>
-          <a href="#" class="nav-link">Pro</a>
-          <a href="#" class="nav-link">AI</a>
-          <a href="#" class="nav-link">团队</a>
-          <a href="#" class="nav-link">开发者</a>
-          <a href="#" class="nav-link">更新日志</a>
-          <a class="link-pricing">定价</a>
+          <!-- 已移除 Pro, AI, 团队, 开发者, 定价 -->
+          <a href="#" class="nav-link" :class="{ active: viewMode === 'changelog' }" @click.prevent="viewMode = 'changelog'">更新日志</a>
         </div>
 
         <div class="nav-right">
@@ -216,21 +212,35 @@
           <!-- 图标云 Hero 区域 -->
           <div class="store-icon-cloud">
             <div class="cloud-row row-top">
-              <div class="store-app-icon icon-blur-2"><thunderbolt-filled /></div>
-              <div class="store-app-icon icon-blur-1 icon-figma"><bg-colors-outlined /></div>
+              <div class="store-app-icon icon-blur-2 bg-green-douban">
+                <img src="/douban.png" class="notion-n" alt="douban">
+              </div>
+              <div class="store-app-icon icon-blur-1 icon-figma bg-black">
+                <img src="/apple-tv.png" class="notion-n" alt="apple-tv">
+              </div>
 
               <!-- 修复后的 Notion 图标容器 -->
               <div class="store-app-icon icon-focus icon-notion">
                 <img src="/notion.png" class="notion-n" alt="Notion">
               </div>
 
-              <div class="store-app-icon icon-blur-1 icon-spotify"><customer-service-filled /></div>
-              <div class="store-app-icon icon-blur-2 icon-vscode"><code-filled /></div>
+              <div class="store-app-icon icon-blur-1 icon-spotify bg-white">
+                <img src="/netflix.png" class="notion-n" alt="netflix">
+              </div>
+              <div class="store-app-icon icon-blur-2 icon-vscode bg-red">
+                <img src="/网易云.png" class="notion-n" alt="网易云">
+              </div>
             </div>
             <div class="cloud-row row-bottom">
-              <div class="store-app-icon icon-blur-2 icon-google"><google-circle-filled /></div>
-              <div class="store-app-icon icon-blur-1 icon-arc"><compass-filled /></div>
-              <div class="store-app-icon icon-blur-2 icon-slack"><slack-circle-filled /></div>
+              <div class="store-app-icon icon-blur-2 icon-google bg-white">
+                <img src="/notion-calendar.png" class="notion-n" alt="notion-calendar">
+              </div>
+              <div class="store-app-icon icon-blur-1 icon-arc bg-white">
+                <img src="/google-calendar.png" class="notion-n" alt="google-calendar">
+              </div>
+              <div class="store-app-icon icon-blur-2 icon-slack bg-white">
+                <img src="/wechat-pay.png" class="notion-n" alt="微信支付">
+              </div>
             </div>
           </div>
 
@@ -248,42 +258,108 @@
 
               <!-- Pick 1: Notion (Modified) -->
               <a href="https://www.notion.com/zh-cn" target="_blank" class="pick-card glass-card">
-                <div class="pick-icon-wrapper bg-black">
+                <div class="pick-icon-wrapper bg-white">
                   <img src="/notion.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Notion</h3>
                 <p class="pick-desc">一款集笔记、任务管理、数据库和团队协作于一体的全平台工作空间应用，旨在提升个人和团队的生产力</p>
-                <!-- Removed author and button, now entire card is clickable -->
               </a>
 
-              <!-- Pick 2: Book & Movie Sync -->
-              <div class="pick-card">
+              <a href="https://www.douban.com/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-green-douban">
+                  <img src="/douban.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">豆瓣</h3>
+                <p class="pick-desc">豆瓣网是一家基于用户对于图书、电影和音乐兴趣而搭建的社交网站</p>
+              </a>
+
+              <a href="https://www.apple.com/apple-books/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-ibook">
+                  <img src="/ibooks.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">iBooks</h3>
+                <p class="pick-desc">苹果公司开发的内建应用，主要用于阅读和收听书籍及有声读物</p>
+              </a>
+
+              <a href="https://www.apple.com/apple-tv/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-black">
-                  <read-outlined class="pick-icon" />
+                  <img src="/Apple%20TV.png" class="pick-icon">
                 </div>
-                <h3 class="pick-name">书影音自动化</h3>
-                <p class="pick-desc">自动获取书籍与影视元数据，构建个人专属媒体资料库。数据实时同步，让每一次阅读和观影都有迹可循。</p>
-                <div class="pick-author">
-                  <div class="author-avatar-team"><img src="https://api.dicebear.com/7.x/initials/svg?seed=NM" alt="NM"></div>
-                  <span class="author-name">Notion Mate Team</span>
-                </div>
-                <button class="install-btn">立即启用</button>
-              </div>
+                <h3 class="pick-name">Apple TV</h3>
+                <p class="pick-desc">Apple TV是苹果公司推出的流媒体播放器</p>
+              </a>
 
-              <!-- Pick 3: Finance & Productivity -->
-              <div class="pick-card">
-                <div class="pick-icon-wrapper bg-orange-finance">
-                  <bank-outlined class="pick-icon" />
+              <a href="https://www.netflix.com/hk/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/netflix.png" class="pick-icon">
                 </div>
-                <h3 class="pick-name">财务与生产力</h3>
-                <p class="pick-desc">统一管理个人收支与待办事项。支持 Notion 与 MySQL 双向数据同步，以数据驱动生活，提升个人效率。</p>
-                <div class="pick-author">
-                  <div class="author-avatar-team"><img src="https://api.dicebear.com/7.x/initials/svg?seed=NM" alt="NM"></div>
-                  <span class="author-name">Notion Mate Team</span>
-                </div>
-                <button class="install-btn">立即启用</button>
-              </div>
+                <h3 class="pick-name">Netflix</h3>
+                <p class="pick-desc">美国会员订阅制的流媒体播放平台</p>
+              </a>
 
+              <a href="https://music.apple.com/cn/new" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-apple-music">
+                  <img src="/apple-music.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">Apple Music</h3>
+                <p class="pick-desc">Apple Music 是苹果公司推出的一项流媒体音乐服务，提供数千万首歌曲的在线收听、下载和个性化推荐功能</p>
+              </a>
+
+              <a href="https://open.spotify.com/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/spotify.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">Spotify</h3>
+                <p class="pick-desc">是一家全球领先的音乐流媒体服务平台，提供丰富的音乐库和多种订阅模式，用户可享受免费或付费的音乐体验</p>
+              </a>
+
+              <a href="https://y.qq.com/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/qq-music.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">QQ音乐</h3>
+                <p class="pick-desc">QQ音乐是腾讯音乐娱乐集团旗下的音乐流媒体平台，成立于2005年，提供丰富的音乐内容和多样化的服务</p>
+              </a>
+
+              <a href="https://music.163.com/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-red">
+                  <img src="/网易云.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">网易云音乐</h3>
+                <p class="pick-desc">网易云音乐是一款由网易开发的在线音乐平台，致力于为用户提供丰富的音乐内容和社交体验</p>
+              </a>
+
+              <a href="https://www.notion.com/zh-cn/product/calendar" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/notion-calendar.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">Notion Calendar</h3>
+                <p class="pick-desc">是 Notion 推出的一款新产品，它能够将 Notion 数据库 和 Google Calendar 整合在一起，形成一个集中管理的日历工具。用户可以通过谷歌账号登录，支持多平台使用，方便管理工作和个人生活的活动。</p>
+              </a>
+
+              <a href="https://calendar.google.com/calendar/u/0/r?pli=1" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/google-calendar.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">Google Calendar</h3>
+                <p class="pick-desc">是谷歌提供的一个强大的时间管理和调度工具，旨在帮助用户高效安排和管理日常活动</p>
+              </a>
+
+              <a href="https://pay.weixin.qq.com/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/wechat-pay.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">微信支付</h3>
+                <p class="pick-desc">微信支付是腾讯推出的一种便捷的移动支付方式，支持多种支付场景，已成为中国领先的第三方支付平台之一</p>
+              </a>
+
+              <a href="https://www.alipay.com/" target="_blank" class="pick-card glass-card">
+                <div class="pick-icon-wrapper bg-white">
+                  <img src="/alipay.png" class="pick-icon">
+                </div>
+                <h3 class="pick-name">支付宝</h3>
+                <p class="pick-desc">支付宝是中国领先的第三方支付平台，成立于2004年，提供安全、便捷的在线支付解决方案，涵盖支付、理财、生活服务等多个领域</p>
+              </a>
             </div>
           </div>
 
@@ -399,9 +475,97 @@
         </div>
       </div>
 
+      <!-- ================= 视图 4: Changelog Page (更新日志页 - 新增) ================= -->
+      <div v-else-if="viewMode === 'changelog'" key="changelog" class="changelog-view">
+        <div class="changelog-bg-glow"></div>
+
+        <div class="changelog-container">
+          <header class="cl-header">
+            <h1 class="cl-title">进化历程</h1>
+            <p class="cl-subtitle">持续迭代，只为打造最极致的 Notion 伴侣体验。</p>
+          </header>
+
+          <div class="timeline-wrapper">
+            <div class="timeline-line"></div>
+
+            <!-- Release 1.68.0 -->
+            <div class="release-item current-release">
+              <div class="release-meta">
+                <span class="r-version">v1.68.0</span>
+                <span class="r-date">2023.10.24</span>
+                <div class="latest-badge">LATEST</div>
+              </div>
+              <div class="release-dot dot-active">
+                <div class="dot-inner"></div>
+              </div>
+              <div class="release-content glass-card-premium">
+                <div class="rc-header">
+                  <h3 class="rc-title">全新集成生态</h3>
+                  <div class="rc-tags">
+                    <span class="tag tag-new">New</span>
+                    <span class="tag tag-impr">Core</span>
+                  </div>
+                </div>
+                <p class="rc-desc">在这个版本中，我们极大地扩展了 Notion Mate 的边界。新增了对 Apple Music、Netflix 和 Google Calendar 的原生支持，让您的娱乐与工作流无缝连接。</p>
+                <ul class="rc-list">
+                  <li><span class="li-icon">✨</span> 新增 10+ 个流媒体平台数据同步支持。</li>
+                  <li><span class="li-icon">⚡️</span> 重构了同步引擎，速度提升 40%。</li>
+                  <li><span class="li-icon">🎨</span> 优化了暗黑模式下的视觉体验。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Release 1.67.5 -->
+            <div class="release-item">
+              <div class="release-meta">
+                <span class="r-version">v1.67.5</span>
+                <span class="r-date">2023.10.10</span>
+              </div>
+              <div class="release-dot"></div>
+              <div class="release-content glass-card-premium">
+                <div class="rc-header">
+                  <h3 class="rc-title">书影音自动化升级</h3>
+                  <div class="rc-tags">
+                    <span class="tag tag-fix">Fix</span>
+                  </div>
+                </div>
+                <p class="rc-desc">专注于修复用户反馈的元数据抓取问题，并增强了对豆瓣新版页面的解析能力。</p>
+                <ul class="rc-list">
+                  <li><span class="li-icon">🐛</span> 修复了部分书籍封面无法获取的高清图源问题。</li>
+                  <li><span class="li-icon">🖥️</span> 解决了 macOS Sonoma 下的窗口对齐 Bug。</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Release 1.66.0 -->
+            <div class="release-item">
+              <div class="release-meta">
+                <span class="r-version">v1.66.0</span>
+                <span class="r-date">2023.09.28</span>
+              </div>
+              <div class="release-dot"></div>
+              <div class="release-content glass-card-premium">
+                <div class="rc-header">
+                  <h3 class="rc-title">智能财务看板</h3>
+                  <div class="rc-tags">
+                    <span class="tag tag-new">New</span>
+                  </div>
+                </div>
+                <p class="rc-desc">引入了全新的财务数据可视化模块。现在，您可以直接在 Notion Mate 中预览您的收支趋势，并自动生成月度报表同步至 Notion。</p>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="cl-footer">
+            <p>更多历史版本请查看 <a href="#" class="cl-link">GitHub Releases</a></p>
+          </div>
+        </div>
+      </div>
+
     </transition>
 
-    <!-- ================= 视图 4: Auth Page ================= -->
+    <!-- ================= 视图 5: Auth Page ================= -->
     <transition name="slide-up">
       <div v-if="viewMode === 'auth'" class="auth-container split-container">
         <aside class="visual-side">
@@ -464,8 +628,8 @@ const handleScroll = () => {
 
 const handleResize = () => handleScroll()
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && (viewMode.value === 'store' || viewMode.value === 'download')) {
-    // 允许 ESC 返回
+  if (e.key === 'Escape' && (viewMode.value !== 'landing')) {
+    // 允许 ESC 返回首页
     viewMode.value = 'landing'
   }
 }
@@ -819,10 +983,13 @@ const handleLogin = () => { setTimeout(() => { AppleAlert.success("Welcome Back"
   box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
-.bg-blue { background: #3b82f6; color: #fff; }
-.bg-black { background: #000; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
-.bg-yellow { background: #eab308; color: #000; }
-.bg-green-douban { background: #007722; color: #fff; }
+.bg-white { background: white; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+.bg-black { background: #171f20}
+.bg-red { background: #ea2000
+}
+.bg-ibook { background: #f98b00; color: #000; }
+.bg-green-douban { background: #00b51d; color: #fff; }
+.bg-apple-music { background: #ff2f56; color: #fff; }
 .bg-orange-finance { background: #f97316; color: #fff; }
 
 .pick-icon { font-size: 36px; }
@@ -1080,6 +1247,162 @@ img.pick-icon {
 .plat-dl-btn.disabled:hover { background: rgba(255,255,255,0.08); border-color: transparent; }
 
 .coming-soon { opacity: 0.7; }
+
+/* ================= 9. New: Changelog Page CSS ================= */
+.changelog-view {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 120px;
+  padding-bottom: 100px;
+}
+
+.changelog-bg-glow {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.03) 0%, transparent 50%);
+  pointer-events: none; z-index: -1;
+}
+
+.changelog-container {
+  width: 100%; max-width: 800px;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 24px;
+}
+
+.cl-header { margin-bottom: 60px; text-align: center; }
+.cl-title {
+  font-size: 56px; font-weight: 800; color: #fff; margin-bottom: 16px; letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.cl-subtitle { font-size: 18px; color: #888; }
+
+.timeline-wrapper {
+  position: relative;
+  width: 100%;
+  padding-left: 120px; /* Space for date/version on left */
+}
+
+/* Vertical Line */
+.timeline-line {
+  position: absolute; left: 120px; top: 20px; bottom: 0;
+  width: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+}
+
+.release-item {
+  position: relative;
+  margin-bottom: 60px;
+  animation: slideUp 0.6s ease forwards;
+  opacity: 0;
+}
+.release-item:nth-child(2) { animation-delay: 0.1s; }
+.release-item:nth-child(3) { animation-delay: 0.2s; }
+.release-item:nth-child(4) { animation-delay: 0.3s; }
+
+/* Left Side Meta */
+.release-meta {
+  position: absolute; left: -140px; top: 0; width: 120px;
+  text-align: right; padding-right: 24px;
+  display: flex; flex-direction: column; align-items: flex-end;
+}
+.r-version {
+  display: block; font-family: monospace; font-size: 16px; font-weight: 700;
+  background: linear-gradient(90deg, #fff, #bbb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+.r-date { font-size: 12px; color: #666; font-family: -apple-system, BlinkMacSystemFont, "Inter", monospace; }
+
+.latest-badge {
+  margin-top: 8px;
+  font-size: 10px; font-weight: 700; color: #000; background: #fff;
+  padding: 2px 6px; border-radius: 4px; display: inline-block;
+  letter-spacing: 0.5px;
+}
+
+/* Timeline Dot */
+.release-dot {
+  position: absolute; left: -6px; top: 6px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #000; border: 2px solid #444;
+  z-index: 2; transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center;
+}
+.dot-inner { width: 6px; height: 6px; background: transparent; border-radius: 50%; transition: all 0.3s; }
+
+.release-dot.dot-active { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+.release-dot.dot-active .dot-inner { background: #fff; }
+
+.release-item:hover .release-dot { border-color: #fff; transform: scale(1.1); }
+
+/* Card Content - Premium Glass */
+.glass-card-premium {
+  background: rgba(20,20,20,0.4);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative; overflow: hidden;
+}
+.glass-card-premium::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  opacity: 0; transition: opacity 0.4s;
+}
+.glass-card-premium:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,255,255,0.15);
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+  background: rgba(25,25,25,0.5);
+}
+.glass-card-premium:hover::before { opacity: 1; }
+
+.rc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.rc-title { font-size: 24px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; }
+.rc-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; }
+.tag-new { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+.tag-fix { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+.tag-impr { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+
+.rc-desc { font-size: 15px; color: #a1a1aa; line-height: 1.7; margin-bottom: 24px; }
+.rc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.rc-list li {
+  position: relative; font-size: 14px; color: #d4d4d8; display: flex; align-items: flex-start; gap: 12px; line-height: 1.5;
+}
+.li-icon { font-size: 16px; line-height: 1.5; display: inline-block; width: 20px; text-align: center; }
+
+.cl-footer { margin-top: 60px; font-size: 14px; color: #666; transition: opacity 0.3s; }
+.cl-footer:hover { opacity: 0.8; }
+.cl-link { color: #888; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; padding-bottom: 2px; }
+.cl-link:hover { color: #fff; border-bottom-color: #fff; }
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+  .timeline-wrapper { padding-left: 24px; border-left: 2px solid rgba(255,255,255,0.05); }
+  .timeline-line { display: none; } /* Use border instead */
+
+  .release-meta {
+    position: static; width: auto; text-align: left; padding: 0 0 16px 0;
+    display: flex; align-items: center; gap: 12px;
+    flex-direction: row;
+  }
+  .r-version { margin-bottom: 0; font-size: 18px; }
+  .latest-badge { margin-top: 0; margin-left: auto; }
+
+  .release-dot { display: none; }
+  .release-item { margin-bottom: 48px; padding-left: 0; }
+
+  .glass-card-premium { padding: 24px; }
+  .rc-header { flex-direction: column; gap: 12px; }
+  .rc-tags { justify-content: flex-start; }
+}
 
 /* 动画 */
 .reveal-1 { animation: slideUp 0.8s 0.1s forwards; opacity: 0; }
