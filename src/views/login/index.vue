@@ -454,10 +454,11 @@
 
     </transition>
 
-    <!-- ================= 视图 5: Auth Page (全新重构) ================= -->
+    <!-- ================= 视图 5: Auth Wrapper (Auth/Forgot/Register) ================= -->
     <!-- 独立层级，全屏覆盖 -->
     <transition name="fade-slow">
-      <div v-if="viewMode === 'auth'" class="auth-wrapper-new">
+      <!-- 只要是认证相关的页面，都共用这个 Wrapper -->
+      <div v-if="['auth', 'forgot-password', 'register'].includes(viewMode)" class="auth-wrapper-new">
         <div class="auth-card-new">
 
           <!-- 左侧：视觉区域 (带轮播) -->
@@ -506,90 +507,246 @@
             </div>
           </div>
 
-          <!-- 右侧：表单区域 -->
+          <!-- 右侧：表单区域 (通过 v-if/v-else-if 切换内部内容) -->
           <div class="auth-form-side">
-
             <div class="form-scroll-container">
-              <!-- 已移除关闭按钮 -->
 
-              <div class="form-header-new">
-                <h2 class="welcome-title">欢迎回到 Notion Mate</h2>
-                <p class="welcome-sub">请登录您的账户以继续</p>
-              </div>
-
-              <div class="form-fields-new">
-                <!-- Username Input -->
-                <div class="input-group">
-                  <label>用户名</label>
-                  <div class="input-wrapper" :class="{ 'has-error': errors.username }">
-                    <input
-                        type="text"
-                        placeholder="请输入用户名"
-                        v-model="formState.username"
-                        @blur="handleInputBlur('username')"
-                        @input="errors.username = ''"
-                    >
+              <!-- A. 登录表单 (Login Form) -->
+              <transition name="fade-slow" mode="out-in">
+                <div v-if="viewMode === 'auth'" key="login-form" class="auth-inner-box">
+                  <div class="form-header-new">
+                    <h2 class="welcome-title">欢迎回来 👋</h2>
+                    <p class="welcome-sub">请登录您的账户以继续</p>
                   </div>
-                  <transition name="slide-fade">
-                    <span class="error-message" v-if="errors.username">{{ errors.username }}</span>
-                  </transition>
-                </div>
 
-                <!-- Password Input -->
-                <div class="input-group">
-                  <label>密码</label>
-                  <div class="input-wrapper" :class="{ 'has-error': errors.password }">
-                    <input
-                        :type="showPassword ? 'text' : 'password'"
-                        placeholder="请输入密码"
-                        v-model="formState.password"
-                        @blur="handleInputBlur('password')"
-                        @input="errors.password = ''"
-                    >
-                    <span class="input-suffix-icon" @click="togglePassword">
-                      <eye-outlined v-if="showPassword" />
-                      <eye-invisible-outlined v-else />
-                    </span>
+                  <div class="form-fields-new">
+                    <!-- Username Input -->
+                    <div class="input-group">
+                      <label>用户名</label>
+                      <div class="input-wrapper" :class="{ 'has-error': errors.username }">
+                        <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input
+                            type="text"
+                            placeholder="请输入用户名"
+                            v-model="formState.username"
+                            @blur="handleInputBlur('username')"
+                            @input="errors.username = ''"
+                        >
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="errors.username">{{ errors.username }}</span>
+                      </transition>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="input-group">
+                      <label>密码</label>
+                      <div class="input-wrapper" :class="{ 'has-error': errors.password }">
+                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input
+                            :type="showPassword ? 'text' : 'password'"
+                            placeholder="请输入密码"
+                            v-model="formState.password"
+                            @blur="handleInputBlur('password')"
+                            @input="errors.password = ''"
+                        >
+                        <span class="input-suffix-icon" @click="togglePassword">
+                          <eye-outlined v-if="showPassword" />
+                          <eye-invisible-outlined v-else />
+                        </span>
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
+                      </transition>
+                    </div>
+
+                    <!-- Forgot Password Link -->
+                    <div class="form-actions-row" style="justify-content: flex-end;">
+                      <a href="#" class="forgot-link" @click.prevent="viewMode = 'forgot-password'; forgotStep = 1; clearForgotForm()">忘记密码？</a>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
+                      <template v-if="!isLoading">登 录</template>
+                      <loading-outlined v-else class="spin-icon" />
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="auth-divider">
+                      <span>快速登录</span>
+                    </div>
+
+                    <!-- Social Buttons -->
+                    <div class="social-row">
+                      <button class="social-btn-new">
+                        <google-circle-filled class="s-icon google" />
+                        Google
+                      </button>
+                      <button class="social-btn-new">
+                        <apple-filled class="s-icon apple" />
+                        Apple
+                      </button>
+                    </div>
+
+                    <!-- Register Footer -->
+                    <div class="auth-footer-text">
+                      还没有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'register'">立即注册</a>
+                    </div>
                   </div>
-                  <transition name="slide-fade">
-                    <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
-                  </transition>
                 </div>
 
-                <!-- Forgot Password (Remember Me removed) -->
-                <div class="form-actions-row" style="justify-content: flex-end;">
-                  <a href="#" class="forgot-link">忘记密码？</a>
+                <!-- B. 忘记密码表单 (Forgot Password Form) - Revised to 2 Steps -->
+                <div v-else-if="viewMode === 'forgot-password'" key="forgot-form" class="auth-inner-box">
+                  <div class="form-header-new">
+                    <h2 class="welcome-title">{{ forgotStep === 1 ? '安全验证 🔐' : '重置密码 🔑' }}</h2>
+                    <p class="welcome-sub">
+                      {{ forgotStep === 1 ? '请验证您的手机号以继续' : '设置您的新密码' }}
+                    </p>
+                  </div>
+
+                  <div class="form-fields-new">
+                    <!-- Step 1: Phone & Code -->
+                    <template v-if="forgotStep === 1">
+                      <div class="input-group">
+                        <label>手机号码</label>
+                        <!-- Updated Input Wrapper: Contains SMS Button now -->
+                        <div class="input-wrapper" :class="{ 'has-error': forgotErrors.phone }" style="padding-right: 8px;">
+                          <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <input
+                              type="text"
+                              placeholder="请输入手机号码"
+                              v-model="forgotForm.phone"
+                              @input="forgotErrors.phone = ''"
+                          >
+                          <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendSms">
+                            {{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}
+                          </button>
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="forgotErrors.phone">{{ forgotErrors.phone }}</span>
+                        </transition>
+                      </div>
+
+                      <div class="input-group">
+                        <label>验证码</label>
+                        <div class="otp-box-container">
+                          <input
+                              v-for="(digit, index) in 6"
+                              :key="index"
+                              :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
+                              v-model="otpDigits[index]"
+                              type="text"
+                              maxlength="1"
+                              class="otp-input"
+                              :class="{ 'has-error': forgotErrors.code }"
+                              @input="handleOtpInput(index, $event)"
+                              @keydown="handleOtpKeyDown(index, $event)"
+                              @paste="handleOtpPaste"
+                          />
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="forgotErrors.code">{{ forgotErrors.code }}</span>
+                        </transition>
+                      </div>
+
+                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleVerifyNext" :disabled="isLoading">
+                        <template v-if="!isLoading">下一步</template>
+                        <loading-outlined v-else class="spin-icon" />
+                      </button>
+                    </template>
+
+                    <!-- Step 2: New Password -->
+                    <template v-else>
+                      <div class="input-group">
+                        <label>新密码</label>
+                        <div class="input-wrapper" :class="{ 'has-error': forgotErrors.newPassword }">
+                          <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <input
+                              type="password"
+                              placeholder="请输入新密码"
+                              v-model="forgotForm.newPassword"
+                              @input="forgotErrors.newPassword = ''"
+                          >
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="forgotErrors.newPassword">{{ forgotErrors.newPassword }}</span>
+                        </transition>
+                      </div>
+
+                      <div class="input-group">
+                        <label>确认密码</label>
+                        <div class="input-wrapper" :class="{ 'has-error': forgotErrors.confirmPassword }">
+                          <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <input
+                              type="password"
+                              placeholder="请再次输入新密码"
+                              v-model="forgotForm.confirmPassword"
+                              @input="forgotErrors.confirmPassword = ''"
+                          >
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="forgotErrors.confirmPassword">{{ forgotErrors.confirmPassword }}</span>
+                        </transition>
+                      </div>
+
+                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleResetConfirm" :disabled="isLoading">
+                        <template v-if="!isLoading">确认修改</template>
+                        <loading-outlined v-else class="spin-icon" />
+                      </button>
+                    </template>
+
+                    <div class="auth-footer-text">
+                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'">返回登录</a>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Login Button -->
-                <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
-                  <template v-if="!isLoading">登 录</template>
-                  <loading-outlined v-else class="spin-icon" />
-                </button>
+                <!-- C. 注册表单 (Register Form) -->
+                <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
+                  <div class="form-header-new">
+                    <h2 class="welcome-title">创建账户 🚀</h2>
+                    <p class="welcome-sub">免费开始您的 Notion Mate 之旅</p>
+                  </div>
 
-                <!-- Divider -->
-                <div class="auth-divider">
-                  <span>快速登录</span>
+                  <div class="form-fields-new">
+                    <!-- Username -->
+                    <div class="input-group">
+                      <label>用户名</label>
+                      <div class="input-wrapper">
+                        <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input type="text" placeholder="设置您的用户名" />
+                      </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="input-group">
+                      <label>电子邮箱</label>
+                      <div class="input-wrapper">
+                        <mail-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input type="email" placeholder="name@example.com" />
+                      </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-group">
+                      <label>设置密码</label>
+                      <div class="input-wrapper">
+                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input type="password" placeholder="至少 8 位字符" />
+                      </div>
+                    </div>
+
+                    <button class="auth-btn-primary">
+                      立即注册
+                    </button>
+
+                    <div class="auth-footer-text">
+                      已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'">立即登录</a>
+                    </div>
+                  </div>
                 </div>
 
-                <!-- Social Buttons -->
-                <div class="social-row">
-                  <button class="social-btn-new">
-                    <google-circle-filled class="s-icon google" />
-                    通过 Google 登录
-                  </button>
-                  <button class="social-btn-new">
-                    <apple-filled class="s-icon apple" />
-                    通过 Apple 登录
-                  </button>
-                </div>
-
-                <!-- Register Footer -->
-                <div class="auth-footer-text">
-                  还没有账户？ <a href="#" class="register-link">立即注册</a>
-                </div>
-
-              </div>
+              </transition>
             </div>
           </div>
 
@@ -605,14 +762,14 @@ import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import {
   DatabaseOutlined, CloseOutlined,
   AppleFilled, WindowsFilled, AndroidFilled, TabletFilled,
-  ArrowLeftOutlined, UserOutlined, LockOutlined, GoogleCircleFilled,
+  ArrowLeftOutlined, UserOutlined, LockOutlined, MailOutlined, GoogleCircleFilled,
   SearchOutlined, ArrowRightOutlined, FileTextFilled,
   LeftOutlined, RightOutlined,
   RadarChartOutlined, TranslationOutlined, CustomerServiceFilled, CheckOutlined,
   StepBackwardFilled, PlayCircleFilled, StepForwardFilled, CaretRightFilled,
   ThunderboltFilled, BgColorsOutlined, CodeFilled, CompassFilled, SlackCircleFilled,
   CalendarFilled, DeploymentUnitOutlined, SyncOutlined, VideoCameraFilled, BankOutlined, BarChartOutlined,
-  ReadOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined
+  ReadOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined, MobileOutlined, SafetyCertificateOutlined
 } from '@ant-design/icons-vue'
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
 import { useRouter, useRoute } from 'vue-router'
@@ -629,7 +786,7 @@ const isLoading = ref(false)
 const showMaskLeft = ref(false)
 const showMaskRight = ref(false)
 
-/* ----------------- Form Logic (New) ----------------- */
+/* ----------------- Login Form Logic ----------------- */
 const formState = reactive({
   username: '',
   password: ''
@@ -679,7 +836,145 @@ const handleLogin = async () => {
   }, 800)
 }
 
-/* ----------------- Carousel Logic (New) ----------------- */
+/* ----------------- Forgot Password Logic (Phone + SMS + OTP 6-digits) ----------------- */
+const forgotStep = ref(1) // 1: Verify, 2: Reset
+const smsCountdown = ref(0)
+let smsTimer: any = null
+
+// New: OTP Refs and Logic
+const otpDigits = reactive(['', '', '', '', '', ''])
+const otpInputRefs = ref<HTMLInputElement[]>([])
+
+const forgotForm = reactive({
+  phone: '',
+  code: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+const forgotErrors = reactive({
+  phone: '',
+  code: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// Sync OTP array to form string
+const syncCode = () => {
+  forgotForm.code = otpDigits.join('')
+  if (forgotForm.code.length > 0) forgotErrors.code = ''
+}
+
+const handleOtpInput = (index: number, e: Event) => {
+  const target = e.target as HTMLInputElement
+  let val = target.value
+
+  // Only allow numbers
+  if (!/^\d*$/.test(val)) {
+    otpDigits[index] = ''
+    return
+  }
+
+  // If user somehow enters multiple chars (e.g. fast typing), take last
+  if (val.length > 1) {
+    val = val.slice(-1)
+    otpDigits[index] = val
+  }
+
+  if (val && index < 5) {
+    otpInputRefs.value[index + 1]?.focus()
+  }
+
+  syncCode()
+}
+
+const handleOtpKeyDown = (index: number, e: KeyboardEvent) => {
+  // Backspace logic: if current empty, move back and delete prev
+  if (e.key === 'Backspace') {
+    if (!otpDigits[index] && index > 0) {
+      otpDigits[index - 1] = ''
+      otpInputRefs.value[index - 1]?.focus()
+      syncCode()
+    }
+  }
+}
+
+const handleOtpPaste = (e: ClipboardEvent) => {
+  const pasteData = e.clipboardData?.getData('text') || ''
+  if (!/^\d{6}$/.test(pasteData)) return // simple validation for 6 digits
+  e.preventDefault() // Stop default paste into one box
+  const digits = pasteData.split('')
+  digits.forEach((d, i) => {
+    if (i < 6) otpDigits[i] = d
+  })
+  otpInputRefs.value[5]?.focus()
+  syncCode()
+}
+
+const clearForgotForm = () => {
+  forgotForm.phone = ''
+  forgotForm.code = ''
+  forgotForm.newPassword = ''
+  forgotForm.confirmPassword = ''
+  // Clear OTP digits
+  for (let i = 0; i < 6; i++) otpDigits[i] = ''
+
+  Object.keys(forgotErrors).forEach(key => forgotErrors[key as keyof typeof forgotErrors] = '')
+  smsCountdown.value = 0
+  if (smsTimer) clearInterval(smsTimer)
+}
+
+const handleSendSms = () => {
+  if (!forgotForm.phone) {
+    forgotErrors.phone = '请输入手机号码'
+    return
+  }
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (!phoneRegex.test(forgotForm.phone)) {
+    forgotErrors.phone = '请输入有效的手机号码'
+    return
+  }
+
+  // Simulate API Call
+  smsCountdown.value = 60
+  AppleAlert.success("验证码发送成功", "请注意查收短信")
+  smsTimer = setInterval(() => {
+    smsCountdown.value--
+    if (smsCountdown.value <= 0) clearInterval(smsTimer)
+  }, 1000)
+}
+
+const handleVerifyNext = () => {
+  if (!forgotForm.phone) { return forgotErrors.phone = '请输入手机号码' }
+  // Ensure we sync before checking
+  syncCode()
+
+  if (!forgotForm.code) { return forgotErrors.code = '请输入验证码' }
+  if (forgotForm.code.length !== 6) { return forgotErrors.code = '验证码格式错误' }
+
+  isLoading.value = true
+  setTimeout(() => {
+    isLoading.value = false
+    // Assume verification passed
+    forgotStep.value = 2
+  }, 800)
+}
+
+const handleResetConfirm = () => {
+  if (!forgotForm.newPassword) { return forgotErrors.newPassword = '请输入新密码' }
+  if (forgotForm.newPassword.length < 8) { return forgotErrors.newPassword = '密码至少需要8位' }
+  if (forgotForm.newPassword !== forgotForm.confirmPassword) { return forgotErrors.confirmPassword = '两次输入密码不一致' }
+
+  isLoading.value = true
+  setTimeout(() => {
+    isLoading.value = false
+    AppleAlert.success("重置成功", "您的密码已修改，请重新登录。")
+    viewMode.value = 'auth'
+    clearForgotForm()
+  }, 1000)
+}
+
+
+/* ----------------- Carousel Logic ----------------- */
 const currentSlide = ref(0)
 let carouselTimer: any = null
 
@@ -719,14 +1014,15 @@ const setSlide = (index: number) => {
 
 // Start/Stop carousel based on viewMode
 watch(viewMode, (newVal) => {
-  if (newVal === 'auth') {
+  // Now checks for any auth-related mode
+  if (['auth', 'forgot-password', 'register'].includes(newVal)) {
     startCarousel()
   } else {
     stopCarousel()
   }
 })
-/* ----------------- End Carousel Logic ----------------- */
 
+/* ----------------- Other Logic ----------------- */
 
 const handleScroll = () => {
   if (!extGridRef.value) return
@@ -1242,17 +1538,52 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
 .register-link:hover { text-decoration: underline; }
 
-/* Responsive Auth */
-@media (max-width: 900px) {
-  .auth-wrapper-new { padding: 0; }
-  .auth-card-new { flex-direction: column; }
-  .auth-visual-side { display: none; } /* Hide visual on mobile if preferred, or adjust height */
-  .auth-form-side { width: 100%; min-width: auto; }
-  .form-scroll-container { padding: 40px; }
-  .visual-home-btn { display: none; } /* Or move it to form side for mobile */
+.sms-btn {
+  border: none;
+  background: none;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.sms-btn:hover { color: #1d4ed8; }
+.sms-btn:disabled { color: #9ca3af; cursor: not-allowed; }
+
+/* Apple-style OTP Inputs */
+.otp-box-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-/* ================= 6. Integrations Page (原 Store Page) ================= */
+.otp-input {
+  width: 100%;
+  height: 64px; /* Taller */
+  border-radius: 16px; /* Rounded */
+  border: 1px solid #E5E7EB;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  background: #fff;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.otp-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  transform: translateY(-2px);
+}
+
+.otp-input.has-error {
+  border-color: #ef4444;
+}
+
+/* ================= 6. Integrations Page (Store Page) - RE-ADDED ================= */
 .store-view {
   position: relative;
   width: 100%;
@@ -1327,21 +1658,11 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 .store-subtitle { font-size: 18px; color: #888; line-height: 1.6; max-width: 600px; margin: 0 auto; }
 
-/* Store Search - Removed as requested */
-
-/* ================= 7. New: Top Picks Section ================= */
+/* ================= 7. New: Top Picks Section - RE-ADDED ================= */
 .top-picks-section {
   width: 100%;
   margin-top: 80px;
   text-align: left;
-}
-
-.section-label {
-  color: #888;
-  font-size: 15px;
-  font-weight: 500;
-  margin-bottom: 24px;
-  padding-left: 4px;
 }
 
 .picks-grid {
@@ -1412,26 +1733,6 @@ img.pick-icon {
   border-radius: 8px; /* 稍微添加圆角以防图片过于尖锐 */
 }
 
-.pick-icon.text-black { color: #1a1a1a; }
-.pick-text-icon { font-family: 'Courier New', monospace; font-weight: 800; font-size: 20px; letter-spacing: -1px; }
-
-.pick-icon-badge {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  color: #3b82f6;
-  font-size: 18px;
-  font-weight: 700;
-  width: 32px; height: 32px;
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-/* Override for calendar icon specific look */
-.bg-blue .pick-icon { display: none; } /* Hide the ANT icon to build custom badge */
-
 .pick-name {
   font-size: 18px;
   font-weight: 700;
@@ -1447,53 +1748,7 @@ img.pick-icon {
   flex-grow: 1; /* Pushes content apart if needed */
 }
 
-.pick-author {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.author-avatar {
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  background: #333;
-}
-
-.author-avatar-team {
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  background: #333;
-  overflow: hidden;
-}
-.author-avatar-team img { width: 100%; height: 100%; object-fit: cover; }
-
-.author-name {
-  font-size: 13px;
-  color: #999;
-  font-weight: 500;
-}
-
-.install-btn {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
-  max-width: 160px;
-}
-
-.install-btn:hover {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.4);
-}
-
-/* ================= 8. New: Download Page ================= */
+/* ================= 8. New: Download Page - RE-ADDED ================= */
 .download-view {
   position: relative;
   width: 100%;
@@ -1658,7 +1913,7 @@ img.pick-icon {
 
 .coming-soon { opacity: 0.7; }
 
-/* ================= 9. New: Changelog Page CSS ================= */
+/* ================= 9. New: Changelog Page CSS - RE-ADDED ================= */
 .changelog-view {
   position: relative;
   width: 100%;
@@ -1793,28 +2048,27 @@ img.pick-icon {
 .cl-link { color: #888; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; padding-bottom: 2px; }
 .cl-link:hover { color: #fff; border-bottom-color: #fff; }
 
-/* 响应式适配 */
-@media (max-width: 768px) {
-  .timeline-wrapper { padding-left: 24px; border-left: 2px solid rgba(255,255,255,0.05); }
-  .timeline-line { display: none; } /* Use border instead */
-
-  .release-meta {
-    position: static; width: auto; text-align: left; padding: 0 0 16px 0;
-    display: flex; align-items: center; gap: 12px;
-    flex-direction: row;
-  }
-  .r-version { margin-bottom: 0; font-size: 18px; }
-  .latest-badge { margin-top: 0; margin-left: auto; }
-
-  .release-dot { display: none; }
-  .release-item { margin-bottom: 48px; padding-left: 0; }
-
-  .glass-card-premium { padding: 24px; }
-  .rc-header { flex-direction: column; gap: 12px; }
-  .rc-tags { justify-content: flex-start; }
+/* Responsive Auth */
+@media (max-width: 900px) {
+  .auth-wrapper-new { padding: 0; }
+  .auth-card-new { flex-direction: column; }
+  .auth-visual-side { display: none; } /* Hide visual on mobile if preferred, or adjust height */
+  .auth-form-side { width: 100%; min-width: auto; }
+  .form-scroll-container { padding: 40px; }
+  .visual-home-btn { display: none; } /* Or move it to form side for mobile */
 }
 
-/* 动画 */
+/* Animations - RE-ADDED & FIXES */
+.fade-slow-enter-active,
+.fade-slow-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-slow-enter-from,
+.fade-slow-leave-to {
+  opacity: 0;
+}
+
 .reveal-1 { animation: slideUp 0.8s 0.1s forwards; opacity: 0; }
 .reveal-2 { animation: slideUp 0.8s 0.2s forwards; opacity: 0; }
 .reveal-3 { animation: slideUp 0.8s 0.3s forwards; opacity: 0; }
