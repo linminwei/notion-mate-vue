@@ -9,7 +9,7 @@ export const getRoleList = () => {
   return request.get<SysRole[]>('/system/role/list')
 }
 
-export const getRoleById = (id: number) => {
+export const getRoleById = (id: string) => {
   return request.get<SysRole>(`/system/role/${id}`)
 }
 
@@ -21,10 +21,10 @@ export const updateRole = (data: any) => {
   return request.put('/system/role', data)
 }
 
-export const deleteRole = (id: number) => {
+export const deleteRole = (id: string) => {
   return request.delete(`/system/role/${id}`)
 }
 
-export const deleteRoleBatch = (ids: number[]) => {
+export const deleteRoleBatch = (ids: string[]) => {
   return request.delete('/system/role/batch', { data: ids })
 }

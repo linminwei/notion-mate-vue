@@ -26,20 +26,21 @@ export interface LoginResult {
 }
 
 export interface UserInfo {
-  id: number
+  id: string
   username: string
   nickname: string
   email: string
   phone: string
   avatar: string
-  gender: number
-  roles: string[]
+  status: number
+  roles: SysRole[]
   permissions: string[]
+  menuTree: MenuItem[]
 }
 
 export interface MenuItem {
-  id: number
-  parentId: number
+  id: string
+  parentId: string
   menuName: string
   menuType: number
   path: string
@@ -47,39 +48,37 @@ export interface MenuItem {
   permission: string
   icon: string
   sort: number
-  visible: number
   status: number
-  keepAlive: number
   children?: MenuItem[]
 }
 
 export interface SysUser {
-  id: number
+  id: string
   username: string
   nickname: string
   email: string
   phone: string
   avatar: string
-  gender: number
   status: number
   remark: string
-  roleIds: number[]
+  roles: SysRole[]
+  roleIds: string[]
   createTime: string
 }
 
 export interface SysRole {
-  id: number
+  id: string
   roleCode: string
   roleName: string
   sort: number
   status: number
   remark: string
-  menuIds: number[]
+  menuIds: string[]
 }
 
 export interface SysMenu {
-  id: number
-  parentId: number
+  id: string
+  parentId: string
   menuName: string
   menuType: number
   path: string

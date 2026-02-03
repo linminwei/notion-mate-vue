@@ -1,7 +1,7 @@
 ﻿import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { UserInfo, MenuItem } from '@/types'
-import { login as loginApi, getUserInfo, getUserMenus, logout as logoutApi } from '@/api/auth'
+import { login as loginApi, getUserInfo, logout as logoutApi ,loginByPhone as loginPhone} from '@/api/auth'
 import type { LoginForm } from '@/types'
 import router from '@/router'
 
@@ -19,20 +19,22 @@ export const useUserStore = defineStore('user', () => {
     token.value = res.data.accessToken
     localStorage.setItem('token', token.value)
     await fetchUserInfo()
-    await fetchMenus()
   }
 
-  // 获取用户信息
+  // 手机号登录
+  async function loginByPhone(phone: string, captcha: string) {
+    const res = await loginPhone(phone,captcha)
+    token.value = res.data.accessToken
+    localStorage.setItem('token', token.value)
+    await fetchUserInfo()
+  }
+
+  // 获取用户信息（包含菜单和权限）
   async function fetchUserInfo() {
     const res = await getUserInfo()
     userInfo.value = res.data
     permissions.value = res.data.permissions || []
-  }
-
-  // 获取菜单
-  async function fetchMenus() {
-    const res = await getUserMenus()
-    menus.value = res.data
+    menus.value = res.data.menuTree || []
   }
 
   // 退出登录
@@ -61,9 +63,9 @@ export const useUserStore = defineStore('user', () => {
     permissions,
     isLoggedIn,
     login,
+    loginByPhone,
     logout,
     fetchUserInfo,
-    fetchMenus,
     hasPermission,
   }
 })

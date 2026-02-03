@@ -11,8 +11,8 @@ export const getUserList = () => {
   return request.get<SysUser[]>('/system/user/list')
 }
 
-// 根据ID查询用户
-export const getUserById = (id: number) => {
+// 根据 ID 查询用户
+export const getUserById = (id: string) => {
   return request.get<SysUser>(`/system/user/${id}`)
 }
 
@@ -27,16 +27,16 @@ export const updateUser = (data: any) => {
 }
 
 // 删除用户
-export const deleteUser = (id: number) => {
+export const deleteUser = (id: string) => {
   return request.delete(`/system/user/${id}`)
 }
 
 // 批量删除用户
-export const deleteUserBatch = (ids: number[]) => {
+export const deleteUserBatch = (ids: string[]) => {
   return request.delete('/system/user/batch', { data: ids })
 }
 
 // 重置密码
-export const resetPassword = (id: number, newPassword: string) => {
+export const resetPassword = (id: string, newPassword: string) => {
   return request.put(`/system/user/${id}/password`, null, { params: { newPassword } })
 }

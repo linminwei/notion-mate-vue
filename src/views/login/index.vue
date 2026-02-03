@@ -5,7 +5,7 @@
     <div class="ray-bg-engine">
       <div class="void-bg"></div>
 
-      <!-- 动态线条层 (强化版：倾斜光栅) -->
+      <!-- 动态线条层 ( 强化版：倾斜光栅 ) -->
       <div class="grid-lines-wrapper">
         <div class="grid-vertical"></div>
         <div class="grid-flow"></div>
@@ -32,12 +32,12 @@
         </div>
 
         <div class="nav-center">
-          <a href="#" class="nav-link" :class="{ active: viewMode === 'store' }" @click.prevent="viewMode = 'store'">集成</a>
-          <a href="#" class="nav-link" :class="{ active: viewMode === 'changelog' }" @click.prevent="viewMode = 'changelog'">更新日志</a>
+          <a href="#" class="nav-link" :class="{ active: viewMode === 'store' }" @click.prevent="viewMode = 'store'"> 集成 </a>
+          <a href="#" class="nav-link" :class="{ active: viewMode === 'changelog' }" @click.prevent="viewMode = 'changelog'"> 更新日志 </a>
         </div>
 
         <div class="nav-right">
-          <button class="login-btn-text" @click="switchToAuth">登录</button>
+          <button class="login-btn-text" @click="switchToAuth"> 登录 </button>
           <button class="download-btn-white" @click="switchToDownload">
             下载
           </button>
@@ -48,15 +48,15 @@
     <!-- ================= 主内容区域切换 ================= -->
     <transition name="fade-slow" mode="out-in">
 
-      <!-- 视图 1: Landing Page Content (首页) -->
+      <!-- 视图 1: Landing Page Content ( 首页 ) -->
       <div v-if="viewMode === 'landing'" key="landing" class="landing-view">
 
         <!-- Hero 区域 -->
         <header class="hero-section">
           <div class="hero-inner">
             <h1 class="hero-title">
-              <span class="line reveal-1">Notion 的超级伴侣</span>
-              <span class="line reveal-2 glow-text">数据自由流转</span>
+              <span class="line reveal-1">Notion 的超级伴侣 </span>
+              <span class="line reveal-2 glow-text"> 数据自由流转 </span>
             </h1>
             <p class="hero-sub reveal-3">
               打破平台壁垒，管理您的每一比特数据。<br class="desktop-br">
@@ -69,14 +69,14 @@
         <section class="extensions-section reveal-4">
           <div class="ext-header">
             <div class="ext-titles">
-              <h2 class="ext-title">万千功能，一呼百应。</h2>
-              <p class="ext-sub">告别数据孤岛。在同一个入口，连接您所有的数据。</p>
+              <h2 class="ext-title"> 万千功能，一呼百应。</h2>
+              <p class="ext-sub"> 告别数据孤岛。在同一个入口，连接您所有的数据。</p>
             </div>
             <div class="ext-tags">
-              <span class="ext-tag active">生产力</span>
-              <span class="ext-tag">工程</span>
-              <span class="ext-tag">设计</span>
-              <span class="ext-tag">写作</span>
+              <span class="ext-tag active"> 生产力 </span>
+              <span class="ext-tag"> 工程 </span>
+              <span class="ext-tag"> 设计 </span>
+              <span class="ext-tag"> 写作 </span>
             </div>
           </div>
 
@@ -91,7 +91,7 @@
                   </div>
                   <div class="card-arrow-btn"><arrow-right-outlined /></div>
                 </div>
-                <p class="card-desc">无需离开键盘，即可创建、搜索和修改您的 Linear 议题。</p>
+                <p class="card-desc"> 无需离开键盘，即可创建、搜索和修改您的 Linear 议题。</p>
                 <div class="card-visual visual-linear">
                   <div class="linear-ring"></div>
                   <div class="linear-orbit"></div>
@@ -109,16 +109,16 @@
                 <div class="card-top">
                   <div class="card-head-left">
                     <div class="card-icon-box icon-blue"><translation-outlined /></div>
-                    <span class="card-name">Google 翻译</span>
+                    <span class="card-name">Google 翻译 </span>
                   </div>
                   <div class="card-arrow-btn"><arrow-right-outlined /></div>
                 </div>
-                <p class="card-desc">打破语言障碍，极速翻译，沟通无界。</p>
+                <p class="card-desc"> 打破语言障碍，极速翻译，沟通无界。</p>
                 <div class="card-visual visual-translate">
                   <div class="trans-text t1">Omelette du fromage</div>
                   <div class="trans-text t2">Cheese Omelette</div>
                   <div class="trans-text t3">Tortilla de queso</div>
-                  <div class="trans-text t4">Käse omelett</div>
+                  <div class="trans-text t4">K ä se omelett</div>
                   <div class="trans-text t5">Ushizi Omelette</div>
                 </div>
               </div>
@@ -132,7 +132,7 @@
                   </div>
                   <div class="card-arrow-btn"><arrow-right-outlined /></div>
                 </div>
-                <p class="card-desc">掌控您的音乐律动。搜索、播放、管理，尽在指尖。</p>
+                <p class="card-desc"> 掌控您的音乐律动。搜索、播放、管理，尽在指尖。</p>
                 <div class="card-visual visual-spotify">
                   <div class="spotify-album-wrapper">
                     <img src="https://upload.wikimedia.org/wikipedia/en/3/3b/Dark_Side_of_the_Moon.png" alt="Album" class="s-img" onerror="this.style.backgroundColor='#333'">
@@ -153,11 +153,11 @@
                 <div class="card-top">
                   <div class="card-head-left">
                     <div class="card-icon-box"><google-circle-filled /></div>
-                    <span class="card-name">Google 搜索</span>
+                    <span class="card-name">Google 搜索 </span>
                   </div>
                   <div class="card-arrow-btn"><arrow-right-outlined /></div>
                 </div>
-                <p class="card-desc">无需打开浏览器，直接从 Notion Mate 探索世界。</p>
+                <p class="card-desc"> 无需打开浏览器，直接从 Notion Mate 探索世界。</p>
                 <div class="card-visual visual-google">
                   <div class="g-search-input">
                     <search-outlined class="g-icon" />
@@ -179,7 +179,7 @@
                   </div>
                   <div class="card-arrow-btn"><arrow-right-outlined /></div>
                 </div>
-                <p class="card-desc">捕捉瞬时灵感，无缝存入您的知识库。</p>
+                <p class="card-desc"> 捕捉瞬时灵感，无缝存入您的知识库。</p>
                 <div class="card-visual visual-obsidian">
                   <div class="obsidian-shard"></div>
                 </div>
@@ -195,12 +195,12 @@
           </div>
 
           <footer class="landing-footer">
-            <p>为速度而生，为 Notion 爱好者而造。</p>
+            <p> 为速度而生，为 Notion 爱好者而造。</p>
           </footer>
         </section>
       </div>
 
-      <!-- 视图 2: Integrations Page (集成页) -->
+      <!-- 视图 2: Integrations Page ( 集成页 ) -->
       <div v-else-if="viewMode === 'store'" key="store" class="store-view">
         <div class="store-bg-glow"></div>
         <div class="store-content-wrapper">
@@ -210,34 +210,34 @@
               <div class="store-app-icon icon-blur-1 icon-figma bg-black"><img src="/apple-tv.png" class="notion-n" alt="apple-tv"></div>
               <div class="store-app-icon icon-focus icon-notion"><img src="/notion.png" class="notion-n" alt="Notion"></div>
               <div class="store-app-icon icon-blur-1 icon-spotify bg-white"><img src="/netflix.png" class="notion-n" alt="netflix"></div>
-              <div class="store-app-icon icon-blur-2 icon-vscode bg-red"><img src="/网易云.png" class="notion-n" alt="网易云"></div>
+              <div class="store-app-icon icon-blur-2 icon-vscode bg-red"><img src="/网易云.png" class="notion-n" alt=" 网易云 "></div>
             </div>
             <div class="cloud-row row-bottom">
               <div class="store-app-icon icon-blur-2 icon-google bg-white"><img src="/notion-calendar.png" class="notion-n" alt="notion-calendar"></div>
               <div class="store-app-icon icon-blur-1 icon-arc bg-white"><img src="/google-calendar.png" class="notion-n" alt="google-calendar"></div>
-              <div class="store-app-icon icon-blur-2 icon-slack bg-white"><img src="/wechat-pay.png" class="notion-n" alt="微信支付"></div>
+              <div class="store-app-icon icon-blur-2 icon-slack bg-white"><img src="/wechat-pay.png" class="notion-n" alt=" 微信支付 "></div>
             </div>
           </div>
           <div class="store-hero-text">
-            <h1 class="store-title">原生集成</h1>
-            <p class="store-subtitle">不仅仅是连接，更是智能数据中枢，构建自动化第二大脑</p>
+            <h1 class="store-title"> 原生集成 </h1>
+            <p class="store-subtitle"> 不仅仅是连接，更是智能数据中枢，构建自动化第二大脑 </p>
           </div>
           <div class="top-picks-section">
             <div class="picks-grid">
               <a href="https://www.notion.com/zh-cn" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-white"><img src="/notion.png" class="pick-icon"></div>
                 <h3 class="pick-name">Notion</h3>
-                <p class="pick-desc">一款集笔记、任务管理、数据库和团队协作于一体的全平台工作空间应用。</p>
+                <p class="pick-desc"> 一款集笔记、任务管理、数据库和团队协作于一体的全平台工作空间应用。</p>
               </a>
               <a href="https://www.douban.com/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-green-douban"><img src="/douban.png" class="pick-icon"></div>
-                <h3 class="pick-name">豆瓣</h3>
-                <p class="pick-desc">豆瓣网是一家基于用户对于图书、电影和音乐兴趣而搭建的社交网站。</p>
+                <h3 class="pick-name"> 豆瓣 </h3>
+                <p class="pick-desc"> 豆瓣网是一家基于用户对于图书、电影和音乐兴趣而搭建的社交网站。</p>
               </a>
               <a href="https://www.apple.com/apple-books/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-ibook"><img src="/ibooks.png" class="pick-icon"></div>
                 <h3 class="pick-name">iBooks</h3>
-                <p class="pick-desc">苹果公司开发的内建应用，主要用于阅读和收听书籍及有声读物。</p>
+                <p class="pick-desc"> 苹果公司开发的内建应用，主要用于阅读和收听书籍及有声读物。</p>
               </a>
 
               <a href="https://www.apple.com/apple-tv/" target="_blank" class="pick-card glass-card">
@@ -245,7 +245,7 @@
                   <img src="/apple-tv.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Apple TV</h3>
-                <p class="pick-desc">Apple TV是苹果公司推出的流媒体播放器</p>
+                <p class="pick-desc">Apple TV 是苹果公司推出的流媒体播放器 </p>
               </a>
 
               <a href="https://www.netflix.com/hk/" target="_blank" class="pick-card glass-card">
@@ -253,7 +253,7 @@
                   <img src="/netflix.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Netflix</h3>
-                <p class="pick-desc">美国会员订阅制的流媒体播放平台</p>
+                <p class="pick-desc"> 美国会员订阅制的流媒体播放平台 </p>
               </a>
 
               <a href="https://music.apple.com/cn/new" target="_blank" class="pick-card glass-card">
@@ -261,7 +261,7 @@
                   <img src="/apple-music.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Apple Music</h3>
-                <p class="pick-desc">Apple Music 是苹果公司推出的一项流媒体音乐服务，提供数千万首歌曲的在线收听、下载和个性化推荐功能</p>
+                <p class="pick-desc">Apple Music 是苹果公司推出的一项流媒体音乐服务，提供数千万首歌曲的在线收听、下载和个性化推荐功能 </p>
               </a>
 
               <a href="https://open.spotify.com/" target="_blank" class="pick-card glass-card">
@@ -269,23 +269,23 @@
                   <img src="/spotify.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Spotify</h3>
-                <p class="pick-desc">是一家全球领先的音乐流媒体服务平台，提供丰富的音乐库和多种订阅模式，用户可享受免费或付费的音乐体验</p>
+                <p class="pick-desc"> 是一家全球领先的音乐流媒体服务平台，提供丰富的音乐库和多种订阅模式，用户可享受免费或付费的音乐体验 </p>
               </a>
 
               <a href="https://y.qq.com/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-white">
                   <img src="/qq-music.png" class="pick-icon">
                 </div>
-                <h3 class="pick-name">QQ音乐</h3>
-                <p class="pick-desc">QQ音乐是腾讯音乐娱乐集团旗下的音乐流媒体平台，成立于2005年，提供丰富的音乐内容和多样化的服务</p>
+                <h3 class="pick-name">QQ 音乐 </h3>
+                <p class="pick-desc">QQ 音乐是腾讯音乐娱乐集团旗下的音乐流媒体平台，成立于 2005 年，提供丰富的音乐内容和多样化的服务 </p>
               </a>
 
               <a href="https://music.163.com/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-red">
                   <img src="/网易云.png" class="pick-icon">
                 </div>
-                <h3 class="pick-name">网易云音乐</h3>
-                <p class="pick-desc">网易云音乐是一款由网易开发的在线音乐平台，致力于为用户提供丰富的音乐内容和社交体验</p>
+                <h3 class="pick-name"> 网易云音乐 </h3>
+                <p class="pick-desc"> 网易云音乐是一款由网易开发的在线音乐平台，致力于为用户提供丰富的音乐内容和社交体验 </p>
               </a>
 
               <a href="https://www.notion.com/zh-cn/product/calendar" target="_blank" class="pick-card glass-card">
@@ -293,7 +293,7 @@
                   <img src="/notion-calendar.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Notion Calendar</h3>
-                <p class="pick-desc">是 Notion 推出的一款新产品，它能够将 Notion 数据库 和 Google Calendar 整合在一起，形成一个集中管理的日历工具。用户可以通过谷歌账号登录，支持多平台使用，方便管理工作和个人生活的活动。</p>
+                <p class="pick-desc"> 是 Notion 推出的一款新产品，它能够将 Notion 数据库 和 Google Calendar 整合在一起，形成一个集中管理的日历工具。用户可以通过谷歌账号登录，支持多平台使用，方便管理工作和个人生活的活动。</p>
               </a>
 
               <a href="https://calendar.google.com/calendar/u/0/r?pli=1" target="_blank" class="pick-card glass-card">
@@ -301,77 +301,77 @@
                   <img src="/google-calendar.png" class="pick-icon">
                 </div>
                 <h3 class="pick-name">Google Calendar</h3>
-                <p class="pick-desc">是谷歌提供的一个强大的时间管理和调度工具，旨在帮助用户高效安排和管理日常活动</p>
+                <p class="pick-desc"> 是谷歌提供的一个强大的时间管理和调度工具，旨在帮助用户高效安排和管理日常活动 </p>
               </a>
 
               <a href="https://pay.weixin.qq.com/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-white">
                   <img src="/wechat-pay.png" class="pick-icon">
                 </div>
-                <h3 class="pick-name">微信支付</h3>
-                <p class="pick-desc">微信支付是腾讯推出的一种便捷的移动支付方式，支持多种支付场景，已成为中国领先的第三方支付平台之一</p>
+                <h3 class="pick-name"> 微信支付 </h3>
+                <p class="pick-desc"> 微信支付是腾讯推出的一种便捷的移动支付方式，支持多种支付场景，已成为中国领先的第三方支付平台之一 </p>
               </a>
 
               <a href="https://www.alipay.com/" target="_blank" class="pick-card glass-card">
                 <div class="pick-icon-wrapper bg-white">
                   <img src="/alipay.png" class="pick-icon">
                 </div>
-                <h3 class="pick-name">支付宝</h3>
-                <p class="pick-desc">支付宝是中国领先的第三方支付平台，成立于2004年，提供安全、便捷的在线支付解决方案，涵盖支付、理财、生活服务等多个领域</p>
+                <h3 class="pick-name"> 支付宝 </h3>
+                <p class="pick-desc"> 支付宝是中国领先的第三方支付平台，成立于 2004 年，提供安全、便捷的在线支付解决方案，涵盖支付、理财、生活服务等多个领域 </p>
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 视图 3: Download Page (下载页) -->
+      <!-- 视图 3: Download Page ( 下载页 ) -->
       <div v-else-if="viewMode === 'download'" key="download" class="download-view">
         <div class="download-bg-glow"></div>
         <div class="download-container">
           <div class="download-header">
-            <h1 class="download-title">跨越平台，如影随形</h1>
-            <p class="download-subtitle">为每一处平台打造的原生体验，尽享 Notion Mate 的极速快感</p>
+            <h1 class="download-title"> 跨越平台，如影随形 </h1>
+            <p class="download-subtitle"> 为每一处平台打造的原生体验，尽享 Notion Mate 的极速快感 </p>
           </div>
           <div class="primary-dl-card">
             <div class="primary-content">
               <div class="os-icon-large mac-icon"><apple-filled /></div>
               <div class="dl-info">
                 <h2 class="dl-os-name">macOS</h2>
-                <p class="dl-os-desc">支持 Apple Silicon 和 Intel 芯片</p>
-                <div class="dl-meta"><span class="version-badge">v1.68.0</span><span class="req-text">需要 macOS 12+</span></div>
+                <p class="dl-os-desc"> 支持 Apple Silicon 和 Intel 芯片 </p>
+                <div class="dl-meta"><span class="version-badge">v1.68.0</span><span class="req-text"> 需要 macOS 12+</span></div>
               </div>
               <div class="dl-actions">
-                <button class="dl-btn-primary"><span class="btn-txt">下载 Mac 版本</span></button>
+                <button class="dl-btn-primary"><span class="btn-txt"> 下载 Mac 版本 </span></button>
               </div>
             </div>
             <div class="primary-visual">
               <div class="app-window-mock scale-in">
-                <div class="win-bar"><search-outlined class="win-search-icon" /><div class="win-search-text">搜索 Notion Mate...</div></div>
+                <div class="win-bar"><search-outlined class="win-search-icon" /><div class="win-search-text"> 搜索 Notion Mate...</div></div>
                 <div class="win-list">
-                  <div class="win-item active"><div class="item-left"><sync-outlined class="item-icon" /><span class="item-text">同步数据中心</span></div><span class="item-key">↵</span></div>
-                  <div class="win-item"><div class="item-left"><video-camera-filled class="item-icon" /><span class="item-text">管理书影音库</span></div></div>
-                  <div class="win-item"><div class="item-left"><bank-outlined class="item-icon" /><span class="item-text">记录个人财务</span></div></div>
+                  <div class="win-item active"><div class="item-left"><sync-outlined class="item-icon" /><span class="item-text"> 同步数据中心 </span></div><span class="item-key">↵</span></div>
+                  <div class="win-item"><div class="item-left"><video-camera-filled class="item-icon" /><span class="item-text"> 管理书影音库 </span></div></div>
+                  <div class="win-item"><div class="item-left"><bank-outlined class="item-icon" /><span class="item-text"> 记录个人财务 </span></div></div>
                 </div>
               </div>
             </div>
           </div>
           <div class="platforms-grid">
-            <div class="plat-item-card win-card"><div class="plat-icon-box win-icon"><windows-filled /></div><div class="plat-details"><h3>Windows</h3><p>Windows 10/11</p></div><button class="plat-dl-btn">下载</button></div>
+            <div class="plat-item-card win-card"><div class="plat-icon-box win-icon"><windows-filled /></div><div class="plat-details"><h3>Windows</h3><p>Windows 10/11</p></div><button class="plat-dl-btn"> 下载 </button></div>
             <div class="plat-item-card ios-card"><div class="plat-icon-box ios-icon"><apple-filled /></div><div class="plat-details"><h3>iOS</h3><p>iPhone & iPad</p></div><button class="plat-dl-btn">App Store</button></div>
             <div class="plat-item-card android-card"><div class="plat-icon-box android-icon"><android-filled /></div><div class="plat-details"><h3>Android</h3><p>Android 10+</p></div><button class="plat-dl-btn">Google Play</button></div>
-            <div class="plat-item-card linux-card coming-soon"><div class="plat-icon-box linux-icon"><code-filled /></div><div class="plat-details"><h3>Linux</h3><p style="opacity: 0; pointer-events: none;">Coming Soon</p></div><button class="plat-dl-btn disabled">敬请期待</button></div>
+            <div class="plat-item-card linux-card coming-soon"><div class="plat-icon-box linux-icon"><code-filled /></div><div class="plat-details"><h3>Linux</h3><p style="opacity: 0; pointer-events: none;">Coming Soon</p></div><button class="plat-dl-btn disabled"> 敬请期待 </button></div>
           </div>
         </div>
       </div>
 
-      <!-- ================= 视图 4: Changelog Page (更新日志页 - 已修复) ================= -->
+      <!-- ================= 视图 4: Changelog Page ( 更新日志页 - 已修复 ) ================= -->
       <div v-else-if="viewMode === 'changelog'" key="changelog" class="changelog-view">
         <div class="changelog-bg-glow"></div>
 
         <div class="changelog-container">
           <header class="cl-header">
-            <h1 class="cl-title">进化历程</h1>
-            <p class="cl-subtitle">持续迭代，只为打造最极致的 Notion 伴侣体验。</p>
+            <h1 class="cl-title"> 进化历程 </h1>
+            <p class="cl-subtitle"> 持续迭代，只为打造最极致的 Notion 伴侣体验。</p>
           </header>
 
           <div class="timeline-wrapper">
@@ -389,17 +389,17 @@
               </div>
               <div class="release-content glass-card-premium">
                 <div class="rc-header">
-                  <h3 class="rc-title">全新集成生态</h3>
+                  <h3 class="rc-title"> 全新集成生态 </h3>
                   <div class="rc-tags">
                     <span class="tag tag-new">New</span>
                     <span class="tag tag-impr">Core</span>
                   </div>
                 </div>
-                <p class="rc-desc">在这个版本中，我们极大地扩展了 Notion Mate 的边界。新增了对 Apple Music、Netflix 和 Google Calendar 的原生支持，让您的娱乐与工作流无缝连接。</p>
+                <p class="rc-desc"> 在这个版本中，我们极大地扩展了 Notion Mate 的边界。新增了对 Apple Music、 Netflix 和 Google Calendar 的原生支持，让您的娱乐与工作流无缝连接。</p>
                 <ul class="rc-list">
-                  <li><span class="li-icon">✨</span> 新增 10+ 个流媒体平台数据同步支持。</li>
-                  <li><span class="li-icon">⚡️</span> 重构了同步引擎，速度提升 40%。</li>
-                  <li><span class="li-icon">🎨</span> 优化了暗黑模式下的视觉体验。</li>
+                  <li><span class="li-icon"> ✨ </span> 新增 10+ 个流媒体平台数据同步支持。</li>
+                  <li><span class="li-icon"> ⚡️</span> 重构了同步引擎，速度提升 40%。</li>
+                  <li><span class="li-icon"> 🎨 </span> 优化了暗黑模式下的视觉体验。</li>
                 </ul>
               </div>
             </div>
@@ -413,15 +413,15 @@
               <div class="release-dot"></div>
               <div class="release-content glass-card-premium">
                 <div class="rc-header">
-                  <h3 class="rc-title">书影音自动化升级</h3>
+                  <h3 class="rc-title"> 书影音自动化升级 </h3>
                   <div class="rc-tags">
                     <span class="tag tag-fix">Fix</span>
                   </div>
                 </div>
-                <p class="rc-desc">专注于修复用户反馈的元数据抓取问题，并增强了对豆瓣新版页面的解析能力。</p>
+                <p class="rc-desc"> 专注于修复用户反馈的元数据抓取问题，并增强了对豆瓣新版页面的解析能力。</p>
                 <ul class="rc-list">
-                  <li><span class="li-icon">🐛</span> 修复了部分书籍封面无法获取的高清图源问题。</li>
-                  <li><span class="li-icon">🖥️</span> 解决了 macOS Sonoma 下的窗口对齐 Bug。</li>
+                  <li><span class="li-icon"> 🐛 </span> 修复了部分书籍封面无法获取的高清图源问题。</li>
+                  <li><span class="li-icon"> 🖥️</span> 解决了 macOS Sonoma 下的窗口对齐 Bug。</li>
                 </ul>
               </div>
             </div>
@@ -435,19 +435,19 @@
               <div class="release-dot"></div>
               <div class="release-content glass-card-premium">
                 <div class="rc-header">
-                  <h3 class="rc-title">智能财务看板</h3>
+                  <h3 class="rc-title"> 智能财务看板 </h3>
                   <div class="rc-tags">
                     <span class="tag tag-new">New</span>
                   </div>
                 </div>
-                <p class="rc-desc">引入了全新的财务数据可视化模块。现在，您可以直接在 Notion Mate 中预览您的收支趋势，并自动生成月度报表同步至 Notion。</p>
+                <p class="rc-desc"> 引入了全新的财务数据可视化模块。现在，您可以直接在 Notion Mate 中预览您的收支趋势，并自动生成月度报表同步至 Notion。</p>
               </div>
             </div>
 
           </div>
 
           <div class="cl-footer">
-            <p>更多历史版本请查看 <a href="#" class="cl-link">GitHub Releases</a></p>
+            <p> 更多历史版本请查看 <a href="#" class="cl-link">GitHub Releases</a></p>
           </div>
         </div>
       </div>
@@ -458,10 +458,10 @@
     <!-- 独立层级，全屏覆盖 -->
     <transition name="fade-slow">
       <!-- 只要是认证相关的页面，都共用这个 Wrapper -->
-      <div v-if="['auth', 'forgot-password', 'register'].includes(viewMode)" class="auth-wrapper-new">
+      <div v-if="['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode)" class="auth-wrapper-new">
         <div class="auth-card-new">
 
-          <!-- 左侧：视觉区域 (带轮播) -->
+          <!-- 左侧：视觉区域 ( 带轮播 ) -->
           <div class="auth-visual-side">
             <!-- 轮播背景图层 -->
             <div class="carousel-bg-wrapper">
@@ -483,7 +483,7 @@
               <span>Notion Mate</span>
             </div>
 
-            <!-- 返回按钮 (移至左侧视觉区右上角) -->
+            <!-- 返回按钮 ( 移至左侧视觉区右上角 ) -->
             <button class="return-home-btn visual-home-btn" @click="viewMode = 'landing'">
               <arrow-left-outlined class="btn-icon"/> 返回首页
             </button>
@@ -507,7 +507,7 @@
             </div>
           </div>
 
-          <!-- 右侧：表单区域 (通过 v-if/v-else-if 切换内部内容) -->
+          <!-- 右侧：表单区域 ( 通过 v-if/v-else-if 切换内部内容 ) -->
           <div class="auth-form-side">
             <div class="form-scroll-container">
 
@@ -515,19 +515,19 @@
               <transition name="fade-slow" mode="out-in">
                 <div v-if="viewMode === 'auth'" key="login-form" class="auth-inner-box">
                   <div class="form-header-new">
-                    <h2 class="welcome-title">欢迎回来 👋</h2>
-                    <p class="welcome-sub">请登录您的账户以继续</p>
+                    <h2 class="welcome-title"> 欢迎回来 👋 </h2>
+                    <p class="welcome-sub"> 请登录您的账户以继续 </p>
                   </div>
 
                   <div class="form-fields-new">
                     <!-- Username Input -->
                     <div class="input-group">
-                      <label>用户名</label>
+                      <label> 用户名 </label>
                       <div class="input-wrapper" :class="{ 'has-error': errors.username }">
                         <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
                         <input
                             type="text"
-                            placeholder="请输入用户名"
+                            placeholder=" 请输入用户名 "
                             v-model="formState.username"
                             @blur="handleInputBlur('username')"
                             @input="errors.username = ''"
@@ -540,12 +540,12 @@
 
                     <!-- Password Input -->
                     <div class="input-group">
-                      <label>密码</label>
+                      <label> 密码 </label>
                       <div class="input-wrapper" :class="{ 'has-error': errors.password }">
                         <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
                         <input
                             :type="showPassword ? 'text' : 'password'"
-                            placeholder="请输入密码"
+                            placeholder=" 请输入密码 "
                             v-model="formState.password"
                             @blur="handleInputBlur('password')"
                             @input="errors.password = ''"
@@ -562,18 +562,18 @@
 
                     <!-- Forgot Password Link -->
                     <div class="form-actions-row" style="justify-content: flex-end;">
-                      <a href="#" class="forgot-link" @click.prevent="viewMode = 'forgot-password'; forgotStep = 1; clearForgotForm()">忘记密码？</a>
+                      <a href="#" class="forgot-link" @click.prevent="viewMode = 'forgot-password'; forgotStep = 1; clearForgotForm()"> 忘记密码？</a>
                     </div>
 
                     <!-- Login Button -->
                     <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
-                      <template v-if="!isLoading">登 录</template>
+                      <template v-if="!isLoading"> 登 录 </template>
                       <loading-outlined v-else class="spin-icon" />
                     </button>
 
                     <!-- Divider -->
                     <div class="auth-divider">
-                      <span>快速登录</span>
+                      <span> 快速登录 </span>
                     </div>
 
                     <!-- Social Buttons -->
@@ -582,15 +582,79 @@
                         <google-circle-filled class="s-icon google" />
                         Google
                       </button>
-                      <button class="social-btn-new">
-                        <apple-filled class="s-icon apple" />
-                        Apple
+                      <button class="social-btn-new" @click="viewMode = 'phone-login'; clearPhoneLoginForm()">
+                        <mobile-outlined class="s-icon" style="color: #10b981;" />
+                        手机号登录
                       </button>
                     </div>
 
                     <!-- Register Footer -->
                     <div class="auth-footer-text">
-                      还没有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'register'">立即注册</a>
+                      还没有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'register'"> 立即注册 </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- D. 手机号登录表单 (Phone Login Form) -->
+                <div v-else-if="viewMode === 'phone-login'" key="phone-login-form" class="auth-inner-box">
+                  <div class="form-header-new">
+                    <h2 class="welcome-title"> 手机号快捷登录 📱 </h2>
+                    <p class="welcome-sub">
+                      未注册手机号验证后将自动创建账户
+                    </p>
+                  </div>
+
+                  <div class="form-fields-new">
+                    <!-- Step 1: Phone -->
+                    <div class="input-group">
+                      <label> 手机号码 </label>
+                      <div class="input-wrapper" :class="{ 'has-error': phoneLoginErrors.phone }" style="padding-right: 8px;">
+                        <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input
+                            type="text"
+                            placeholder=" 请输入手机号码 "
+                            v-model="phoneLoginForm.phone"
+                            @input="phoneLoginErrors.phone = ''"
+                        >
+                        <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendLoginSms">
+                          {{ smsCountdown > 0 ? `${smsCountdown}s` : ' 获取验证码 ' }}
+                        </button>
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="phoneLoginErrors.phone">{{ phoneLoginErrors.phone }}</span>
+                      </transition>
+                    </div>
+
+                    <!-- Step 2: Code -->
+                    <div class="input-group">
+                      <label> 验证码 </label>
+                      <div class="otp-box-container">
+                        <input
+                            v-for="(digit, index) in 6"
+                            :key="index"
+                            :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
+                            v-model="otpDigits[index]"
+                            type="text"
+                            maxlength="1"
+                            class="otp-input"
+                            :class="{ 'has-error': phoneLoginErrors.code }"
+                            @input="handleOtpInput(index, $event, true)"
+                            @keydown="handleOtpKeyDown(index, $event, true)"
+                            @paste="e => handleOtpPaste(e, true)"
+                        />
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="phoneLoginErrors.code">{{ phoneLoginErrors.code }}</span>
+                      </transition>
+                    </div>
+
+                    <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handlePhoneLogin" :disabled="isLoading">
+                      <template v-if="!isLoading"> 登 录 </template>
+                      <loading-outlined v-else class="spin-icon" />
+                    </button>
+
+                    <div class="auth-footer-text">
+                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回账号密码登录 </a>
                     </div>
                   </div>
                 </div>
@@ -598,9 +662,9 @@
                 <!-- B. 忘记密码表单 (Forgot Password Form) - Revised to 2 Steps -->
                 <div v-else-if="viewMode === 'forgot-password'" key="forgot-form" class="auth-inner-box">
                   <div class="form-header-new">
-                    <h2 class="welcome-title">{{ forgotStep === 1 ? '安全验证 🔐' : '重置密码 🔑' }}</h2>
+                    <h2 class="welcome-title">{{ forgotStep === 1 ? ' 安全验证 🔐 ' : ' 重置密码 🔑 ' }}</h2>
                     <p class="welcome-sub">
-                      {{ forgotStep === 1 ? '请验证您的手机号以继续' : '设置您的新密码' }}
+                      {{ forgotStep === 1 ? ' 请验证您的手机号以继续 ' : ' 设置您的新密码 ' }}
                     </p>
                   </div>
 
@@ -608,18 +672,19 @@
                     <!-- Step 1: Phone & Code -->
                     <template v-if="forgotStep === 1">
                       <div class="input-group">
-                        <label>手机号码</label>
+                        <label> 手机号码 </label>
                         <!-- Updated Input Wrapper: Contains SMS Button now -->
                         <div class="input-wrapper" :class="{ 'has-error': forgotErrors.phone }" style="padding-right: 8px;">
                           <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
                           <input
                               type="text"
-                              placeholder="请输入手机号码"
+                              placeholder=" 请输入手机号码 "
                               v-model="forgotForm.phone"
+                              @blur="handleResetInputBlur('phone')"
                               @input="forgotErrors.phone = ''"
                           >
                           <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendSms">
-                            {{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}
+                            {{ smsCountdown > 0 ? `${smsCountdown}s` : ' 获取验证码 ' }}
                           </button>
                         </div>
                         <transition name="slide-fade">
@@ -628,7 +693,7 @@
                       </div>
 
                       <div class="input-group">
-                        <label>验证码</label>
+                        <label> 验证码 </label>
                         <div class="otp-box-container">
                           <input
                               v-for="(digit, index) in 6"
@@ -650,7 +715,7 @@
                       </div>
 
                       <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleVerifyNext" :disabled="isLoading">
-                        <template v-if="!isLoading">下一步</template>
+                        <template v-if="!isLoading"> 下一步 </template>
                         <loading-outlined v-else class="spin-icon" />
                       </button>
                     </template>
@@ -658,31 +723,53 @@
                     <!-- Step 2: New Password -->
                     <template v-else>
                       <div class="input-group">
-                        <label>新密码</label>
+                        <label> 新密码 </label>
                         <div class="input-wrapper" :class="{ 'has-error': forgotErrors.newPassword }">
                           <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
                           <input
-                              type="password"
-                              placeholder="请输入新密码"
+                              :type="showNewPassword ? 'text' : 'password'"
+                              placeholder=" 请输入新密码 "
                               v-model="forgotForm.newPassword"
+                              @blur="handleResetInputBlur('newPassword')"
                               @input="forgotErrors.newPassword = ''"
                           >
+                          <span class="input-suffix-icon" @click="showNewPassword = !showNewPassword">
+                            <eye-outlined v-if="showNewPassword" />
+                            <eye-invisible-outlined v-else />
+                          </span>
                         </div>
+
+                        <!-- UI 优化的密码强度指示器 -->
+                        <div class="password-strength-container" v-if="forgotForm.newPassword">
+                          <div class="strength-bars">
+                            <div class="strength-segment" :class="{ active: passwordStrength >= 1, [strengthLevel]: passwordStrength >= 1 }"></div>
+                            <div class="strength-segment" :class="{ active: passwordStrength >= 2, [strengthLevel]: passwordStrength >= 2 }"></div>
+                            <div class="strength-segment" :class="{ active: passwordStrength >= 3, [strengthLevel]: passwordStrength >= 3 }"></div>
+                            <div class="strength-segment" :class="{ active: passwordStrength >= 4, [strengthLevel]: passwordStrength >= 4 }"></div>
+                          </div>
+                          <span class="strength-label" :class="strengthClass">{{ strengthLabel }}</span>
+                        </div>
+
                         <transition name="slide-fade">
                           <span class="error-message" v-if="forgotErrors.newPassword">{{ forgotErrors.newPassword }}</span>
                         </transition>
                       </div>
 
                       <div class="input-group">
-                        <label>确认密码</label>
+                        <label> 确认密码 </label>
                         <div class="input-wrapper" :class="{ 'has-error': forgotErrors.confirmPassword }">
                           <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
                           <input
-                              type="password"
-                              placeholder="请再次输入新密码"
+                              :type="showConfirmPassword ? 'text' : 'password'"
+                              placeholder=" 请再次输入新密码 "
                               v-model="forgotForm.confirmPassword"
+                              @blur="handleResetInputBlur('confirmPassword')"
                               @input="forgotErrors.confirmPassword = ''"
                           >
+                          <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
+                            <eye-outlined v-if="showConfirmPassword" />
+                            <eye-invisible-outlined v-else />
+                          </span>
                         </div>
                         <transition name="slide-fade">
                           <span class="error-message" v-if="forgotErrors.confirmPassword">{{ forgotErrors.confirmPassword }}</span>
@@ -690,13 +777,13 @@
                       </div>
 
                       <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleResetConfirm" :disabled="isLoading">
-                        <template v-if="!isLoading">确认修改</template>
+                        <template v-if="!isLoading"> 确认修改 </template>
                         <loading-outlined v-else class="spin-icon" />
                       </button>
                     </template>
 
                     <div class="auth-footer-text">
-                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'">返回登录</a>
+                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回登录 </a>
                     </div>
                   </div>
                 </div>
@@ -704,23 +791,23 @@
                 <!-- C. 注册表单 (Register Form) -->
                 <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
                   <div class="form-header-new">
-                    <h2 class="welcome-title">创建账户 🚀</h2>
-                    <p class="welcome-sub">免费开始您的 Notion Mate 之旅</p>
+                    <h2 class="welcome-title"> 创建账户 🚀 </h2>
+                    <p class="welcome-sub"> 免费开始您的 Notion Mate 之旅 </p>
                   </div>
 
                   <div class="form-fields-new">
                     <!-- Username -->
                     <div class="input-group">
-                      <label>用户名</label>
+                      <label> 用户名 </label>
                       <div class="input-wrapper">
                         <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input type="text" placeholder="设置您的用户名" />
+                        <input type="text" placeholder=" 设置您的用户名 " />
                       </div>
                     </div>
 
                     <!-- Email -->
                     <div class="input-group">
-                      <label>电子邮箱</label>
+                      <label> 电子邮箱 </label>
                       <div class="input-wrapper">
                         <mail-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
                         <input type="email" placeholder="name@example.com" />
@@ -729,10 +816,10 @@
 
                     <!-- Password -->
                     <div class="input-group">
-                      <label>设置密码</label>
+                      <label> 设置密码 </label>
                       <div class="input-wrapper">
                         <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input type="password" placeholder="至少 8 位字符" />
+                        <input type="password" placeholder=" 至少 8 位字符 " />
                       </div>
                     </div>
 
@@ -741,7 +828,7 @@
                     </button>
 
                     <div class="auth-footer-text">
-                      已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'">立即登录</a>
+                      已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 立即登录 </a>
                     </div>
                   </div>
                 </div>
@@ -758,7 +845,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
 import {
   DatabaseOutlined, CloseOutlined,
   AppleFilled, WindowsFilled, AndroidFilled, TabletFilled,
@@ -774,6 +861,7 @@ import {
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { sendCaptcha, verifyCaptcha, resetPassword} from '@/api/auth'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -803,10 +891,10 @@ const togglePassword = () => {
 
 const validateField = (field: 'username' | 'password') => {
   if (field === 'username') {
-    errors.username = !formState.username.trim() ? '请输入用户名' : ''
+    errors.username = !formState.username.trim() ? ' 请输入用户名 ' : ''
   }
   if (field === 'password') {
-    errors.password = !formState.password.trim() ? '请输入密码' : ''
+    errors.password = !formState.password.trim() ? ' 请输入密码 ' : ''
   }
 }
 
@@ -827,24 +915,29 @@ const handleLogin = async () => {
       await userStore.login({username:formState.username,password:formState.password})
       const redirect = route.query.redirect as string
       await router.push(redirect || '/')
-      AppleAlert.success("登录成功","欢迎回来:" + userStore.userInfo?.nickname)
+      AppleAlert.success(" 登录成功 "," 欢迎回来 :" + userStore.userInfo?.nickname)
     }catch (error: any){
-      AppleAlert.error("登录失败",error.message)
+      AppleAlert.error(" 登录失败 ",error.message)
     }finally {
       isLoading.value = false
     }
   }, 800)
 }
 
-/* ----------------- Forgot Password Logic (Phone + SMS + OTP 6-digits) ----------------- */
+/* ----------------- Forgot Password & Phone Login Logic (OTP 6-digits) ----------------- */
 const forgotStep = ref(1) // 1: Verify, 2: Reset
 const smsCountdown = ref(0)
 let smsTimer: any = null
+
+// Password visibility toggles for reset step
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 // New: OTP Refs and Logic
 const otpDigits = reactive(['', '', '', '', '', ''])
 const otpInputRefs = ref<HTMLInputElement[]>([])
 
+// Forgot Password Form State
 const forgotForm = reactive({
   phone: '',
   code: '',
@@ -858,13 +951,63 @@ const forgotErrors = reactive({
   confirmPassword: ''
 })
 
+// Phone Login Form State
+const phoneLoginForm = reactive({
+  phone: '',
+  code: ''
+})
+const phoneLoginErrors = reactive({
+  phone: '',
+  code: ''
+})
+
+// Password Strength Logic
+const passwordStrength = computed(() => {
+  const val = forgotForm.newPassword
+  if (!val) return 0
+  let score = 0
+  if (val.length >= 8) score++
+  if (/[A-Z]/.test(val)) score++ // Uppercase
+  if (/[0-9]/.test(val)) score++ // Number
+  if (/[^A-Za-z0-9]/.test(val)) score++ // Symbol
+  return score
+})
+
+const strengthLevel = computed(() => {
+  const s = passwordStrength.value
+  if (s < 2) return 'weak'
+  if (s < 4) return 'medium'
+  return 'strong'
+})
+
+const strengthLabel = computed(() => {
+  const s = passwordStrength.value
+  if (s === 0) return ''
+  if (s < 2) return '太弱'
+  if (s < 4) return '还行' // "还行" fits better for Medium
+  return '完美'
+})
+
+const strengthClass = computed(() => {
+  const s = passwordStrength.value
+  if (s < 2) return 'text-weak'
+  if (s < 4) return 'text-medium'
+  return 'text-strong'
+})
+
 // Sync OTP array to form string
-const syncCode = () => {
-  forgotForm.code = otpDigits.join('')
-  if (forgotForm.code.length > 0) forgotErrors.code = ''
+const syncCode = (isPhoneLogin = false) => {
+  const code = otpDigits.join('')
+  if (isPhoneLogin) {
+    phoneLoginForm.code = code
+    if (phoneLoginForm.code.length > 0) phoneLoginErrors.code = ''
+  } else {
+    forgotForm.code = code
+    if (forgotForm.code.length > 0) forgotErrors.code = ''
+  }
 }
 
-const handleOtpInput = (index: number, e: Event) => {
+const handleOtpInput = (index: number, e: Event, isPhoneLogin = false) => {
   const target = e.target as HTMLInputElement
   let val = target.value
 
@@ -884,21 +1027,21 @@ const handleOtpInput = (index: number, e: Event) => {
     otpInputRefs.value[index + 1]?.focus()
   }
 
-  syncCode()
+  syncCode(isPhoneLogin)
 }
 
-const handleOtpKeyDown = (index: number, e: KeyboardEvent) => {
+const handleOtpKeyDown = (index: number, e: KeyboardEvent, isPhoneLogin = false) => {
   // Backspace logic: if current empty, move back and delete prev
   if (e.key === 'Backspace') {
     if (!otpDigits[index] && index > 0) {
       otpDigits[index - 1] = ''
       otpInputRefs.value[index - 1]?.focus()
-      syncCode()
+      syncCode(isPhoneLogin)
     }
   }
 }
 
-const handleOtpPaste = (e: ClipboardEvent) => {
+const handleOtpPaste = (e: ClipboardEvent, isPhoneLogin = false) => {
   const pasteData = e.clipboardData?.getData('text') || ''
   if (!/^\d{6}$/.test(pasteData)) return // simple validation for 6 digits
   e.preventDefault() // Stop default paste into one box
@@ -907,7 +1050,7 @@ const handleOtpPaste = (e: ClipboardEvent) => {
     if (i < 6) otpDigits[i] = d
   })
   otpInputRefs.value[5]?.focus()
-  syncCode()
+  syncCode(isPhoneLogin)
 }
 
 const clearForgotForm = () => {
@@ -915,6 +1058,8 @@ const clearForgotForm = () => {
   forgotForm.code = ''
   forgotForm.newPassword = ''
   forgotForm.confirmPassword = ''
+  showNewPassword.value = false
+  showConfirmPassword.value = false
   // Clear OTP digits
   for (let i = 0; i < 6; i++) otpDigits[i] = ''
 
@@ -923,54 +1068,147 @@ const clearForgotForm = () => {
   if (smsTimer) clearInterval(smsTimer)
 }
 
-const handleSendSms = () => {
-  if (!forgotForm.phone) {
-    forgotErrors.phone = '请输入手机号码'
+const clearPhoneLoginForm = () => {
+  phoneLoginForm.phone = ''
+  phoneLoginForm.code = ''
+  for (let i = 0; i < 6; i++) otpDigits[i] = ''
+  Object.keys(phoneLoginErrors).forEach(key => phoneLoginErrors[key as keyof typeof phoneLoginErrors] = '')
+  smsCountdown.value = 0
+  if (smsTimer) clearInterval(smsTimer)
+}
+
+// Unified SMS Handler - supports both forms
+const handleSendSms = async () => {
+  const isPhoneLogin = viewMode.value === 'phone-login'
+  const phone = isPhoneLogin ? phoneLoginForm.phone : forgotForm.phone
+  const errorsObj = isPhoneLogin ? phoneLoginErrors : forgotErrors
+
+  if (!phone) {
+    errorsObj.phone = ' 请输入手机号码 '
     return
   }
   const phoneRegex = /^1[3-9]\d{9}$/
-  if (!phoneRegex.test(forgotForm.phone)) {
-    forgotErrors.phone = '请输入有效的手机号码'
+  if (!phoneRegex.test(phone)) {
+    errorsObj.phone = ' 请输入有效的手机号码 '
     return
   }
 
-  // Simulate API Call
-  smsCountdown.value = 60
-  AppleAlert.success("验证码发送成功", "请注意查收短信")
-  smsTimer = setInterval(() => {
-    smsCountdown.value--
-    if (smsCountdown.value <= 0) clearInterval(smsTimer)
-  }, 1000)
+  try {
+    // 调用后端 API 发送验证码
+    await sendCaptcha(phone)
+
+    // 启动倒计时
+    smsCountdown.value = 60
+    AppleAlert.success(" 验证码发送成功 ", " 请注意查收短信 ")
+    smsTimer = setInterval(() => {
+      smsCountdown.value--
+      if (smsCountdown.value <= 0) clearInterval(smsTimer)
+    }, 1000)
+  } catch (error: any) {
+    AppleAlert.error(" 验证码发送失败 ", error.message || " 验证码发送失败，请稍后重试 ")
+  }
 }
 
-const handleVerifyNext = () => {
-  if (!forgotForm.phone) { return forgotErrors.phone = '请输入手机号码' }
+// Unified Send SMS Handler for Phone Login (Wrapper)
+const handleSendLoginSms = () => {
+  handleSendSms()
+}
+
+const handleVerifyNext = async () => {
+  if (!forgotForm.phone) { return forgotErrors.phone = ' 请输入手机号码 ' }
   // Ensure we sync before checking
   syncCode()
 
-  if (!forgotForm.code) { return forgotErrors.code = '请输入验证码' }
-  if (forgotForm.code.length !== 6) { return forgotErrors.code = '验证码格式错误' }
+  if (!forgotForm.code) { return forgotErrors.code = ' 请输入验证码 ' }
+  if (forgotForm.code.length !== 6) { return forgotErrors.code = ' 验证码格式错误 ' }
 
   isLoading.value = true
-  setTimeout(() => {
-    isLoading.value = false
-    // Assume verification passed
+  try {
+    // 调用后端 API 校验验证码
+    await verifyCaptcha(forgotForm.phone, forgotForm.code)
+    // 校验通过，进入下一步
     forgotStep.value = 2
-  }, 800)
+  } catch (error: any) {
+    AppleAlert.error(" 验证失败 ", error.message || " 验证码错误或已过期 ")
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const handleResetConfirm = () => {
-  if (!forgotForm.newPassword) { return forgotErrors.newPassword = '请输入新密码' }
-  if (forgotForm.newPassword.length < 8) { return forgotErrors.newPassword = '密码至少需要8位' }
-  if (forgotForm.newPassword !== forgotForm.confirmPassword) { return forgotErrors.confirmPassword = '两次输入密码不一致' }
+const handlePhoneLogin = async () => {
+  if (!phoneLoginForm.phone) { return phoneLoginErrors.phone = ' 请输入手机号码 ' }
+  syncCode(true)
+  if (!phoneLoginForm.code) { return phoneLoginErrors.code = ' 请输入验证码 ' }
+  if (phoneLoginForm.code.length !== 6) { return phoneLoginErrors.code = ' 验证码格式错误 ' }
 
   isLoading.value = true
-  setTimeout(() => {
-    isLoading.value = false
-    AppleAlert.success("重置成功", "您的密码已修改，请重新登录。")
-    viewMode.value = 'auth'
+  setTimeout(async () => {
+    try {
+      await userStore.loginByPhone(phoneLoginForm.phone,phoneLoginForm.code)
+      const redirect = route.query.redirect as string
+      await router.push(redirect || '/')
+      AppleAlert.success("登录成功","欢迎回来:" + userStore.userInfo?.nickname)
+    }catch (error: any) {
+      AppleAlert.error("登录失败",error.message)
+    }finally {
+      isLoading.value = false
+    }
+  },800)
+}
+
+const handleResetInputBlur = (field: 'newPassword' | 'confirmPassword' | 'phone') => {
+  if (field === 'phone') {
+    if (!forgotForm.phone) {
+      forgotErrors.phone = ' 请输入手机号码 '
+    } else if (!/^1[3-9]\d{9}$/.test(forgotForm.phone)) {
+      forgotErrors.phone = ' 请输入有效的手机号码 '
+    } else {
+      forgotErrors.phone = ''
+    }
+  }
+
+  if (field === 'newPassword') {
+    if (!forgotForm.newPassword) {
+      forgotErrors.newPassword = ' 请输入新密码 '
+    } else if (forgotForm.newPassword.length < 8) {
+      forgotErrors.newPassword = ' 密码至少需要 8 位 '
+    } else {
+      forgotErrors.newPassword = ''
+    }
+  }
+
+  if (field === 'confirmPassword') {
+    if (!forgotForm.confirmPassword) {
+      forgotErrors.confirmPassword = ' 请再次输入新密码 '
+    } else if (forgotForm.newPassword !== forgotForm.confirmPassword) {
+      forgotErrors.confirmPassword = ' 两次输入密码不一致 '
+    } else {
+      forgotErrors.confirmPassword = ''
+    }
+  }
+}
+
+const handleResetConfirm = async () => {
+  handleResetInputBlur('newPassword')
+  handleResetInputBlur('confirmPassword')
+
+  if (forgotErrors.newPassword || forgotErrors.confirmPassword) {
+    return
+  }
+
+  isLoading.value = true
+  try {
+    // 调用后端重置密码
+    await resetPassword(forgotForm.phone,forgotForm.code,forgotForm.newPassword,forgotForm.confirmPassword)
+    AppleAlert.success(" 重置密码成功 "," 您的密码已修改,请重新登录 ")
     clearForgotForm()
-  }, 1000)
+    viewMode.value = 'auth'
+  }catch (error: any) {
+    AppleAlert.error(" 重置密码失败 ",error.message)
+  }
+  finally {
+    isLoading.value = false
+  }
 }
 
 
@@ -981,18 +1219,18 @@ let carouselTimer: any = null
 const slides = [
   {
     image: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop',
-    title: '高效构建知识库',
-    desc: '在一个统一的平台轻松追踪笔记、任务与数据流，告别繁琐的手动管理，让知识产生复利。'
+    title: ' 高效构建知识库 ',
+    desc: ' 在一个统一的平台轻松追踪笔记、任务与数据流，告别繁琐的手动管理，让知识产生复利。'
   },
   {
     image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
-    title: '无缝连接工作流',
-    desc: '深度集成 Spotify、Linear、Google Calendar 等您喜爱的工具，打破数据孤岛，实现自动化流转。'
+    title: ' 无缝连接工作流 ',
+    desc: ' 深度集成 Spotify、 Linear、 Google Calendar 等您喜爱的工具，打破数据孤岛，实现自动化流转。'
   },
   {
     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop',
-    title: '数据可视化洞察',
-    desc: '通过强大的可视化仪表盘，将枯燥的原始数据转化为直观的图表与洞察，助力科学决策。'
+    title: ' 数据可视化洞察 ',
+    desc: ' 通过强大的可视化仪表盘，将枯燥的原始数据转化为直观的图表与洞察，助力科学决策。'
   }
 ]
 
@@ -1015,7 +1253,7 @@ const setSlide = (index: number) => {
 // Start/Stop carousel based on viewMode
 watch(viewMode, (newVal) => {
   // Now checks for any auth-related mode
-  if (['auth', 'forgot-password', 'register'].includes(newVal)) {
+  if (['auth', 'forgot-password', 'register', 'phone-login'].includes(newVal)) {
     startCarousel()
   } else {
     stopCarousel()
@@ -1583,6 +1821,44 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   border-color: #ef4444;
 }
 
+/* Password Strength Meter - Optimized Design */
+.password-strength-container {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 4px;
+  height: 4px;
+  width: 100%;
+}
+
+.strength-segment {
+  flex: 1;
+  background-color: #e5e7eb;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.strength-segment.active.weak { background-color: #ef4444; }
+.strength-segment.active.medium { background-color: #f59e0b; }
+.strength-segment.active.strong { background-color: #10b981; }
+
+.strength-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+  transition: color 0.3s ease;
+  min-height: 18px; /* reserve space */
+}
+
+.text-weak { color: #ef4444; }
+.text-medium { color: #f59e0b; }
+.text-strong { color: #10b981; }
+
 /* ================= 6. Integrations Page (Store Page) - RE-ADDED ================= */
 .store-view {
   position: relative;
@@ -1683,7 +1959,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   text-align: center;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
-  text-decoration: none; /* 确保作为a标签时无下划线 */
+  text-decoration: none; /* 确保作为 a 标签时无下划线 */
 }
 
 /* 新增半透明卡片样式 */

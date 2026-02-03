@@ -22,7 +22,9 @@ export const role: Directive = {
     if (value) {
       const roles = userStore.userInfo?.roles || []
       const requiredRoles = Array.isArray(value) ? value : [value]
-      const hasRole = requiredRoles.some(role => roles.includes(role))
+      const hasRole = requiredRoles.some(requiredRole => 
+        roles.some(role => role.roleCode === requiredRole)
+      )
       
       if (!hasRole) {
         el.parentNode?.removeChild(el)
