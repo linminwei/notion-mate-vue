@@ -785,7 +785,7 @@
                   </div>
                 </div>
 
-                <!-- C. 注册表单 (Register Form) -->
+                <!-- C. 注册表单 (Register Form) - UPDATED -->
                 <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
                   <div class="form-header-new">
                     <h2 class="welcome-title"> 创建账户 🚀 </h2>
@@ -793,35 +793,149 @@
                   </div>
 
                   <div class="form-fields-new">
-                    <!-- Username -->
-                    <div class="input-group">
-                      <label> 用户名 </label>
-                      <div class="input-wrapper">
-                        <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input type="text" placeholder=" 设置您的用户名 " />
+                    <!-- Avatar Upload -->
+                    <div class="avatar-upload-container">
+                      <div class="avatar-wrapper" @click="triggerFileInput">
+                        <img v-if="registerForm.avatarUrl" :src="registerForm.avatarUrl" class="avatar-img" />
+                        <div v-else class="avatar-placeholder" :style="{ backgroundColor: registerForm.nickname ? '#2563eb' : '#e5e7eb' }">
+                          <span class="avatar-char">{{ generatedAvatarChar }}</span>
+                        </div>
+                        <div class="avatar-overlay">
+                          <camera-filled class="camera-icon" />
+                        </div>
+                      </div>
+                      <input type="file" ref="fileInput" accept="image/*" style="display: none" @change="handleFileChange" />
+                      <span class="avatar-hint"> 点击上传头像 </span>
+                    </div>
+
+                    <!-- Username & Nickname (Parallel) -->
+                    <div class="form-row-group">
+                      <div class="input-group flex-1">
+                        <label> 用户名 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.username }">
+                          <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <input type="text" placeholder=" 用户名 " v-model="registerForm.username" @input="registerErrors.username = ''" />
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="registerErrors.username">{{ registerErrors.username }}</span>
+                        </transition>
+                      </div>
+
+                      <div class="input-group flex-1">
+                        <label> 昵称 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.nickname }">
+                          <deployment-unit-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <input type="text" placeholder=" 昵称 " v-model="registerForm.nickname" @input="registerErrors.nickname = ''" />
+                        </div>
                       </div>
                     </div>
 
-                    <!-- Email -->
+                    <!-- Email Field (New) -->
                     <div class="input-group">
                       <label> 电子邮箱 </label>
-                      <div class="input-wrapper">
+                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.email }">
                         <mail-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input type="email" placeholder="name@example.com" />
+                        <input type="email" placeholder=" name@example.com " v-model="registerForm.email" @input="registerErrors.email = ''" />
                       </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="registerErrors.email">{{ registerErrors.email }}</span>
+                      </transition>
                     </div>
+
+                    <!-- Phone -->
+                    <div class="input-group">
+                      <label> 手机号码 </label>
+                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.phone }" style="padding-right: 8px;">
+                        <mobile-outlined v-if="!isPhoneVerified" style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <check-outlined v-else style="color: #10b981; margin-right: 8px; font-size: 18px;" />
+                        <input
+                            type="text"
+                            placeholder=" 请输入手机号码 "
+                            v-model="registerForm.phone"
+                            :disabled="isPhoneVerified"
+                            @input="registerErrors.phone = ''"
+                        >
+                        <span v-if="isPhoneVerified" class="verified-badge"> 已验证 </span>
+                        <button v-else class="sms-btn" :disabled="registerSmsCountdown > 0" @click="handleRegisterSms">
+                          {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 获取验证码 ' }}
+                        </button>
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="registerErrors.phone">{{ registerErrors.phone }}</span>
+                      </transition>
+                    </div>
+
+                    <!-- Verification Code (Conditional - 6 Digit Box) -->
+                    <transition name="slide-fade">
+                      <div class="input-group" v-if="showRegisterCodeInput">
+                        <label> 验证码 </label>
+                        <!-- Use OTP Container -->
+                        <div class="otp-box-container">
+                          <input
+                              v-for="(digit, index) in 6"
+                              :key="index"
+                              :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
+                              v-model="otpDigits[index]"
+                              type="text"
+                              maxlength="1"
+                              class="otp-input"
+                              :class="{ 'has-error': registerErrors.code }"
+                              @input="handleOtpInput(index, $event)"
+                              @keydown="handleOtpKeyDown(index, $event)"
+                              @paste="handleOtpPaste"
+                          />
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="registerErrors.code">{{ registerErrors.code }}</span>
+                        </transition>
+                      </div>
+                    </transition>
 
                     <!-- Password -->
                     <div class="input-group">
                       <label> 设置密码 </label>
-                      <div class="input-wrapper">
+                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.password }">
                         <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input type="password" placeholder=" 至少 8 位字符 " />
+                        <input :type="showPassword ? 'text' : 'password'" placeholder=" 至少 8 位字符 " v-model="registerForm.password" @input="registerErrors.password = ''" />
+                        <span class="input-suffix-icon" @click="showPassword = !showPassword">
+                          <eye-outlined v-if="showPassword" />
+                          <eye-invisible-outlined v-else />
+                        </span>
                       </div>
+                      <!-- Password Strength -->
+                      <div class="password-strength-container" v-if="registerForm.password">
+                        <div class="strength-bars">
+                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 1, [registerStrengthLevel]: registerPasswordStrength >= 1 }"></div>
+                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 2, [registerStrengthLevel]: registerPasswordStrength >= 2 }"></div>
+                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 3, [registerStrengthLevel]: registerPasswordStrength >= 3 }"></div>
+                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 4, [registerStrengthLevel]: registerPasswordStrength >= 4 }"></div>
+                        </div>
+                        <span class="strength-label" :class="registerStrengthClass">{{ registerStrengthLabel }}</span>
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="registerErrors.password">{{ registerErrors.password }}</span>
+                      </transition>
                     </div>
 
-                    <button class="auth-btn-primary">
-                      立即注册
+                    <!-- Confirm Password -->
+                    <div class="input-group">
+                      <label> 确认密码 </label>
+                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.confirmPassword }">
+                        <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <input :type="showConfirmPassword ? 'text' : 'password'" placeholder=" 请再次输入密码 " v-model="registerForm.confirmPassword" @input="registerErrors.confirmPassword = ''" />
+                        <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
+                          <eye-outlined v-if="showConfirmPassword" />
+                          <eye-invisible-outlined v-else />
+                        </span>
+                      </div>
+                      <transition name="slide-fade">
+                        <span class="error-message" v-if="registerErrors.confirmPassword">{{ registerErrors.confirmPassword }}</span>
+                      </transition>
+                    </div>
+
+                    <button class="auth-btn-primary" @click="handleRegister" :disabled="isLoading">
+                      <template v-if="!isLoading"> 立即注册 </template>
+                      <loading-outlined v-else class="spin-icon" />
                     </button>
 
                     <div class="auth-footer-text">
@@ -853,7 +967,8 @@ import {
   StepBackwardFilled, PlayCircleFilled, StepForwardFilled, CaretRightFilled,
   ThunderboltFilled, BgColorsOutlined, CodeFilled, CompassFilled, SlackCircleFilled,
   CalendarFilled, DeploymentUnitOutlined, SyncOutlined, VideoCameraFilled, BankOutlined, BarChartOutlined,
-  ReadOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined, MobileOutlined, SafetyCertificateOutlined
+  ReadOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined, MobileOutlined, SafetyCertificateOutlined,
+  CameraFilled
 } from '@ant-design/icons-vue'
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
 import { useRouter, useRoute } from 'vue-router'
@@ -998,12 +1113,16 @@ const strengthClass = computed(() => {
 // Sync OTP array to form string
 const syncCode = (isPhoneLogin = false) => {
   const code = otpDigits.join('')
-  if (isPhoneLogin) {
+  const mode = viewMode.value
+  if (mode === 'phone-login') {
     phoneLoginForm.code = code
     if (phoneLoginForm.code.length > 0) phoneLoginErrors.code = ''
-  } else {
+  } else if (mode === 'forgot-password') {
     forgotForm.code = code
     if (forgotForm.code.length > 0) forgotErrors.code = ''
+  } else if (mode === 'register') {
+    registerForm.code = code
+    if (registerForm.code.length > 0) registerErrors.code = ''
   }
 }
 
@@ -1028,6 +1147,11 @@ const handleOtpInput = (index: number, e: Event, isPhoneLogin = false) => {
   }
 
   syncCode(isPhoneLogin)
+
+  // Auto-verify for registration when 6 digits are filled
+  if (viewMode.value === 'register' && otpDigits.join('').length === 6) {
+    handleRegisterVerifyCode()
+  }
 }
 
 const handleOtpKeyDown = (index: number, e: KeyboardEvent, isPhoneLogin = false) => {
@@ -1051,6 +1175,11 @@ const handleOtpPaste = (e: ClipboardEvent, isPhoneLogin = false) => {
   })
   otpInputRefs.value[5]?.focus()
   syncCode(isPhoneLogin)
+
+  // Auto-verify for registration when paste fills 6 digits
+  if (viewMode.value === 'register' && otpDigits.join('').length === 6) {
+    handleRegisterVerifyCode()
+  }
 }
 
 const clearForgotForm = () => {
@@ -1208,6 +1337,143 @@ const handleResetConfirm = async () => {
     AppleAlert.error(" 重置密码失败 ",error.message)
   }
   finally {
+    isLoading.value = false
+  }
+}
+
+/* ----------------- Register Logic (New Added) ----------------- */
+const registerForm = reactive({
+  username: '',
+  nickname: '',
+  email: '',
+  phone: '',
+  code: '',
+  password: '',
+  confirmPassword: '',
+  avatar: null as File | null,
+  avatarUrl: ''
+})
+const registerErrors = reactive({
+  username: '',
+  nickname: '',
+  email: '',
+  phone: '',
+  code: '',
+  password: '',
+  confirmPassword: ''
+})
+const isPhoneVerified = ref(false)
+const showRegisterCodeInput = ref(false)
+const registerSmsCountdown = ref(0)
+let registerSmsTimer: any = null
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const triggerFileInput = () => fileInput.value?.click()
+const handleFileChange = (e: Event) => {
+  const files = (e.target as HTMLInputElement).files
+  if (files && files[0]) {
+    registerForm.avatar = files[0]
+    registerForm.avatarUrl = URL.createObjectURL(files[0])
+  }
+}
+const generatedAvatarChar = computed(() => {
+  return registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U'
+})
+
+// Register Password Strength
+const registerPasswordStrength = computed(() => {
+  const val = registerForm.password
+  if (!val) return 0
+  let score = 0
+  if (val.length >= 8) score++
+  if (/[A-Z]/.test(val)) score++
+  if (/[0-9]/.test(val)) score++
+  if (/[^A-Za-z0-9]/.test(val)) score++
+  return score
+})
+const registerStrengthLevel = computed(() => {
+  const s = registerPasswordStrength.value
+  if (s < 2) return 'weak'
+  if (s < 4) return 'medium'
+  return 'strong'
+})
+const registerStrengthLabel = computed(() => {
+  const s = registerPasswordStrength.value
+  if (s === 0) return ''
+  if (s < 2) return '太弱'
+  if (s < 4) return '还行'
+  return '完美'
+})
+const registerStrengthClass = computed(() => {
+  const s = registerPasswordStrength.value
+  if (s < 2) return 'text-weak'
+  if (s < 4) return 'text-medium'
+  return 'text-strong'
+})
+
+const handleRegisterSms = async () => {
+  if (!registerForm.phone) { return registerErrors.phone = '请输入手机号码' }
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (!phoneRegex.test(registerForm.phone)) { return registerErrors.phone = '请输入有效的手机号码' }
+
+  try {
+    await sendCaptcha(registerForm.phone)
+    showRegisterCodeInput.value = true // Show input
+    // Clear OTP for fresh start
+    for (let i = 0; i < 6; i++) otpDigits[i] = ''
+    registerForm.code = ''
+
+    registerSmsCountdown.value = 60
+    AppleAlert.success("验证码发送成功", "请注意查收短信")
+    registerSmsTimer = setInterval(() => {
+      registerSmsCountdown.value--
+      if (registerSmsCountdown.value <= 0) clearInterval(registerSmsTimer)
+    }, 1000)
+  } catch (error: any) {
+    AppleAlert.error("发送失败", error.message)
+  }
+}
+
+const handleRegisterVerifyCode = async () => {
+  // Sync before checking just in case
+  syncCode()
+
+  if (!registerForm.code) { return registerErrors.code = '请输入验证码' }
+  try {
+    // 假设有一个验证 API，这里复用 login 的 verify 或者单独的接口
+    await verifyCaptcha(registerForm.phone, registerForm.code)
+    isPhoneVerified.value = true
+    showRegisterCodeInput.value = false // Hide input on success
+    registerForm.code = '' // clear code to be safe? or keep it for submit
+    AppleAlert.success("验证成功", "手机号已验证")
+  } catch (error: any) {
+    registerErrors.code = '验证码错误'
+    AppleAlert.error("验证失败", error.message)
+  }
+}
+
+const handleRegister = async () => {
+  // Validate
+  if (!registerForm.username) registerErrors.username = '请输入用户名'
+  if (!registerForm.nickname) registerErrors.nickname = '请输入昵称'
+  if (!registerForm.email) registerErrors.email = '请输入电子邮箱'
+  if (!registerForm.phone) registerErrors.phone = '请输入手机号码'
+  if (!isPhoneVerified.value) registerErrors.phone = '请先验证手机号码'
+  if (!registerForm.password) registerErrors.password = '请输入密码'
+  if (registerForm.password !== registerForm.confirmPassword) registerErrors.confirmPassword = '两次密码不一致'
+
+  if (Object.values(registerErrors).some(x => x)) return
+
+  isLoading.value = true
+  try {
+    // Construct registration data
+    // await userStore.register(registerForm) // Mock call
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    AppleAlert.success("注册成功", "请登录您的账户")
+    viewMode.value = 'auth'
+  } catch (error: any) {
+    AppleAlert.error("注册失败", error.message)
+  } finally {
     isLoading.value = false
   }
 }
@@ -1585,11 +1851,21 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 
 .form-scroll-container {
-  padding: 40px; /* Reduced side padding, rely on max-width for centering */
+  padding: 80px 40px 150px; /* Adjusted: Top 80, Sides 40, Bottom 150 - More breathing room */
   width: 100%;
-  max-width: 440px; /* Reduced from 560px to 440px for a tighter look */
+  max-width: 480px; /* Slightly wider for better spacing */
   margin: 0 auto;
-  display: flex; flex-direction: column; justify-content: center; min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%; /* Ensure full height for centering logic */
+  /* justify-content: center; REMOVED to prevent overflow cropping */
+}
+
+/* New Auth Inner Box Wrapper for Centering */
+.auth-inner-box {
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .visual-home-btn {
@@ -2359,4 +2635,33 @@ img.pick-icon {
 .zoom-fade-enter-active, .zoom-fade-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .zoom-fade-enter-from { opacity: 0; transform: scale(0.95); }
 .zoom-fade-leave-to { opacity: 0; transform: scale(1.05); }
+
+/* Avatar Upload */
+.avatar-upload-container { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; }
+.avatar-wrapper {
+  position: relative; width: 80px; height: 80px; border-radius: 50%;
+  overflow: hidden; cursor: pointer; transition: transform 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.avatar-wrapper:hover { transform: scale(1.05); }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-placeholder {
+  width: 100%; height: 100%; background: #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 32px; font-weight: 700;
+}
+.avatar-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s;
+}
+.avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+.camera-icon { color: #fff; font-size: 24px; }
+.avatar-hint { font-size: 12px; color: #9ca3af; font-weight: 500; }
+
+/* Parallel Form Row */
+.form-row-group { display: flex; gap: 12px; }
+.flex-1 { flex: 1; }
+
+.verified-badge { font-size: 12px; color: #10b981; font-weight: 600; padding: 0 8px; white-space: nowrap; }
 </style>
