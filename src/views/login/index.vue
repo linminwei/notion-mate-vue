@@ -578,12 +578,9 @@
 
                     <!-- Social Buttons -->
                     <div class="social-row">
-                      <button class="social-btn-new">
-                        <google-circle-filled class="s-icon google" />
-                        Google
-                      </button>
-                      <button class="social-btn-new" @click="viewMode = 'phone-login'; clearPhoneLoginForm()">
-                        <mobile-outlined class="s-icon" style="color: #10b981;" />
+                      <!-- 移除 Google 按钮，仅保留手机号登录并优化样式 -->
+                      <button class="auth-btn-secondary" @click="viewMode = 'phone-login'; clearPhoneLoginForm()">
+                        <mobile-outlined class="s-icon" />
                         手机号登录
                       </button>
                     </div>
@@ -1743,37 +1740,40 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 
 .social-row { display: flex; gap: 16px; }
-.social-btn-new {
-  flex: 1;
+
+/* 优化后的次级操作按钮 (手机号登录) */
+.auth-btn-secondary {
+  width: 100%;
   height: 48px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: #000000;
+  border: 1px solid #000000;
   border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px; /* Increased gap */
-  font-size: 14px;
+  gap: 10px;
+  font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  white-space: nowrap; /* Prevent wrap */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
-.social-btn-new:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
+
+.auth-btn-secondary:hover {
+  background: #333333;
+  border-color: #333333;
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
-.social-btn-new:active {
-  transform: translateY(0);
-  background: #f3f4f6;
+
+.auth-btn-secondary .s-icon {
+  font-size: 20px;
+  transition: color 0.3s;
+  color: #ffffff;
 }
-.s-icon { font-size: 20px; }
-.s-icon.google { color: #EA4335; }
-.s-icon.apple { color: #000; }
+
+/* 已移除旧的 .social-btn-new, .s-icon.google, .s-icon.apple */
 
 .auth-footer-text { text-align: center; font-size: 13px; color: #6b7280; margin-top: 24px; font-weight: 500; }
 .register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
