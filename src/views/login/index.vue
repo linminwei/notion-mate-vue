@@ -913,9 +913,12 @@ const handleLogin = async () => {
   setTimeout(async () => {
     try {
       await userStore.login({username:formState.username,password:formState.password})
-      const redirect = route.query.redirect as string
-      await router.push(redirect || '/')
       AppleAlert.success(" 登录成功 "," 欢迎回来 :" + userStore.userInfo?.nickname)
+      viewMode.value = 'landing' // Fix: Close modal by switching view
+      const redirect = route.query.redirect as string
+      if (redirect && redirect !== '/') {
+        await router.push(redirect)
+      }
     }catch (error: any){
       AppleAlert.error(" 登录失败 ",error.message)
     }finally {
@@ -1148,6 +1151,7 @@ const handlePhoneLogin = async () => {
       const redirect = route.query.redirect as string
       await router.push(redirect || '/')
       AppleAlert.success("登录成功","欢迎回来:" + userStore.userInfo?.nickname)
+      viewMode.value = 'landing' // Close modal on success
     }catch (error: any) {
       AppleAlert.error("登录失败",error.message)
     }finally {
@@ -1584,9 +1588,9 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 
 .form-scroll-container {
-  padding: 40px 100px; /* 增加内边距 */
+  padding: 40px; /* Reduced side padding, rely on max-width for centering */
   width: 100%;
-  max-width: 560px; /* 调整最大宽度，保持聚焦 */
+  max-width: 440px; /* Reduced from 560px to 440px for a tighter look */
   margin: 0 auto;
   display: flex; flex-direction: column; justify-content: center; min-height: 100%;
 }
@@ -1614,31 +1618,30 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   display: none;
 }
 
-.form-header-new { margin-bottom: 40px; }
-/* Added white-space: nowrap and clamp() for responsive font sizing to prevent wrapping */
+.form-header-new { margin-bottom: 32px; } /* Slightly reduced margin */
+
 .welcome-title {
-  font-size: clamp(24px, 2.8vw, 36px);
-  font-weight: 800;
+  font-size: 28px; /* Fixed standard size, large enough but not huge */
+  font-weight: 700; /* 800 is a bit heavy sometimes */
   color: #111827;
-  margin-bottom: 12px;
-  letter-spacing: -0.5px;
-  white-space: nowrap;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
 }
-.welcome-sub { color: #6b7280; font-size: 15px; }
+.welcome-sub { color: #6b7280; font-size: 14px; }
 
-.form-fields-new { display: flex; flex-direction: column; gap: 24px; }
+.form-fields-new { display: flex; flex-direction: column; gap: 20px; } /* Reduced gap */
 
-.input-group { display: flex; flex-direction: column; gap: 8px; }
-.input-group label { font-size: 14px; font-weight: 600; color: #374151; }
+.input-group { display: flex; flex-direction: column; gap: 6px; }
+.input-group label { font-size: 13px; font-weight: 600; color: #374151; }
 
 .input-wrapper {
   background: #FFFFFF;
   border: 1px solid #E5E7EB; /* Tailwind gray-200 equivalent */
-  border-radius: 16px; /* 更大的圆角 */
-  padding: 14px 16px;
+  border-radius: 12px; /* Adjusted radius for smaller height */
+  padding: 0 14px; /* Horizontal padding */
   display: flex; align-items: center;
   transition: border-color 0.2s, box-shadow 0.2s;
-  height: 56px; /* 增加高度 */
+  height: 48px; /* Reduced from 56px to 48px */
 }
 .input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
 /* Error state styles */
@@ -1686,20 +1689,20 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 /* Just removing the block in HTML as per request */
 
-.forgot-link { color: #6b7280; font-size: 14px; text-decoration: none; font-weight: 500; }
+.forgot-link { color: #6b7280; font-size: 13px; text-decoration: none; font-weight: 500; }
 .forgot-link:hover { color: #2563eb; }
 
 .auth-btn-primary {
-  width: 100%; height: 56px;
+  width: 100%; height: 48px; /* Match input height */
   background: #2563eb;
   color: #fff;
   border: none;
-  border-radius: 28px; /* Pill shape */
-  font-size: 16px;
+  border-radius: 24px; /* Pill shape */
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
-  margin-top: 12px;
+  margin-top: 8px;
   box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06); /* Tailwind-like shadow */
   display: flex; justify-content: center; align-items: center;
 }
@@ -1730,7 +1733,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 
 .auth-divider {
-  position: relative; text-align: center; margin: 32px 0;
+  position: relative; text-align: center; margin: 24px 0;
 }
 .auth-divider::before {
   content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb;
@@ -1742,15 +1745,15 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .social-row { display: flex; gap: 16px; }
 .social-btn-new {
   flex: 1;
-  height: 56px;
+  height: 48px;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 28px;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px; /* Increased gap */
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #374151;
   cursor: pointer;
@@ -1772,7 +1775,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .s-icon.google { color: #EA4335; }
 .s-icon.apple { color: #000; }
 
-.auth-footer-text { text-align: center; font-size: 14px; color: #6b7280; margin-top: 32px; font-weight: 500; }
+.auth-footer-text { text-align: center; font-size: 13px; color: #6b7280; margin-top: 24px; font-weight: 500; }
 .register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
 .register-link:hover { text-decoration: underline; }
 
@@ -1781,7 +1784,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   background: none;
   color: #2563eb;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   padding: 4px 8px;
   white-space: nowrap;
@@ -1799,11 +1802,11 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 .otp-input {
   width: 100%;
-  height: 64px; /* Taller */
-  border-radius: 16px; /* Rounded */
+  height: 52px; /* Taller */
+  border-radius: 12px; /* Rounded */
   border: 1px solid #E5E7EB;
   text-align: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   background: #fff;
   color: #111827;
