@@ -1851,14 +1851,14 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 
 .form-scroll-container {
-  padding: 80px 40px 150px; /* Adjusted: Top 80, Sides 40, Bottom 150 - More breathing room */
+  padding: 80px 40px; /* Reduced vertical padding */
   width: 100%;
   max-width: 480px; /* Slightly wider for better spacing */
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   min-height: 100%; /* Ensure full height for centering logic */
-  /* justify-content: center; REMOVED to prevent overflow cropping */
+  box-sizing: border-box; /* IMPORTANT: Include padding in width/height calculation */
 }
 
 /* New Auth Inner Box Wrapper for Centering */
