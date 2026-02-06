@@ -19,6 +19,17 @@ export interface LoginForm {
   password: string
 }
 
+export interface RegisterForm {
+  username: string
+  nickname: string
+  email: string
+  phone: string
+  avatar: File
+  password: string
+  confirmPassword: string
+  captcha: string
+}
+
 export interface LoginResult {
   accessToken: string
   tokenType: string

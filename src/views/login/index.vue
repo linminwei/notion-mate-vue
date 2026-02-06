@@ -210,7 +210,7 @@
               <div class="store-app-icon icon-blur-1 icon-figma bg-black"><img src="/apple-tv.png" class="notion-n" alt="apple-tv"></div>
               <div class="store-app-icon icon-focus icon-notion"><img src="/notion.png" class="notion-n" alt="Notion"></div>
               <div class="store-app-icon icon-blur-1 icon-spotify bg-white"><img src="/netflix.png" class="notion-n" alt="netflix"></div>
-              <div class="store-app-icon icon-blur-2 icon-vscode bg-red"><img src="/网易云.png" class="notion-n" alt=" 网易云 "></div>
+              <div class="store-app-icon icon-blur-2 icon-vscode bg-red"><img src="/网易云.png" class="notion-n" alt="网易云"></div>
             </div>
             <div class="cloud-row row-bottom">
               <div class="store-app-icon icon-blur-2 icon-google bg-white"><img src="/notion-calendar.png" class="notion-n" alt="notion-calendar"></div>
@@ -796,7 +796,7 @@
                     <!-- Avatar Upload -->
                     <div class="avatar-upload-container">
                       <div class="avatar-wrapper" @click="triggerFileInput">
-                        <img v-if="registerForm.avatarUrl" :src="registerForm.avatarUrl" class="avatar-img" />
+                        <img v-if="registerForm.avatar" :src="avatarPreviewUrl" class="avatar-img" />
                         <div v-else class="avatar-placeholder" :style="{ backgroundColor: registerForm.nickname ? '#2563eb' : '#e5e7eb' }">
                           <span class="avatar-char">{{ generatedAvatarChar }}</span>
                         </div>
@@ -973,7 +973,7 @@ import {
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { sendCaptcha, verifyCaptcha, resetPassword} from '@/api/auth'
+import { sendCaptcha, verifyCaptcha, resetPassword, register } from '@/api/auth'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
@@ -1084,7 +1084,7 @@ const passwordStrength = computed(() => {
   if (val.length >= 8) score++
   if (/[A-Z]/.test(val)) score++ // Uppercase
   if (/[0-9]/.test(val)) score++ // Number
-  if (/[^A-Za-z0-9]/.test(val)) score++ // Symbol
+  if (/[ ^ A-Za-z0-9]/.test(val)) score++ // Symbol
   return score
 })
 
@@ -1098,9 +1098,9 @@ const strengthLevel = computed(() => {
 const strengthLabel = computed(() => {
   const s = passwordStrength.value
   if (s === 0) return ''
-  if (s < 2) return '太弱'
-  if (s < 4) return '还行' // "还行" fits better for Medium
-  return '完美'
+  if (s < 2) return ' 太弱 '
+  if (s < 4) return ' 还行 ' // " 还行 " fits better for Medium
+  return ' 完美 '
 })
 
 const strengthClass = computed(() => {
@@ -1218,7 +1218,7 @@ const handleSendSms = async () => {
   }
   const phoneRegex = /^1[3-9]\d{9}$/
   if (!phoneRegex.test(phone)) {
-    errorsObj.phone = ' 请输入有效的手机号码 '
+    errorsObj.phone = '请输入有效的手机号码'
     return
   }
 
@@ -1258,14 +1258,14 @@ const handleVerifyNext = async () => {
     // 校验通过，进入下一步
     forgotStep.value = 2
   } catch (error: any) {
-    AppleAlert.error(" 验证失败 ", error.message || " 验证码错误或已过期 ")
+    AppleAlert.error("验证失败", error.message || "验证码错误或已过期")
   } finally {
     isLoading.value = false
   }
 }
 
 const handlePhoneLogin = async () => {
-  if (!phoneLoginForm.phone) { return phoneLoginErrors.phone = ' 请输入手机号码 ' }
+  if (!phoneLoginForm.phone) { return phoneLoginErrors.phone = '请输入手机号码' }
   syncCode(true)
   if (!phoneLoginForm.code) { return phoneLoginErrors.code = ' 请输入验证码 ' }
   if (phoneLoginForm.code.length !== 6) { return phoneLoginErrors.code = ' 验证码格式错误 ' }
@@ -1276,10 +1276,10 @@ const handlePhoneLogin = async () => {
       await userStore.loginByPhone(phoneLoginForm.phone,phoneLoginForm.code)
       const redirect = route.query.redirect as string
       await router.push(redirect || '/')
-      AppleAlert.success("登录成功","欢迎回来:" + userStore.userInfo?.nickname)
+      AppleAlert.success(" 登录成功 "," 欢迎回来 :" + userStore.userInfo?.nickname)
       viewMode.value = 'landing' // Close modal on success
     }catch (error: any) {
-      AppleAlert.error("登录失败",error.message)
+      AppleAlert.error(" 登录失败 ",error.message)
     }finally {
       isLoading.value = false
     }
@@ -1291,7 +1291,7 @@ const handleResetInputBlur = (field: 'newPassword' | 'confirmPassword' | 'phone'
     if (!forgotForm.phone) {
       forgotErrors.phone = ' 请输入手机号码 '
     } else if (!/^1[3-9]\d{9}$/.test(forgotForm.phone)) {
-      forgotErrors.phone = ' 请输入有效的手机号码 '
+      forgotErrors.phone = '请输入有效的手机号码'
     } else {
       forgotErrors.phone = ''
     }
@@ -1330,7 +1330,7 @@ const handleResetConfirm = async () => {
   try {
     // 调用后端重置密码
     await resetPassword(forgotForm.phone,forgotForm.code,forgotForm.newPassword,forgotForm.confirmPassword)
-    AppleAlert.success(" 重置密码成功 "," 您的密码已修改,请重新登录 ")
+    AppleAlert.success(" 重置密码成功 "," 您的密码已修改 , 请重新登录 ")
     clearForgotForm()
     viewMode.value = 'auth'
   }catch (error: any) {
@@ -1350,8 +1350,7 @@ const registerForm = reactive({
   code: '',
   password: '',
   confirmPassword: '',
-  avatar: null as File | null,
-  avatarUrl: ''
+  avatar: null as unknown as File // 初始化为空，会在注册时生成默认头像
 })
 const registerErrors = reactive({
   username: '',
@@ -1373,11 +1372,47 @@ const handleFileChange = (e: Event) => {
   const files = (e.target as HTMLInputElement).files
   if (files && files[0]) {
     registerForm.avatar = files[0]
-    registerForm.avatarUrl = URL.createObjectURL(files[0])
   }
+}
+
+// 生成默认头像的函数
+const generateDefaultAvatar = async (): Promise<File> => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  
+  if (ctx) {
+    // 设置背景色（蓝色）
+    ctx.fillStyle = '#2563eb';
+    ctx.fillRect(0, 0, 200, 200);
+    
+    // 绘制文字
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 80px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const char = registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U';
+    ctx.fillText(char, 100, 100);
+  }
+  
+  // 转换为 blob
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], 'default-avatar.png', { type: 'image/png' });
+        resolve(file);
+      }
+    }, 'image/png');
+  });
 }
 const generatedAvatarChar = computed(() => {
   return registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U'
+})
+
+const avatarPreviewUrl = computed(() => {
+  return registerForm.avatar ? URL.createObjectURL(registerForm.avatar) : ''
 })
 
 // Register Password Strength
@@ -1388,7 +1423,7 @@ const registerPasswordStrength = computed(() => {
   if (val.length >= 8) score++
   if (/[A-Z]/.test(val)) score++
   if (/[0-9]/.test(val)) score++
-  if (/[^A-Za-z0-9]/.test(val)) score++
+  if (/[ ^ A-Za-z0-9]/.test(val)) score++
   return score
 })
 const registerStrengthLevel = computed(() => {
@@ -1400,9 +1435,9 @@ const registerStrengthLevel = computed(() => {
 const registerStrengthLabel = computed(() => {
   const s = registerPasswordStrength.value
   if (s === 0) return ''
-  if (s < 2) return '太弱'
-  if (s < 4) return '还行'
-  return '完美'
+  if (s < 2) return ' 太弱 '
+  if (s < 4) return ' 还行 '
+  return ' 完美 '
 })
 const registerStrengthClass = computed(() => {
   const s = registerPasswordStrength.value
@@ -1412,7 +1447,7 @@ const registerStrengthClass = computed(() => {
 })
 
 const handleRegisterSms = async () => {
-  if (!registerForm.phone) { return registerErrors.phone = '请输入手机号码' }
+  if (!registerForm.phone) { return registerErrors.phone = ' 请输入手机号码 ' }
   const phoneRegex = /^1[3-9]\d{9}$/
   if (!phoneRegex.test(registerForm.phone)) { return registerErrors.phone = '请输入有效的手机号码' }
 
@@ -1424,13 +1459,13 @@ const handleRegisterSms = async () => {
     registerForm.code = ''
 
     registerSmsCountdown.value = 60
-    AppleAlert.success("验证码发送成功", "请注意查收短信")
+    AppleAlert.success(" 验证码发送成功 ", " 请注意查收短信 ")
     registerSmsTimer = setInterval(() => {
       registerSmsCountdown.value--
       if (registerSmsCountdown.value <= 0) clearInterval(registerSmsTimer)
     }, 1000)
   } catch (error: any) {
-    AppleAlert.error("发送失败", error.message)
+    AppleAlert.error(" 发送失败 ", error.message)
   }
 }
 
@@ -1438,41 +1473,57 @@ const handleRegisterVerifyCode = async () => {
   // Sync before checking just in case
   syncCode()
 
-  if (!registerForm.code) { return registerErrors.code = '请输入验证码' }
+  if (!registerForm.code) { return registerErrors.code = ' 请输入验证码 ' }
   try {
     // 假设有一个验证 API，这里复用 login 的 verify 或者单独的接口
     await verifyCaptcha(registerForm.phone, registerForm.code)
     isPhoneVerified.value = true
     showRegisterCodeInput.value = false // Hide input on success
-    registerForm.code = '' // clear code to be safe? or keep it for submit
-    AppleAlert.success("验证成功", "手机号已验证")
+    AppleAlert.success(" 验证成功 ", " 手机号已验证 ")
   } catch (error: any) {
-    registerErrors.code = '验证码错误'
-    AppleAlert.error("验证失败", error.message)
+    registerErrors.code = ' 验证码错误 '
+    AppleAlert.error(" 验证失败 ", error.message)
   }
 }
 
 const handleRegister = async () => {
   // Validate
-  if (!registerForm.username) registerErrors.username = '请输入用户名'
-  if (!registerForm.nickname) registerErrors.nickname = '请输入昵称'
-  if (!registerForm.email) registerErrors.email = '请输入电子邮箱'
-  if (!registerForm.phone) registerErrors.phone = '请输入手机号码'
-  if (!isPhoneVerified.value) registerErrors.phone = '请先验证手机号码'
-  if (!registerForm.password) registerErrors.password = '请输入密码'
-  if (registerForm.password !== registerForm.confirmPassword) registerErrors.confirmPassword = '两次密码不一致'
+  if (!registerForm.username) registerErrors.username = ' 请输入用户名 '
+  if (!registerForm.nickname) registerErrors.nickname = ' 请输入昵称 '
+  if (!registerForm.email) registerErrors.email = ' 请输入电子邮箱 '
+  if (!registerForm.phone) registerErrors.phone = ' 请输入手机号码 '
+  if (!isPhoneVerified.value) registerErrors.phone = ' 请先验证手机号码 '
+  if (!registerForm.password) registerErrors.password = ' 请输入密码 '
+  if (registerForm.password !== registerForm.confirmPassword) registerErrors.confirmPassword = ' 两次密码不一致 '
 
   if (Object.values(registerErrors).some(x => x)) return
 
   isLoading.value = true
   try {
-    // Construct registration data
-    // await userStore.register(registerForm) // Mock call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    AppleAlert.success("注册成功", "请登录您的账户")
+    // 确保有头像文件
+    let avatarFile = registerForm.avatar;
+    if (!avatarFile) {
+      console.log(' 没有上传头像，生成默认头像 ');
+      avatarFile = await generateDefaultAvatar();
+    }
+      
+    // 构造注册数据
+    const registerData = {
+      username: registerForm.username,
+      nickname: registerForm.nickname,
+      email: registerForm.email,
+      phone: registerForm.phone,
+      avatar: avatarFile, // 确保有文件对象
+      password: registerForm.password,
+      confirmPassword: registerForm.confirmPassword,
+      captcha: registerForm.code // 修复字段名不一致问题： code -> captcha
+    }
+      
+    await userStore.register(registerData)
+    AppleAlert.success(" 注册成功 ", " 请登录您的账户 ")
     viewMode.value = 'auth'
   } catch (error: any) {
-    AppleAlert.error("注册失败", error.message)
+    AppleAlert.error(" 注册失败 ", error.message)
   } finally {
     isLoading.value = false
   }
@@ -1483,7 +1534,7 @@ const handleRegister = async () => {
 const handleRegisterInputBlur = (field: string) => {
   if (field === 'confirmPassword') {
     if (registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword) {
-      registerErrors.confirmPassword = '两次密码不一致'
+      registerErrors.confirmPassword = ' 两次密码不一致 '
     } else {
       registerErrors.confirmPassword = ''
     }
@@ -2031,7 +2082,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 .social-row { display: flex; gap: 16px; }
 
-/* 优化后的次级操作按钮 (手机号登录) */
+/* 优化后的次级操作按钮 ( 手机号登录 ) */
 .auth-btn-secondary {
   width: 100%;
   height: 44px; /* 44px match */

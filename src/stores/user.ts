@@ -1,7 +1,7 @@
 ﻿import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { UserInfo, MenuItem } from '@/types'
-import { login as loginApi, getUserInfo, logout as logoutApi ,loginByPhone as loginPhone} from '@/api/auth'
+import type { UserInfo, MenuItem, RegisterForm } from '@/types'
+import { login as loginApi, getUserInfo, logout as logoutApi, loginByPhone as loginPhone, register as registerApi } from '@/api/auth'
 import type { LoginForm } from '@/types'
 import router from '@/router'
 
@@ -27,6 +27,11 @@ export const useUserStore = defineStore('user', () => {
     token.value = res.data.accessToken
     localStorage.setItem('token', token.value)
     await fetchUserInfo()
+  }
+
+  // 用户注册
+  async function register(form: RegisterForm) {
+    await registerApi(form)
   }
 
   // 获取用户信息（包含菜单和权限）
@@ -64,6 +69,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     login,
     loginByPhone,
+    register,
     logout,
     fetchUserInfo,
     hasPermission,

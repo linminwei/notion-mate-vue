@@ -1,5 +1,5 @@
 ﻿import { request } from '@/utils/request'
-import type { LoginForm, LoginResult, UserInfo } from '@/types'
+import type { LoginForm, LoginResult, UserInfo, RegisterForm } from '@/types'
 
 // 登录
 export const login = (data: LoginForm) => {
@@ -29,6 +29,34 @@ export const verifyCaptcha = (phone: string, captcha: string) => {
 // 重置密码
 export const resetPassword = (phone: string, captcha: string,password: string,confirmPassword: string) => {
   return request.post('/auth/reset-password', { phone, captcha,password,confirmPassword })
+}
+
+// 用户注册
+export const register = (data: RegisterForm) => {
+  const formData = new FormData();
+  
+  // 构造用户数据对象（包含所有字段）
+  const userData = {
+    username: data.username,
+    nickname: data.nickname,
+    email: data.email,
+    phone: data.phone,
+    password: data.password,
+    confirmPassword: data.confirmPassword,
+    captcha: data.captcha
+  };
+  
+  // 添加用户数据（ JSON 字符串）
+  formData.append('userData', new Blob([JSON.stringify(userData)], { type: 'application/json' }));
+    
+  // 添加头像文件
+  formData.append('avatar', data.avatar);
+  
+  return request.post<void>('/auth/register', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
 }
 
 // 退出登录
