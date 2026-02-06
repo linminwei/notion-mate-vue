@@ -922,7 +922,7 @@
                       <label> 确认密码 </label>
                       <div class="input-wrapper" :class="{ 'has-error': registerErrors.confirmPassword }">
                         <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input :type="showConfirmPassword ? 'text' : 'password'" placeholder=" 请再次输入密码 " v-model="registerForm.confirmPassword" @input="registerErrors.confirmPassword = ''" />
+                        <input :type="showConfirmPassword ? 'text' : 'password'" placeholder=" 请再次输入密码 " v-model="registerForm.confirmPassword" @blur="handleRegisterInputBlur('confirmPassword')" @input="registerErrors.confirmPassword = ''" />
                         <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
                           <eye-outlined v-if="showConfirmPassword" />
                           <eye-invisible-outlined v-else />
@@ -1478,6 +1478,19 @@ const handleRegister = async () => {
   }
 }
 
+// ----------------------
+// New Function added for checking password match on blur
+const handleRegisterInputBlur = (field: string) => {
+  if (field === 'confirmPassword') {
+    if (registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword) {
+      registerErrors.confirmPassword = '两次密码不一致'
+    } else {
+      registerErrors.confirmPassword = ''
+    }
+  }
+}
+// ----------------------
+
 
 /* ----------------- Carousel Logic ----------------- */
 const currentSlide = ref(0)
@@ -1866,6 +1879,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   width: 100%;
   margin-top: auto;
   margin-bottom: auto;
+  padding-bottom: 20px; /* 内部再增加一点底部空间缓冲 */
 }
 
 .visual-home-btn {
@@ -1891,10 +1905,10 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   display: none;
 }
 
-.form-header-new { margin-bottom: 32px; } /* Slightly reduced margin */
+.form-header-new { margin-bottom: 24px; text-align: left; } /* 修改为左对齐 */
 
 .welcome-title {
-  font-size: 28px; /* Fixed standard size, large enough but not huge */
+  font-size: 26px; /* Slightly smaller for cleaner look */
   font-weight: 700; /* 800 is a bit heavy sometimes */
   color: #111827;
   margin-bottom: 8px;
@@ -1902,7 +1916,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 .welcome-sub { color: #6b7280; font-size: 14px; }
 
-.form-fields-new { display: flex; flex-direction: column; gap: 20px; } /* Reduced gap */
+.form-fields-new { display: flex; flex-direction: column; gap: 16px; } /* Reduced gap from 20px to 16px for compactness */
 
 .input-group { display: flex; flex-direction: column; gap: 6px; }
 .input-group label { font-size: 13px; font-weight: 600; color: #374151; }
@@ -1910,11 +1924,11 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .input-wrapper {
   background: #FFFFFF;
   border: 1px solid #E5E7EB; /* Tailwind gray-200 equivalent */
-  border-radius: 12px; /* Adjusted radius for smaller height */
+  border-radius: 10px; /* Adjusted radius */
   padding: 0 14px; /* Horizontal padding */
   display: flex; align-items: center;
   transition: border-color 0.2s, box-shadow 0.2s;
-  height: 48px; /* Reduced from 56px to 48px */
+  height: 44px; /* Reduced from 48px to 44px for tighter UI */
 }
 .input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
 /* Error state styles */
@@ -1927,18 +1941,18 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 
 .input-wrapper input {
-  border: none; outline: none; width: 100%; font-size: 15px; color: #1f2937; background: transparent;
+  border: none; outline: none; width: 100%; font-size: 14px; color: #1f2937; background: transparent; /* Font 14px */
 }
 .input-wrapper input::placeholder { color: #9ca3af; }
-.input-suffix-icon { color: #9ca3af; cursor: pointer; font-size: 20px; display: flex; align-items: center; }
+.input-suffix-icon { color: #9ca3af; cursor: pointer; font-size: 18px; display: flex; align-items: center; }
 
 /* Error message below input */
 .error-message {
   color: #ef4444;
-  font-size: 13px;
+  font-size: 12px; /* Smaller error text */
   font-weight: 500;
-  margin-top: 8px; /* Increased from -4px to 8px */
-  padding-left: 4px;
+  margin-top: 4px; /* Tighten up */
+  padding-left: 2px;
   display: block;
 }
 
@@ -1966,11 +1980,11 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .forgot-link:hover { color: #2563eb; }
 
 .auth-btn-primary {
-  width: 100%; height: 48px; /* Match input height */
+  width: 100%; height: 44px; /* Match input height 44px */
   background: #2563eb;
   color: #fff;
   border: none;
-  border-radius: 24px; /* Pill shape */
+  border-radius: 22px; /* Pill shape */
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -2006,7 +2020,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 
 .auth-divider {
-  position: relative; text-align: center; margin: 24px 0;
+  position: relative; text-align: center; margin: 20px 0; /* Reduced margin */
 }
 .auth-divider::before {
   content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb;
@@ -2020,15 +2034,15 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 /* 优化后的次级操作按钮 (手机号登录) */
 .auth-btn-secondary {
   width: 100%;
-  height: 48px;
+  height: 44px; /* 44px match */
   background: #000000;
   border: 1px solid #000000;
-  border-radius: 24px;
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #ffffff;
   cursor: pointer;
@@ -2044,14 +2058,21 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 
 .auth-btn-secondary .s-icon {
-  font-size: 20px;
+  font-size: 18px;
   transition: color 0.3s;
   color: #ffffff;
 }
 
 /* 已移除旧的 .social-btn-new, .s-icon.google, .s-icon.apple */
 
-.auth-footer-text { text-align: center; font-size: 13px; color: #6b7280; margin-top: 24px; font-weight: 500; }
+.auth-footer-text {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 24px;
+  font-weight: 500;
+  padding-bottom: 0; /* Let container padding handle spacing */
+}
 .register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
 .register-link:hover { text-decoration: underline; }
 
@@ -2078,8 +2099,8 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 .otp-input {
   width: 100%;
-  height: 52px; /* Taller */
-  border-radius: 12px; /* Rounded */
+  height: 48px; /* Slightly smaller OTP */
+  border-radius: 10px; /* Rounded */
   border: 1px solid #E5E7EB;
   text-align: center;
   font-size: 20px;
@@ -2102,10 +2123,10 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 /* Password Strength Meter - Optimized Design */
 .password-strength-container {
-  margin-top: 8px;
+  margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .strength-bars {
@@ -2637,9 +2658,9 @@ img.pick-icon {
 .zoom-fade-leave-to { opacity: 0; transform: scale(1.05); }
 
 /* Avatar Upload */
-.avatar-upload-container { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; }
+.avatar-upload-container { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; } /* 修改为居中对齐 */
 .avatar-wrapper {
-  position: relative; width: 80px; height: 80px; border-radius: 50%;
+  position: relative; width: 72px; height: 72px; border-radius: 50%;
   overflow: hidden; cursor: pointer; transition: transform 0.2s;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
