@@ -38,9 +38,7 @@
 
         <div class="nav-right">
           <button class="login-btn-text" @click="switchToAuth"> 登录 </button>
-          <button class="download-btn-white" @click="switchToDownload">
-            下载
-          </button>
+          <button class="download-btn-white" @click="switchToDownload"> 下载 </button>
         </div>
       </nav>
     </div>
@@ -461,6 +459,11 @@
       <div v-if="['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode)" class="auth-wrapper-new">
         <div class="auth-card-new">
 
+          <!-- 全局关闭按钮 (移至最外层结构中，使其独立悬浮) -->
+          <button class="close-auth-btn" @click="viewMode = 'landing'" aria-label="关闭">
+            <close-outlined />
+          </button>
+
           <!-- 左侧：视觉区域 ( 带轮播 ) -->
           <div class="auth-visual-side">
             <!-- 轮播背景图层 -->
@@ -483,11 +486,6 @@
               <span>Notion Mate</span>
             </div>
 
-            <!-- 返回按钮 ( 移至左侧视觉区右上角 ) -->
-            <button class="return-home-btn visual-home-btn" @click="viewMode = 'landing'">
-              <arrow-left-outlined class="btn-icon"/> 返回首页
-            </button>
-
             <!-- Bottom Text Content (Dynamic) -->
             <div class="visual-content">
               <transition name="fade-text" mode="out-in">
@@ -507,7 +505,7 @@
             </div>
           </div>
 
-          <!-- 右侧：表单区域 ( 通过 v-if/v-else-if 切换内部内容 ) -->
+          <!-- 右侧：表单区域包裹器 ( 固定的外壳，不滚动 ) -->
           <div class="auth-form-side">
 
             <!-- 移动端专属顶部导航栏 (Native App Header Style) -->
@@ -517,182 +515,120 @@
               </button>
             </div>
 
-            <div class="form-scroll-container">
+            <!-- 内部独立滚动区域 ( 携带淡入淡出遮罩 ) -->
+            <div class="auth-scroll-area" ref="authScrollRef" @scroll="handleAuthScroll">
+              <div class="form-scroll-container">
 
-              <!-- A. 登录表单 (Login Form) -->
-              <transition name="fade-slow" mode="out-in">
-                <div v-if="viewMode === 'auth'" key="login-form" class="auth-inner-box">
-                  <div class="form-header-new">
-                    <h2 class="welcome-title"> 欢迎回来 👋 </h2>
-                    <p class="welcome-sub"> 请登录您的账户以继续 </p>
-                  </div>
+                <!-- A. 登录表单 (Login Form) -->
+                <transition name="fade-slow" mode="out-in">
+                  <div v-if="viewMode === 'auth'" key="login-form" class="auth-inner-box">
+                    <div class="form-header-new">
+                      <h2 class="welcome-title"> 欢迎回来 👋 </h2>
+                      <p class="welcome-sub"> 请登录您的账户以继续 </p>
+                    </div>
 
-                  <div class="form-fields-new">
-                    <!-- Username Input -->
-                    <div class="input-group">
-                      <label> 用户名 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': errors.username }">
-                        <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                        <input
-                            type="text"
-                            placeholder=" 请输入用户名 "
-                            v-model="formState.username"
-                            @blur="handleInputBlur('username')"
-                            @input="errors.username = ''"
-                        >
+                    <div class="form-fields-new">
+                      <!-- Username Input -->
+                      <div class="input-group">
+                        <label> 用户名 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': errors.username }">
+                          <user-outlined class="input-prefix-icon" />
+                          <input
+                              type="text"
+                              placeholder=" 请输入用户名 "
+                              v-model="formState.username"
+                              @blur="handleInputBlur('username')"
+                              @input="errors.username = ''"
+                          >
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="errors.username">{{ errors.username }}</span>
+                        </transition>
                       </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="errors.username">{{ errors.username }}</span>
-                      </transition>
-                    </div>
 
-                    <!-- Password Input -->
-                    <div class="input-group">
-                      <label> 密码 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': errors.password }">
-                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                        <input
-                            :type="showPassword ? 'text' : 'password'"
-                            placeholder=" 请输入密码 "
-                            v-model="formState.password"
-                            @blur="handleInputBlur('password')"
-                            @input="errors.password = ''"
-                        >
-                        <span class="input-suffix-icon" @click="togglePassword">
-                          <eye-outlined v-if="showPassword" />
-                          <eye-invisible-outlined v-else />
-                        </span>
+                      <!-- Password Input -->
+                      <div class="input-group">
+                        <label> 密码 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': errors.password }">
+                          <lock-outlined class="input-prefix-icon" />
+                          <input
+                              :type="showPassword ? 'text' : 'password'"
+                              placeholder=" 请输入密码 "
+                              v-model="formState.password"
+                              @blur="handleInputBlur('password')"
+                              @input="errors.password = ''"
+                              @keyup.enter="handleLogin"
+                          >
+                          <span class="input-suffix-icon" @click="togglePassword">
+                            <eye-outlined v-if="showPassword" />
+                            <eye-invisible-outlined v-else />
+                          </span>
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
+                        </transition>
                       </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="errors.password">{{ errors.password }}</span>
-                      </transition>
-                    </div>
 
-                    <!-- Forgot Password Link -->
-                    <div class="form-actions-row" style="justify-content: flex-end;">
-                      <a href="#" class="forgot-link" @click.prevent="viewMode = 'forgot-password'; forgotStep = 1; clearForgotForm()"> 忘记密码？</a>
-                    </div>
+                      <!-- Forgot Password Link -->
+                      <div class="form-actions-row" style="justify-content: flex-end;">
+                        <a href="#" class="forgot-link" @click.prevent="viewMode = 'forgot-password'; forgotStep = 1; clearForgotForm()"> 忘记密码？</a>
+                      </div>
 
-                    <!-- Login Button -->
-                    <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
-                      <template v-if="!isLoading"> 登 录 </template>
-                      <loading-outlined v-else class="spin-icon" />
-                    </button>
-
-                    <!-- Divider -->
-                    <div class="auth-divider">
-                      <span> 快速登录 </span>
-                    </div>
-
-                    <!-- Social Buttons -->
-                    <div class="social-row">
-                      <button class="auth-btn-secondary" @click="viewMode = 'phone-login'; clearPhoneLoginForm()">
-                        <mobile-outlined class="s-icon" />
-                        手机号登录
+                      <!-- Login Button -->
+                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
+                        <template v-if="!isLoading"> 登 录 </template>
+                        <loading-outlined v-else class="spin-icon" />
                       </button>
-                    </div>
 
-                    <!-- Register Footer -->
-                    <div class="auth-footer-text">
-                      还没有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'register'"> 立即注册 </a>
-                    </div>
-                  </div>
-                </div>
+                      <!-- Divider -->
+                      <div class="auth-divider">
+                        <span> 快速登录 </span>
+                      </div>
 
-                <!-- D. 手机号登录表单 (Phone Login Form) -->
-                <div v-else-if="viewMode === 'phone-login'" key="phone-login-form" class="auth-inner-box">
-                  <div class="form-header-new">
-                    <h2 class="welcome-title"> 快捷登录</h2>
-                    <p class="welcome-sub"> 通过手机号登录 </p>
-                  </div>
-
-                  <div class="form-fields-new">
-                    <!-- Step 1: Phone -->
-                    <div class="input-group">
-                      <label> 手机号码 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': phoneLoginErrors.phone }" style="padding-right: 8px;">
-                        <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                        <input
-                            type="text"
-                            placeholder=" 请输入手机号码 "
-                            v-model="phoneLoginForm.phone"
-                            @input="phoneLoginErrors.phone = ''"
-                        >
-                        <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendLoginSms">
-                          {{ smsCountdown > 0 ? `${smsCountdown}s` : ' 获取验证码 ' }}
+                      <!-- Social Buttons -->
+                      <div class="social-row">
+                        <button class="auth-btn-secondary" @click="viewMode = 'phone-login'; clearPhoneLoginForm()">
+                          <mobile-outlined class="s-icon" />
+                          手机号登录
                         </button>
                       </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="phoneLoginErrors.phone">{{ phoneLoginErrors.phone }}</span>
-                      </transition>
-                    </div>
 
-                    <!-- Step 2: Code -->
-                    <div class="input-group">
-                      <label> 验证码 </label>
-                      <div class="otp-box-container">
-                        <input
-                            v-for="(digit, index) in 6"
-                            :key="index"
-                            :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
-                            v-model="otpDigits[index]"
-                            type="text"
-                            maxlength="1"
-                            class="otp-input"
-                            :class="{ 'has-error': phoneLoginErrors.code }"
-                            @input="handleOtpInput(index, $event, true)"
-                            @keydown="handleOtpKeyDown(index, $event, true)"
-                            @paste="e => handleOtpPaste(e, true)"
-                        />
+                      <!-- Register Footer -->
+                      <div class="auth-footer-text">
+                        还没有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'register'"> 立即注册 </a>
                       </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="phoneLoginErrors.code">{{ phoneLoginErrors.code }}</span>
-                      </transition>
-                    </div>
-
-                    <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handlePhoneLogin" :disabled="isLoading">
-                      <template v-if="!isLoading"> 登 录 </template>
-                      <loading-outlined v-else class="spin-icon" />
-                    </button>
-
-                    <div class="auth-footer-text">
-                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回账密登录 </a>
                     </div>
                   </div>
-                </div>
 
-                <!-- B. 忘记密码表单 (Forgot Password Form) -->
-                <div v-else-if="viewMode === 'forgot-password'" key="forgot-form" class="auth-inner-box">
-                  <div class="form-header-new">
-                    <h2 class="welcome-title">{{ forgotStep === 1 ? ' 安全验证 ' : ' 重置密码 ' }}</h2>
-                    <p class="welcome-sub">
-                      {{ forgotStep === 1 ? ' 请验证您的手机号以继续 ' : ' 设置您的新密码 ' }}
-                    </p>
-                  </div>
+                  <!-- D. 手机号登录表单 (Phone Login Form) -->
+                  <div v-else-if="viewMode === 'phone-login'" key="phone-login-form" class="auth-inner-box">
+                    <div class="form-header-new">
+                      <h2 class="welcome-title"> 快捷登录</h2>
+                      <p class="welcome-sub"> 通过手机号登录 </p>
+                    </div>
 
-                  <div class="form-fields-new">
-                    <!-- Step 1: Phone & Code -->
-                    <template v-if="forgotStep === 1">
+                    <div class="form-fields-new">
+                      <!-- Step 1: Phone -->
                       <div class="input-group">
                         <label> 手机号码 </label>
-                        <div class="input-wrapper" :class="{ 'has-error': forgotErrors.phone }" style="padding-right: 8px;">
-                          <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                        <div class="input-wrapper" :class="{ 'has-error': phoneLoginErrors.phone }" style="padding-right: 8px;">
+                          <mobile-outlined class="input-prefix-icon" />
                           <input
                               type="text"
                               placeholder=" 请输入手机号码 "
-                              v-model="forgotForm.phone"
-                              @blur="handleResetInputBlur('phone')"
-                              @input="forgotErrors.phone = ''"
+                              v-model="phoneLoginForm.phone"
+                              @input="phoneLoginErrors.phone = ''"
                           >
-                          <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendSms">
+                          <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendLoginSms">
                             {{ smsCountdown > 0 ? `${smsCountdown}s` : ' 获取验证码 ' }}
                           </button>
                         </div>
                         <transition name="slide-fade">
-                          <span class="error-message" v-if="forgotErrors.phone">{{ forgotErrors.phone }}</span>
+                          <span class="error-message" v-if="phoneLoginErrors.phone">{{ phoneLoginErrors.phone }}</span>
                         </transition>
                       </div>
 
+                      <!-- Step 2: Code -->
                       <div class="input-group">
                         <label> 验证码 </label>
                         <div class="otp-box-container">
@@ -704,30 +640,94 @@
                               type="text"
                               maxlength="1"
                               class="otp-input"
-                              :class="{ 'has-error': forgotErrors.code }"
-                              @input="handleOtpInput(index, $event)"
-                              @keydown="handleOtpKeyDown(index, $event)"
-                              @paste="handleOtpPaste"
+                              :class="{ 'has-error': phoneLoginErrors.code }"
+                              @input="handleOtpInput(index, $event, true)"
+                              @keydown="handleOtpKeyDown(index, $event, true)"
+                              @paste="e => handleOtpPaste(e, true)"
                           />
                         </div>
                         <transition name="slide-fade">
-                          <span class="error-message" v-if="forgotErrors.code">{{ forgotErrors.code }}</span>
+                          <span class="error-message" v-if="phoneLoginErrors.code">{{ phoneLoginErrors.code }}</span>
                         </transition>
                       </div>
 
-                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleVerifyNext" :disabled="isLoading">
-                        <template v-if="!isLoading"> 下一步 </template>
+                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handlePhoneLogin" :disabled="isLoading">
+                        <template v-if="!isLoading"> 登 录 </template>
                         <loading-outlined v-else class="spin-icon" />
                       </button>
-                    </template>
 
-                    <!-- Step 2: New Password -->
-                    <template v-else>
-                      <div class="form-row-group">
-                        <div class="input-group flex-1">
+                      <div class="auth-footer-text">
+                        <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回账密登录 </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- B. 忘记密码表单 (Forgot Password Form) -->
+                  <div v-else-if="viewMode === 'forgot-password'" key="forgot-form" class="auth-inner-box">
+                    <div class="form-header-new">
+                      <h2 class="welcome-title">{{ forgotStep === 1 ? ' 安全验证 ' : ' 重置密码 ' }}</h2>
+                      <p class="welcome-sub">
+                        {{ forgotStep === 1 ? ' 请验证您的手机号以继续 ' : ' 设置您的新密码 ' }}
+                      </p>
+                    </div>
+
+                    <div class="form-fields-new">
+                      <!-- Step 1: Phone & Code -->
+                      <template v-if="forgotStep === 1">
+                        <div class="input-group">
+                          <label> 手机号码 </label>
+                          <div class="input-wrapper" :class="{ 'has-error': forgotErrors.phone }" style="padding-right: 8px;">
+                            <mobile-outlined class="input-prefix-icon" />
+                            <input
+                                type="text"
+                                placeholder=" 请输入手机号码 "
+                                v-model="forgotForm.phone"
+                                @blur="handleResetInputBlur('phone')"
+                                @input="forgotErrors.phone = ''"
+                            >
+                            <button class="sms-btn" :disabled="smsCountdown > 0" @click="handleSendSms">
+                              {{ smsCountdown > 0 ? `${smsCountdown}s` : ' 获取验证码 ' }}
+                            </button>
+                          </div>
+                          <transition name="slide-fade">
+                            <span class="error-message" v-if="forgotErrors.phone">{{ forgotErrors.phone }}</span>
+                          </transition>
+                        </div>
+
+                        <div class="input-group">
+                          <label> 验证码 </label>
+                          <div class="otp-box-container">
+                            <input
+                                v-for="(digit, index) in 6"
+                                :key="index"
+                                :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
+                                v-model="otpDigits[index]"
+                                type="text"
+                                maxlength="1"
+                                class="otp-input"
+                                :class="{ 'has-error': forgotErrors.code }"
+                                @input="handleOtpInput(index, $event)"
+                                @keydown="handleOtpKeyDown(index, $event)"
+                                @paste="handleOtpPaste"
+                            />
+                          </div>
+                          <transition name="slide-fade">
+                            <span class="error-message" v-if="forgotErrors.code">{{ forgotErrors.code }}</span>
+                          </transition>
+                        </div>
+
+                        <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleVerifyNext" :disabled="isLoading">
+                          <template v-if="!isLoading"> 下一步 </template>
+                          <loading-outlined v-else class="spin-icon" />
+                        </button>
+                      </template>
+
+                      <!-- Step 2: New Password ( 换行独立显示 ) -->
+                      <template v-else>
+                        <div class="input-group">
                           <label> 新密码 </label>
                           <div class="input-wrapper" :class="{ 'has-error': forgotErrors.newPassword }">
-                            <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                            <lock-outlined class="input-prefix-icon" />
                             <input
                                 :type="showNewPassword ? 'text' : 'password'"
                                 placeholder=" 请输入新密码 "
@@ -740,15 +740,27 @@
                               <eye-invisible-outlined v-else />
                             </span>
                           </div>
+
+                          <!-- 密码强度指示器 -->
+                          <div class="password-strength-container" v-if="forgotForm.newPassword">
+                            <div class="strength-bars">
+                              <div class="strength-segment" :class="{ active: passwordStrength >= 1, [strengthLevel]: passwordStrength >= 1 }"></div>
+                              <div class="strength-segment" :class="{ active: passwordStrength >= 2, [strengthLevel]: passwordStrength >= 2 }"></div>
+                              <div class="strength-segment" :class="{ active: passwordStrength >= 3, [strengthLevel]: passwordStrength >= 3 }"></div>
+                              <div class="strength-segment" :class="{ active: passwordStrength >= 4, [strengthLevel]: passwordStrength >= 4 }"></div>
+                            </div>
+                            <span class="strength-label" :class="strengthClass">{{ strengthLabel }}</span>
+                          </div>
+
                           <transition name="slide-fade">
                             <span class="error-message" v-if="forgotErrors.newPassword">{{ forgotErrors.newPassword }}</span>
                           </transition>
                         </div>
 
-                        <div class="input-group flex-1">
+                        <div class="input-group">
                           <label> 确认密码 </label>
                           <div class="input-wrapper" :class="{ 'has-error': forgotErrors.confirmPassword }">
-                            <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                            <check-outlined class="input-prefix-icon" />
                             <input
                                 :type="showConfirmPassword ? 'text' : 'password'"
                                 placeholder=" 请再次输入 "
@@ -765,82 +777,68 @@
                             <span class="error-message" v-if="forgotErrors.confirmPassword">{{ forgotErrors.confirmPassword }}</span>
                           </transition>
                         </div>
+
+                        <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleResetConfirm" :disabled="isLoading">
+                          <template v-if="!isLoading"> 确认修改 </template>
+                          <loading-outlined v-else class="spin-icon" />
+                        </button>
+                      </template>
+
+                      <div class="auth-footer-text">
+                        <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回登录 </a>
                       </div>
-
-                      <!-- UI 优化的密码强度指示器 -->
-                      <div class="password-strength-container" v-if="forgotForm.newPassword">
-                        <div class="strength-bars">
-                          <div class="strength-segment" :class="{ active: passwordStrength >= 1, [strengthLevel]: passwordStrength >= 1 }"></div>
-                          <div class="strength-segment" :class="{ active: passwordStrength >= 2, [strengthLevel]: passwordStrength >= 2 }"></div>
-                          <div class="strength-segment" :class="{ active: passwordStrength >= 3, [strengthLevel]: passwordStrength >= 3 }"></div>
-                          <div class="strength-segment" :class="{ active: passwordStrength >= 4, [strengthLevel]: passwordStrength >= 4 }"></div>
-                        </div>
-                        <span class="strength-label" :class="strengthClass">{{ strengthLabel }}</span>
-                      </div>
-
-                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleResetConfirm" :disabled="isLoading">
-                        <template v-if="!isLoading"> 确认修改 </template>
-                        <loading-outlined v-else class="spin-icon" />
-                      </button>
-                    </template>
-
-                    <div class="auth-footer-text">
-                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回登录 </a>
                     </div>
                   </div>
-                </div>
 
-                <!-- C. 注册表单 (Register Form) -->
-                <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
-                  <div class="form-header-new">
-                    <h2 class="welcome-title"> 创建账户</h2>
-                    <p class="welcome-sub"> 免费开始您的 Notion Mate 之旅 </p>
-                  </div>
-
-                  <div class="form-fields-new">
-                    <!-- Avatar Upload -->
-                    <div class="avatar-upload-container">
-                      <div class="avatar-wrapper" @click="triggerFileInput">
-                        <img v-if="registerForm.avatar" :src="avatarPreviewUrl" class="avatar-img" />
-                        <div v-else class="avatar-placeholder" :style="{ backgroundColor: registerForm.nickname ? '#2563eb' : '#e5e7eb' }">
-                          <span class="avatar-char">{{ generatedAvatarChar }}</span>
-                        </div>
-                        <div class="avatar-overlay">
-                          <camera-filled class="camera-icon" />
-                        </div>
-                      </div>
-                      <input type="file" ref="fileInput" accept="image/*" style="display: none" @change="handleFileChange" />
+                  <!-- C. 注册表单 (Register Form) -->
+                  <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
+                    <div class="form-header-new">
+                      <h2 class="welcome-title"> 创建账户</h2>
+                      <p class="welcome-sub"> 免费开始您的 Notion Mate 之旅 </p>
                     </div>
 
-                    <!-- Username & Nickname -->
-                    <div class="form-row-group">
-                      <div class="input-group flex-1">
-                        <label> 用户名 </label>
-                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.username }">
-                          <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                          <input type="text" placeholder=" 用户名 " v-model="registerForm.username" @input="registerErrors.username = ''" />
+                    <div class="form-fields-new">
+                      <!-- Avatar Upload -->
+                      <div class="avatar-upload-container">
+                        <div class="avatar-wrapper" @click="triggerFileInput">
+                          <img v-if="registerForm.avatar" :src="avatarPreviewUrl" class="avatar-img" />
+                          <div v-else class="avatar-placeholder" :style="{ backgroundColor: registerForm.nickname ? '#2563eb' : '#e5e7eb' }">
+                            <span class="avatar-char">{{ generatedAvatarChar }}</span>
+                          </div>
+                          <div class="avatar-overlay">
+                            <camera-filled class="camera-icon" />
+                          </div>
                         </div>
-                        <transition name="slide-fade">
-                          <span class="error-message" v-if="registerErrors.username">{{ registerErrors.username }}</span>
-                        </transition>
+                        <input type="file" ref="fileInput" accept="image/*" style="display: none" @change="handleFileChange" />
                       </div>
 
-                      <div class="input-group flex-1">
-                        <label> 昵称 </label>
-                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.nickname }">
-                          <AlignLeftOutlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                          <input type="text" placeholder=" 昵称 " v-model="registerForm.nickname" @input="registerErrors.nickname = ''" />
+                      <!-- Username & Nickname ( 使用 Grid 强制 1:1 等分 ) -->
+                      <div class="form-row-group">
+                        <div class="input-group flex-1">
+                          <label> 用户名 </label>
+                          <div class="input-wrapper" :class="{ 'has-error': registerErrors.username }">
+                            <user-outlined class="input-prefix-icon" />
+                            <input type="text" placeholder=" 用户名 " v-model="registerForm.username" @input="registerErrors.username = ''" />
+                          </div>
+                          <transition name="slide-fade">
+                            <span class="error-message" v-if="registerErrors.username">{{ registerErrors.username }}</span>
+                          </transition>
+                        </div>
+
+                        <div class="input-group flex-1">
+                          <label> 昵称 </label>
+                          <div class="input-wrapper" :class="{ 'has-error': registerErrors.nickname }">
+                            <align-left-outlined class="input-prefix-icon" />
+                            <input type="text" placeholder=" 昵称 " v-model="registerForm.nickname" @input="registerErrors.nickname = ''" />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- Email & Phone ( 并排显示 ) -->
-                    <div class="form-row-group">
-                      <!-- Email Field -->
-                      <div class="input-group flex-1">
+                      <!-- Email 独立占据一行 -->
+                      <div class="input-group">
                         <label> 电子邮箱 </label>
                         <div class="input-wrapper" :class="{ 'has-error': registerErrors.email }">
-                          <mail-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                          <mail-outlined class="input-prefix-icon" />
                           <input type="email" placeholder=" name@example.com " v-model="registerForm.email" @input="registerErrors.email = ''" />
                         </div>
                         <transition name="slide-fade">
@@ -848,114 +846,121 @@
                         </transition>
                       </div>
 
-                      <!-- Phone -->
-                      <div class="input-group flex-1">
+                      <!-- Phone 独立占据一行 -->
+                      <div class="input-group">
                         <label> 手机号码 </label>
                         <div class="input-wrapper" :class="{ 'has-error': registerErrors.phone }" style="padding-right: 8px;">
-                          <mobile-outlined v-if="!isPhoneVerified" style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                          <check-outlined v-else style="color: #10b981; margin-right: 8px; font-size: 16px;" />
+                          <mobile-outlined v-if="!isPhoneVerified" class="input-prefix-icon" />
+                          <check-outlined v-else class="success-prefix-icon" />
                           <input
                               type="text"
                               placeholder=" 输入手机号 "
                               v-model="registerForm.phone"
                               :disabled="isPhoneVerified"
                               @input="registerErrors.phone = ''"
-                              style="min-width: 50px;"
                           >
                           <span v-if="isPhoneVerified" class="verified-badge"> 已验证 </span>
                           <button v-else class="sms-btn" :disabled="registerSmsCountdown > 0" @click="handleRegisterSms">
-                            {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 获取验证码 ' }}
+                            {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 验证码 ' }}
                           </button>
                         </div>
                         <transition name="slide-fade">
                           <span class="error-message" v-if="registerErrors.phone">{{ registerErrors.phone }}</span>
                         </transition>
                       </div>
-                    </div>
 
-                    <!-- Verification Code -->
-                    <transition name="slide-fade">
-                      <div class="input-group" v-if="showRegisterCodeInput">
-                        <label> 验证码 </label>
-                        <!-- Use OTP Container -->
-                        <div class="otp-box-container">
-                          <input
-                              v-for="(digit, index) in 6"
-                              :key="index"
-                              :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
-                              v-model="otpDigits[index]"
-                              type="text"
-                              maxlength="1"
-                              class="otp-input"
-                              :class="{ 'has-error': registerErrors.code }"
-                              @input="handleOtpInput(index, $event)"
-                              @keydown="handleOtpKeyDown(index, $event)"
-                              @paste="handleOtpPaste"
-                          />
+                      <!-- Verification Code -->
+                      <transition name="slide-fade">
+                        <div class="input-group" v-if="showRegisterCodeInput">
+                          <label> 验证码 </label>
+                          <div class="otp-box-container">
+                            <input
+                                v-for="(digit, index) in 6"
+                                :key="index"
+                                :ref="el => { if(el) otpInputRefs[index] = el as HTMLInputElement }"
+                                v-model="otpDigits[index]"
+                                type="text"
+                                maxlength="1"
+                                class="otp-input"
+                                :class="{ 'has-error': registerErrors.code }"
+                                @input="handleOtpInput(index, $event)"
+                                @keydown="handleOtpKeyDown(index, $event)"
+                                @paste="handleOtpPaste"
+                            />
+                          </div>
+                          <transition name="slide-fade">
+                            <span class="error-message" v-if="registerErrors.code">{{ registerErrors.code }}</span>
+                          </transition>
                         </div>
+                      </transition>
+
+                      <!-- Password ( 独立占据一行 ) -->
+                      <div class="input-group">
+                        <label> 设置密码 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.password }">
+                          <lock-outlined class="input-prefix-icon" />
+                          <input :type="showPassword ? 'text' : 'password'" placeholder=" 至少 8 位字符 " v-model="registerForm.password" @input="registerErrors.password = ''" />
+                          <span class="input-suffix-icon" @click="showPassword = !showPassword">
+                            <eye-outlined v-if="showPassword" />
+                            <eye-invisible-outlined v-else />
+                          </span>
+                        </div>
+
+                        <!-- Password Strength -->
+                        <div class="password-strength-container" v-if="registerForm.password">
+                          <div class="strength-bars">
+                            <div class="strength-segment" :class="{ active: registerPasswordStrength >= 1, [registerStrengthLevel]: registerPasswordStrength >= 1 }"></div>
+                            <div class="strength-segment" :class="{ active: registerPasswordStrength >= 2, [registerStrengthLevel]: registerPasswordStrength >= 2 }"></div>
+                            <div class="strength-segment" :class="{ active: registerPasswordStrength >= 3, [registerStrengthLevel]: registerPasswordStrength >= 3 }"></div>
+                            <div class="strength-segment" :class="{ active: registerPasswordStrength >= 4, [registerStrengthLevel]: registerPasswordStrength >= 4 }"></div>
+                          </div>
+                          <span class="strength-label" :class="registerStrengthClass">{{ registerStrengthLabel }}</span>
+                        </div>
+
                         <transition name="slide-fade">
-                          <span class="error-message" v-if="registerErrors.code">{{ registerErrors.code }}</span>
+                          <span class="error-message" v-if="registerErrors.password">{{ registerErrors.password }}</span>
                         </transition>
                       </div>
-                    </transition>
 
-                    <!-- Password ( 独立占据一行 ) -->
-                    <div class="input-group">
-                      <label> 设置密码 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.password }">
-                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                        <input :type="showPassword ? 'text' : 'password'" placeholder=" 至少 8 位字符 " v-model="registerForm.password" @input="registerErrors.password = ''" />
-                        <span class="input-suffix-icon" @click="showPassword = !showPassword">
-                          <eye-outlined v-if="showPassword" />
-                          <eye-invisible-outlined v-else />
-                        </span>
-                      </div>
-
-                      <!-- Password Strength -->
-                      <div class="password-strength-container" v-if="registerForm.password">
-                        <div class="strength-bars">
-                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 1, [registerStrengthLevel]: registerPasswordStrength >= 1 }"></div>
-                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 2, [registerStrengthLevel]: registerPasswordStrength >= 2 }"></div>
-                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 3, [registerStrengthLevel]: registerPasswordStrength >= 3 }"></div>
-                          <div class="strength-segment" :class="{ active: registerPasswordStrength >= 4, [registerStrengthLevel]: registerPasswordStrength >= 4 }"></div>
+                      <!-- Confirm Password ( 独立占据一行 ) -->
+                      <div class="input-group">
+                        <label> 确认密码 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.confirmPassword }">
+                          <check-outlined class="input-prefix-icon" />
+                          <input :type="showConfirmPassword ? 'text' : 'password'" placeholder=" 请再次输入密码 " v-model="registerForm.confirmPassword" @blur="handleRegisterInputBlur('confirmPassword')" @input="registerErrors.confirmPassword = ''" />
+                          <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
+                            <eye-outlined v-if="showConfirmPassword" />
+                            <eye-invisible-outlined v-else />
+                          </span>
                         </div>
-                        <span class="strength-label" :class="registerStrengthClass">{{ registerStrengthLabel }}</span>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="registerErrors.confirmPassword">{{ registerErrors.confirmPassword }}</span>
+                        </transition>
                       </div>
 
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="registerErrors.password">{{ registerErrors.password }}</span>
-                      </transition>
-                    </div>
+                      <button class="auth-btn-primary" @click="handleRegister" :disabled="isLoading">
+                        <template v-if="!isLoading"> 立即注册 </template>
+                        <loading-outlined v-else class="spin-icon" />
+                      </button>
 
-                    <!-- Confirm Password ( 独立占据一行 ) -->
-                    <div class="input-group">
-                      <label> 确认密码 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.confirmPassword }">
-                        <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
-                        <input :type="showConfirmPassword ? 'text' : 'password'" placeholder=" 请再次输入密码 " v-model="registerForm.confirmPassword" @blur="handleRegisterInputBlur('confirmPassword')" @input="registerErrors.confirmPassword = ''" />
-                        <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
-                          <eye-outlined v-if="showConfirmPassword" />
-                          <eye-invisible-outlined v-else />
-                        </span>
+                      <div class="auth-footer-text">
+                        已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 立即登录 </a>
                       </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="registerErrors.confirmPassword">{{ registerErrors.confirmPassword }}</span>
-                      </transition>
-                    </div>
-
-                    <button class="auth-btn-primary" @click="handleRegister" :disabled="isLoading">
-                      <template v-if="!isLoading"> 立即注册 </template>
-                      <loading-outlined v-else class="spin-icon" />
-                    </button>
-
-                    <div class="auth-footer-text">
-                      已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'; clearRegisterForm()"> 立即登录 </a>
                     </div>
                   </div>
-                </div>
 
-              </transition>
-            </div>
+                </transition>
+              </div>
+            </div> <!-- End scroll area -->
+
+            <!-- 全新：智能向下滚动浮动提示 -->
+            <transition name="fade-slow">
+              <div class="scroll-bottom-hint" v-show="showScrollHint">
+                <span class="hint-text">滑动查看更多</span>
+                <down-outlined class="bounce-icon" />
+              </div>
+            </transition>
+
           </div>
 
         </div>
@@ -966,12 +971,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import {
   DatabaseOutlined, AppleFilled, WindowsFilled, AndroidFilled, ArrowLeftOutlined, UserOutlined, LockOutlined, MailOutlined, GoogleCircleFilled,
   SearchOutlined, ArrowRightOutlined, FileTextFilled, LeftOutlined, RightOutlined, RadarChartOutlined, TranslationOutlined, CustomerServiceFilled, CheckOutlined,
   StepBackwardFilled, StepForwardFilled, CaretRightFilled, CodeFilled,DeploymentUnitOutlined, SyncOutlined, VideoCameraFilled, BankOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined, MobileOutlined, AlignLeftOutlined,
-  CameraFilled
+  CameraFilled, CloseOutlined, DownOutlined
 } from '@ant-design/icons-vue'
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
 import { useRouter, useRoute } from 'vue-router'
@@ -989,215 +994,37 @@ const isLoading = ref(false)
 const showMaskLeft = ref(false)
 const showMaskRight = ref(false)
 
-/* ----------------- Login Form Logic ----------------- */
-const formState = reactive({
-  username: '',
-  password: ''
-})
-const errors = reactive({
-  username: '',
-  password: ''
-})
-const showPassword = ref(false)
+/* ----------------- Auto Scroll Hint Logic ( 轻量轮询，无惧动画干扰 ) ----------------- */
+const authScrollRef = ref<HTMLElement | null>(null)
+const showScrollHint = ref(false)
+let scrollCheckInterval: ReturnType<typeof setInterval> | null = null
 
-const togglePassword = () => {
-  showPassword.value = !showPassword.value
+const handleAuthScroll = () => {
+  if (!authScrollRef.value) return
+  const { scrollTop, scrollHeight, clientHeight } = authScrollRef.value
+  // 加入 15px 的容差，避免因为极微小的像素差导致滚动提示误显示
+  showScrollHint.value = scrollHeight - (scrollTop + clientHeight) > 15
 }
 
-const validateField = (field: 'username' | 'password') => {
-  if (field === 'username') {
-    errors.username = !formState.username.trim() ? ' 请输入用户名 ' : ''
-  }
-  if (field === 'password') {
-    errors.password = !formState.password.trim() ? ' 请输入密码 ' : ''
-  }
+const startScrollCheck = () => {
+  if (scrollCheckInterval) clearInterval(scrollCheckInterval)
+  scrollCheckInterval = setInterval(handleAuthScroll, 300)
 }
 
-const handleInputBlur = (field: 'username' | 'password') => {
-  validateField(field)
-}
-
-const handleLogin = async () => {
-  validateField('username')
-  validateField('password')
-
-  if (errors.username || errors.password) {
-    return
-  }
-  isLoading.value = true
-  setTimeout(async () => {
-    try {
-      await userStore.login({username:formState.username,password:formState.password})
-      AppleAlert.success(" 登录成功 "," 欢迎回来 :" + userStore.userInfo?.nickname)
-      viewMode.value = 'landing' // Fix: Close modal by switching view
-      const redirect = route.query.redirect as string
-      if (redirect && redirect !== '/') {
-        await router.push(redirect)
-      }
-    }catch (error: any){
-      AppleAlert.error(" 登录失败 ",error.message)
-    }finally {
-      isLoading.value = false
-    }
-  }, 800)
-}
-
-/* ----------------- Forgot Password & Phone Login Logic (OTP 6-digits) ----------------- */
-const forgotStep = ref(1) // 1: Verify, 2: Reset
-const smsCountdown = ref(0)
-let smsTimer: any = null
-
-// Password visibility toggles for reset step
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
-
-// New: OTP Refs and Logic
-const otpDigits = reactive(['', '', '', '', '', ''])
-const otpInputRefs = ref<HTMLInputElement[]>([])
-
-// Forgot Password Form State
-const forgotForm = reactive({
-  phone: '',
-  code: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-const forgotErrors = reactive({
-  phone: '',
-  code: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
-// Phone Login Form State
-const phoneLoginForm = reactive({
-  phone: '',
-  code: ''
-})
-const phoneLoginErrors = reactive({
-  phone: '',
-  code: ''
-})
-
-// Password Strength Logic
-const passwordStrength = computed(() => {
-  const val = forgotForm.newPassword
-  if (!val) return 0
-  let score = 0
-  if (val.length >= 8) score++
-  if (/[A-Z]/.test(val)) score++ // Uppercase
-  if (/[0-9]/.test(val)) score++ // Number
-  if (/[ ^ A-Za-z0-9]/.test(val)) score++ // Symbol
-  return score
-})
-
-const strengthLevel = computed(() => {
-  const s = passwordStrength.value
-  if (s < 2) return 'weak'
-  if (s < 4) return 'medium'
-  return 'strong'
-})
-
-const strengthLabel = computed(() => {
-  const s = passwordStrength.value
-  if (s === 0) return ''
-  if (s < 2) return ' 太弱 '
-  if (s < 4) return ' 还行 ' // " 还行 " fits better for Medium
-  return ' 完美 '
-})
-
-const strengthClass = computed(() => {
-  const s = passwordStrength.value
-  if (s < 2) return 'text-weak'
-  if (s < 4) return 'text-medium'
-  return 'text-strong'
-})
-
-// Sync OTP array to form string
-const syncCode = (isPhoneLogin = false) => {
-  const code = otpDigits.join('')
-  const mode = viewMode.value
-  if (mode === 'phone-login') {
-    phoneLoginForm.code = code
-    if (phoneLoginForm.code.length > 0) phoneLoginErrors.code = ''
-  } else if (mode === 'forgot-password') {
-    forgotForm.code = code
-    if (forgotForm.code.length > 0) forgotErrors.code = ''
-  } else if (mode === 'register') {
-    registerForm.code = code
-    if (registerForm.code.length > 0) registerErrors.code = ''
+const stopScrollCheck = () => {
+  if (scrollCheckInterval) {
+    clearInterval(scrollCheckInterval)
+    scrollCheckInterval = null
   }
 }
 
-const handleOtpInput = (index: number, e: Event, isPhoneLogin = false) => {
-  const target = e.target as HTMLInputElement
-  let val = target.value
-
-  // Only allow numbers
-  if (!/^\d*$/.test(val)) {
-    otpDigits[index] = ''
-    return
-  }
-
-  // If user somehow enters multiple chars (e.g. fast typing), take last
-  if (val.length > 1) {
-    val = val.slice(-1)
-    otpDigits[index] = val
-  }
-
-  if (val && index < 5) {
-    otpInputRefs.value[index + 1]?.focus()
-  }
-
-  syncCode(isPhoneLogin)
-
-  // Auto-verify for registration when 6 digits are filled
-  if (viewMode.value === 'register' && otpDigits.join('').length === 6) {
-    handleRegisterVerifyCode()
-  }
-}
-
-const handleOtpKeyDown = (index: number, e: KeyboardEvent, isPhoneLogin = false) => {
-  // Backspace logic: if current empty, move back and delete prev
-  if (e.key === 'Backspace') {
-    if (!otpDigits[index] && index > 0) {
-      otpDigits[index - 1] = ''
-      otpInputRefs.value[index - 1]?.focus()
-      syncCode(isPhoneLogin)
-    }
-  }
-}
-
-const handleOtpPaste = (e: ClipboardEvent, isPhoneLogin = false) => {
-  const pasteData = e.clipboardData?.getData('text') || ''
-  if (!/^\d{6}$/.test(pasteData)) return // simple validation for 6 digits
-  e.preventDefault() // Stop default paste into one box
-  const digits = pasteData.split('')
-  digits.forEach((d, i) => {
-    if (i < 6) otpDigits[i] = d
-  })
-  otpInputRefs.value[5]?.focus()
-  syncCode(isPhoneLogin)
-
-  // Auto-verify for registration when paste fills 6 digits
-  if (viewMode.value === 'register' && otpDigits.join('').length === 6) {
-    handleRegisterVerifyCode()
-  }
-}
-
-const clearForgotForm = () => {
-  forgotForm.phone = ''
-  forgotForm.code = ''
-  forgotForm.newPassword = ''
-  forgotForm.confirmPassword = ''
-  showNewPassword.value = false
-  showConfirmPassword.value = false
-  // Clear OTP digits
-  for (let i = 0; i < 6; i++) otpDigits[i] = ''
-
-  Object.keys(forgotErrors).forEach(key => forgotErrors[key as keyof typeof forgotErrors] = '')
-  smsCountdown.value = 0
-  if (smsTimer) clearInterval(smsTimer)
+/* ----------------- 全局表单清空逻辑 ----------------- */
+const clearLoginForm = () => {
+  formState.username = ''
+  formState.password = ''
+  errors.username = ''
+  errors.password = ''
+  showPassword.value = false
 }
 
 const clearPhoneLoginForm = () => {
@@ -1209,161 +1036,232 @@ const clearPhoneLoginForm = () => {
   if (smsTimer) clearInterval(smsTimer)
 }
 
-// Unified SMS Handler - supports both forms
+const clearForgotForm = () => {
+  forgotStep.value = 1
+  forgotForm.phone = ''
+  forgotForm.code = ''
+  forgotForm.newPassword = ''
+  forgotForm.confirmPassword = ''
+  showNewPassword.value = false
+  showConfirmPassword.value = false
+  for (let i = 0; i < 6; i++) otpDigits[i] = ''
+  Object.keys(forgotErrors).forEach(key => forgotErrors[key as keyof typeof forgotErrors] = '')
+  smsCountdown.value = 0
+  if (smsTimer) clearInterval(smsTimer)
+}
+
+const clearRegisterForm = () => {
+  registerForm.username = ''
+  registerForm.nickname = ''
+  registerForm.email = ''
+  registerForm.phone = ''
+  registerForm.code = ''
+  registerForm.password = ''
+  registerForm.confirmPassword = ''
+  registerForm.avatar = null as unknown as File
+  Object.keys(registerErrors).forEach(key => registerErrors[key as keyof typeof registerErrors] = '')
+  isPhoneVerified.value = false
+  showRegisterCodeInput.value = false
+  showPassword.value = false
+  showConfirmPassword.value = false
+  registerSmsCountdown.value = 0
+  if (registerSmsTimer) { clearInterval(registerSmsTimer); registerSmsTimer = null }
+  for (let i = 0; i < 6; i++) { otpDigits[i] = '' }
+}
+
+const clearAllAuthForms = () => {
+  clearLoginForm()
+  clearPhoneLoginForm()
+  clearForgotForm()
+  clearRegisterForm()
+}
+
+/* ----------------- Login Form Logic ----------------- */
+const formState = reactive({ username: '', password: '' })
+const errors = reactive({ username: '', password: '' })
+const showPassword = ref(false)
+
+const togglePassword = () => { showPassword.value = !showPassword.value }
+
+const validateField = (field: 'username' | 'password') => {
+  if (field === 'username') { errors.username = !formState.username.trim() ? '请输入用户名' : '' }
+  if (field === 'password') { errors.password = !formState.password.trim() ? '请输入密码' : '' }
+}
+
+const handleInputBlur = (field: 'username' | 'password') => { validateField(field) }
+
+const handleLogin = async () => {
+  validateField('username')
+  validateField('password')
+  if (errors.username || errors.password) return
+  isLoading.value = true
+  setTimeout(async () => {
+    try {
+      await userStore.login({username:formState.username,password:formState.password})
+      AppleAlert.success("登录成功", "欢迎回来 :" + userStore.userInfo?.nickname)
+      viewMode.value = 'landing'
+      const redirect = route.query.redirect as string
+      if (redirect && redirect !== '/') { await router.push(redirect) }
+    }catch (error: any){
+      AppleAlert.error("登录失败", error.message)
+    }finally { isLoading.value = false }
+  }, 800)
+}
+
+/* ----------------- Forgot Password & Phone Login Logic (OTP 6-digits) ----------------- */
+const forgotStep = ref(1)
+const smsCountdown = ref(0)
+let smsTimer: any = null
+
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+
+const otpDigits = reactive(['', '', '', '', '', ''])
+const otpInputRefs = ref<HTMLInputElement[]>([])
+
+const forgotForm = reactive({ phone: '', code: '', newPassword: '', confirmPassword: '' })
+const forgotErrors = reactive({ phone: '', code: '', newPassword: '', confirmPassword: '' })
+
+const phoneLoginForm = reactive({ phone: '', code: '' })
+const phoneLoginErrors = reactive({ phone: '', code: '' })
+
+const passwordStrength = computed(() => {
+  const val = forgotForm.newPassword
+  if (!val) return 0
+  let score = 0
+  if (val.length >= 8) score++
+  if (/[A-Z]/.test(val)) score++
+  if (/[0-9]/.test(val)) score++
+  if (/[^A-Za-z0-9]/.test(val)) score++
+  return score
+})
+const strengthLevel = computed(() => { const s = passwordStrength.value; if (s < 2) return 'weak'; if (s < 4) return 'medium'; return 'strong' })
+const strengthLabel = computed(() => { const s = passwordStrength.value; if (s === 0) return ''; if (s < 2) return '安全性较弱'; if (s < 4) return '强度中等'; return '极其安全' })
+const strengthClass = computed(() => { const s = passwordStrength.value; if (s < 2) return 'text-weak'; if (s < 4) return 'text-medium'; return 'text-strong' })
+
+const syncCode = (isPhoneLogin = false) => {
+  const code = otpDigits.join('')
+  const mode = viewMode.value
+  if (mode === 'phone-login') { phoneLoginForm.code = code; if (phoneLoginForm.code.length > 0) phoneLoginErrors.code = '' }
+  else if (mode === 'forgot-password') { forgotForm.code = code; if (forgotForm.code.length > 0) forgotErrors.code = '' }
+  else if (mode === 'register') { registerForm.code = code; if (registerForm.code.length > 0) registerErrors.code = '' }
+}
+
+const handleOtpInput = (index: number, e: Event, isPhoneLogin = false) => {
+  const target = e.target as HTMLInputElement
+  let val = target.value
+  if (!/^\d*$/.test(val)) { otpDigits[index] = ''; return }
+  if (val.length > 1) { val = val.slice(-1); otpDigits[index] = val }
+  if (val && index < 5) { otpInputRefs.value[index + 1]?.focus() }
+  syncCode(isPhoneLogin)
+  if (viewMode.value === 'register' && otpDigits.join('').length === 6) { handleRegisterVerifyCode() }
+}
+
+const handleOtpKeyDown = (index: number, e: KeyboardEvent, isPhoneLogin = false) => {
+  if (e.key === 'Backspace') {
+    if (!otpDigits[index] && index > 0) {
+      otpDigits[index - 1] = ''
+      otpInputRefs.value[index - 1]?.focus()
+      syncCode(isPhoneLogin)
+    }
+  }
+}
+
+const handleOtpPaste = (e: ClipboardEvent, isPhoneLogin = false) => {
+  const pasteData = e.clipboardData?.getData('text') || ''
+  if (!/^\d{6}$/.test(pasteData)) return
+  e.preventDefault()
+  const digits = pasteData.split('')
+  digits.forEach((d, i) => { if (i < 6) otpDigits[i] = d })
+  otpInputRefs.value[5]?.focus()
+  syncCode(isPhoneLogin)
+  if (viewMode.value === 'register' && otpDigits.join('').length === 6) { handleRegisterVerifyCode() }
+}
+
 const handleSendSms = async () => {
   const isPhoneLogin = viewMode.value === 'phone-login'
   const phone = isPhoneLogin ? phoneLoginForm.phone : forgotForm.phone
   const errorsObj = isPhoneLogin ? phoneLoginErrors : forgotErrors
 
-  if (!phone) {
-    errorsObj.phone = ' 请输入手机号码 '
-    return
-  }
-  const phoneRegex = /^1[3-9]\d{9}$/
-  if (!phoneRegex.test(phone)) {
-    errorsObj.phone = '请输入有效的手机号码'
-    return
-  }
+  if (!phone) { errorsObj.phone = '请输入手机号码'; return }
+  if (!/^1[3-9]\d{9}$/.test(phone)) { errorsObj.phone = '请输入有效的手机号码'; return }
 
   try {
-    // 调用后端 API 发送验证码
     await sendCaptcha(phone)
-
-    // 启动倒计时
     smsCountdown.value = 60
-    AppleAlert.success(" 验证码发送成功 ", " 请注意查收短信 ")
+    AppleAlert.success("验证码发送成功", "请注意查收短信")
     smsTimer = setInterval(() => {
       smsCountdown.value--
       if (smsCountdown.value <= 0) clearInterval(smsTimer)
     }, 1000)
-  } catch (error: any) {
-    AppleAlert.error(" 验证码发送失败 ", error.message || " 验证码发送失败，请稍后重试 ")
-  }
+  } catch (error: any) { AppleAlert.error("验证码发送失败", error.message || "验证码发送失败，请稍后重试") }
 }
 
-// Unified Send SMS Handler for Phone Login (Wrapper)
-const handleSendLoginSms = () => {
-  handleSendSms()
-}
+const handleSendLoginSms = () => handleSendSms()
 
 const handleVerifyNext = async () => {
-  if (!forgotForm.phone) { return forgotErrors.phone = ' 请输入手机号码 ' }
-  // Ensure we sync before checking
+  if (!forgotForm.phone) { return forgotErrors.phone = '请输入手机号码' }
   syncCode()
-
-  if (!forgotForm.code) { return forgotErrors.code = ' 请输入验证码 ' }
-  if (forgotForm.code.length !== 6) { return forgotErrors.code = ' 验证码格式错误 ' }
-
+  if (!forgotForm.code) { return forgotErrors.code = '请输入验证码' }
+  if (forgotForm.code.length !== 6) { return forgotErrors.code = '验证码格式错误' }
   isLoading.value = true
-  try {
-    // 调用后端 API 校验验证码
-    await verifyCaptcha(forgotForm.phone, forgotForm.code)
-    // 校验通过，进入下一步
-    forgotStep.value = 2
-  } catch (error: any) {
-    AppleAlert.error("验证失败", error.message || "验证码错误或已过期")
-  } finally {
-    isLoading.value = false
-  }
+  try { await verifyCaptcha(forgotForm.phone, forgotForm.code); forgotStep.value = 2 }
+  catch (error: any) { AppleAlert.error("验证失败", error.message || "验证码错误或已过期") }
+  finally { isLoading.value = false }
 }
 
 const handlePhoneLogin = async () => {
   if (!phoneLoginForm.phone) { return phoneLoginErrors.phone = '请输入手机号码' }
   syncCode(true)
-  if (!phoneLoginForm.code) { return phoneLoginErrors.code = ' 请输入验证码 ' }
-  if (phoneLoginForm.code.length !== 6) { return phoneLoginErrors.code = ' 验证码格式错误 ' }
-
+  if (!phoneLoginForm.code) { return phoneLoginErrors.code = '请输入验证码' }
+  if (phoneLoginForm.code.length !== 6) { return phoneLoginErrors.code = '验证码格式错误' }
   isLoading.value = true
   setTimeout(async () => {
     try {
       await userStore.loginByPhone(phoneLoginForm.phone,phoneLoginForm.code)
       const redirect = route.query.redirect as string
       await router.push(redirect || '/')
-      AppleAlert.success(" 登录成功 "," 欢迎回来 :" + userStore.userInfo?.nickname)
-      viewMode.value = 'landing' // Close modal on success
-    }catch (error: any) {
-      AppleAlert.error(" 登录失败 ",error.message)
-    }finally {
-      isLoading.value = false
-    }
+      AppleAlert.success("登录成功","欢迎回来 :" + userStore.userInfo?.nickname)
+      viewMode.value = 'landing'
+    }catch (error: any) { AppleAlert.error("登录失败",error.message) }
+    finally { isLoading.value = false }
   },800)
 }
 
 const handleResetInputBlur = (field: 'newPassword' | 'confirmPassword' | 'phone') => {
   if (field === 'phone') {
-    if (!forgotForm.phone) {
-      forgotErrors.phone = ' 请输入手机号码 '
-    } else if (!/^1[3-9]\d{9}$/.test(forgotForm.phone)) {
-      forgotErrors.phone = '请输入有效的手机号码'
-    } else {
-      forgotErrors.phone = ''
-    }
+    if (!forgotForm.phone) { forgotErrors.phone = '请输入手机号码' }
+    else if (!/^1[3-9]\d{9}$/.test(forgotForm.phone)) { forgotErrors.phone = '请输入有效的手机号码' }
+    else { forgotErrors.phone = '' }
   }
-
   if (field === 'newPassword') {
-    if (!forgotForm.newPassword) {
-      forgotErrors.newPassword = ' 请输入新密码 '
-    } else if (forgotForm.newPassword.length < 8) {
-      forgotErrors.newPassword = ' 密码至少需要 8 位 '
-    } else {
-      forgotErrors.newPassword = ''
-    }
+    if (!forgotForm.newPassword) { forgotErrors.newPassword = '请输入新密码' }
+    else if (forgotForm.newPassword.length < 8) { forgotErrors.newPassword = '密码至少需要 8 位' }
+    else { forgotErrors.newPassword = '' }
   }
-
   if (field === 'confirmPassword') {
-    if (!forgotForm.confirmPassword) {
-      forgotErrors.confirmPassword = ' 请再次输入新密码 '
-    } else if (forgotForm.newPassword !== forgotForm.confirmPassword) {
-      forgotErrors.confirmPassword = ' 两次输入密码不一致 '
-    } else {
-      forgotErrors.confirmPassword = ''
-    }
+    if (!forgotForm.confirmPassword) { forgotErrors.confirmPassword = '请再次输入新密码' }
+    else if (forgotForm.newPassword !== forgotForm.confirmPassword) { forgotErrors.confirmPassword = '两次输入密码不一致' }
+    else { forgotErrors.confirmPassword = '' }
   }
 }
 
 const handleResetConfirm = async () => {
   handleResetInputBlur('newPassword')
   handleResetInputBlur('confirmPassword')
-
-  if (forgotErrors.newPassword || forgotErrors.confirmPassword) {
-    return
-  }
-
+  if (forgotErrors.newPassword || forgotErrors.confirmPassword) return
   isLoading.value = true
   try {
-    // 调用后端重置密码
     await resetPassword(forgotForm.phone,forgotForm.code,forgotForm.newPassword,forgotForm.confirmPassword)
-    AppleAlert.success(" 重置密码成功 "," 您的密码已修改 , 请重新登录 ")
-    clearForgotForm()
+    AppleAlert.success("重置密码成功","您的密码已修改, 请重新登录")
     viewMode.value = 'auth'
-  }catch (error: any) {
-    AppleAlert.error(" 重置密码失败 ",error.message)
-  }
-  finally {
-    isLoading.value = false
-  }
+  }catch (error: any) { AppleAlert.error("重置密码失败",error.message) }
+  finally { isLoading.value = false }
 }
 
-/* ----------------- Register Logic (New Added) ----------------- */
-const registerForm = reactive({
-  username: '',
-  nickname: '',
-  email: '',
-  phone: '',
-  code: '',
-  password: '',
-  confirmPassword: '',
-  avatar: null as unknown as File // 初始化为空，会在注册时生成默认头像
-})
-const registerErrors = reactive({
-  username: '',
-  nickname: '',
-  email: '',
-  phone: '',
-  code: '',
-  password: '',
-  confirmPassword: ''
-})
+/* ----------------- Register Logic ----------------- */
+const registerForm = reactive({ username: '', nickname: '', email: '', phone: '', code: '', password: '', confirmPassword: '', avatar: null as unknown as File })
+const registerErrors = reactive({ username: '', nickname: '', email: '', phone: '', code: '', password: '', confirmPassword: '' })
 const isPhoneVerified = ref(false)
 const showRegisterCodeInput = ref(false)
 const registerSmsCountdown = ref(0)
@@ -1373,215 +1271,83 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const triggerFileInput = () => fileInput.value?.click()
 const handleFileChange = (e: Event) => {
   const files = (e.target as HTMLInputElement).files
-  if (files && files[0]) {
-    registerForm.avatar = files[0]
-  }
+  if (files && files[0]) { registerForm.avatar = files[0] }
 }
 
-// 清除注册表单所有数据与状态的方法
-const clearRegisterForm = () => {
-  // 清空表单字段
-  registerForm.username = ''
-  registerForm.nickname = ''
-  registerForm.email = ''
-  registerForm.phone = ''
-  registerForm.code = ''
-  registerForm.password = ''
-  registerForm.confirmPassword = ''
-  registerForm.avatar = null as unknown as File
-
-  // 清空错误提示
-  Object.keys(registerErrors).forEach(key => registerErrors[key as keyof typeof registerErrors] = '')
-
-  // 重置各种状态
-  isPhoneVerified.value = false
-  showRegisterCodeInput.value = false
-  showPassword.value = false
-  showConfirmPassword.value = false
-
-  // 清除验证码倒计时
-  registerSmsCountdown.value = 0
-  if (registerSmsTimer) {
-    clearInterval(registerSmsTimer)
-    registerSmsTimer = null
-  }
-
-  // 清空 OTP 输入框
-  if (viewMode.value === 'register' || viewMode.value === 'auth') {
-    for (let i = 0; i < 6; i++) {
-      otpDigits[i] = ''
-    }
-  }
-}
-
-// 生成默认头像的函数
 const generateDefaultAvatar = async (): Promise<File> => {
-  const canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 200;
+  const canvas = document.createElement('canvas'); canvas.width = 200; canvas.height = 200;
   const ctx = canvas.getContext('2d');
-
   if (ctx) {
-    // 设置背景色（蓝色）
-    ctx.fillStyle = '#2563eb';
-    ctx.fillRect(0, 0, 200, 200);
-
-    // 绘制文字
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 80px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
+    ctx.fillStyle = '#0A84FF'; ctx.fillRect(0, 0, 200, 200);
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 80px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const char = registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U';
     ctx.fillText(char, 100, 100);
   }
-
-  // 转换为 blob
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], 'default-avatar.png', { type: 'image/png' });
-        resolve(file);
-      }
-    }, 'image/png');
-  });
+  return new Promise((resolve) => { canvas.toBlob((blob) => { if (blob) { const file = new File([blob], 'default-avatar.png', { type: 'image/png' }); resolve(file); } }, 'image/png'); });
 }
-const generatedAvatarChar = computed(() => {
-  return registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U'
-})
 
-const avatarPreviewUrl = computed(() => {
-  return registerForm.avatar ? URL.createObjectURL(registerForm.avatar) : ''
-})
+const generatedAvatarChar = computed(() => registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U')
+const avatarPreviewUrl = computed(() => registerForm.avatar ? URL.createObjectURL(registerForm.avatar) : '')
 
-// Register Password Strength
 const registerPasswordStrength = computed(() => {
-  const val = registerForm.password
-  if (!val) return 0
-  let score = 0
-  if (val.length >= 8) score++
-  if (/[A-Z]/.test(val)) score++
-  if (/[0-9]/.test(val)) score++
-  if (/[ ^ A-Za-z0-9]/.test(val)) score++
-  return score
+  const val = registerForm.password; if (!val) return 0; let score = 0
+  if (val.length >= 8) score++; if (/[A-Z]/.test(val)) score++; if (/[0-9]/.test(val)) score++; if (/[^A-Za-z0-9]/.test(val)) score++; return score
 })
-const registerStrengthLevel = computed(() => {
-  const s = registerPasswordStrength.value
-  if (s < 2) return 'weak'
-  if (s < 4) return 'medium'
-  return 'strong'
-})
-const registerStrengthLabel = computed(() => {
-  const s = registerPasswordStrength.value
-  if (s === 0) return ''
-  if (s < 2) return ' 太弱 '
-  if (s < 4) return ' 还行 '
-  return ' 完美 '
-})
-const registerStrengthClass = computed(() => {
-  const s = registerPasswordStrength.value
-  if (s < 2) return 'text-weak'
-  if (s < 4) return 'text-medium'
-  return 'text-strong'
-})
+const registerStrengthLevel = computed(() => { const s = registerPasswordStrength.value; if (s < 2) return 'weak'; if (s < 4) return 'medium'; return 'strong' })
+const registerStrengthLabel = computed(() => { const s = registerPasswordStrength.value; if (s === 0) return ''; if (s < 2) return '安全性较弱'; if (s < 4) return '强度中等'; return '极其安全' })
+const registerStrengthClass = computed(() => { const s = registerPasswordStrength.value; if (s < 2) return 'text-weak'; if (s < 4) return 'text-medium'; return 'text-strong' })
 
 const handleRegisterSms = async () => {
-  if (!registerForm.phone) { return registerErrors.phone = ' 请输入手机号码 ' }
-  const phoneRegex = /^1[3-9]\d{9}$/
-  if (!phoneRegex.test(registerForm.phone)) { return registerErrors.phone = '请输入有效的手机号码' }
-
+  if (!registerForm.phone) { return registerErrors.phone = '请输入手机号码' }
+  if (!/^1[3-9]\d{9}$/.test(registerForm.phone)) { return registerErrors.phone = '请输入有效的手机号码' }
   try {
     await sendCaptcha(registerForm.phone)
-    showRegisterCodeInput.value = true // Show input
-    // Clear OTP for fresh start
+    showRegisterCodeInput.value = true
     for (let i = 0; i < 6; i++) otpDigits[i] = ''
     registerForm.code = ''
-
     registerSmsCountdown.value = 60
-    AppleAlert.success(" 验证码发送成功 ", " 请注意查收短信 ")
-    registerSmsTimer = setInterval(() => {
-      registerSmsCountdown.value--
-      if (registerSmsCountdown.value <= 0) clearInterval(registerSmsTimer)
-    }, 1000)
-  } catch (error: any) {
-    AppleAlert.error(" 发送失败 ", error.message)
-  }
+    AppleAlert.success("验证码发送成功", "请注意查收短信")
+    registerSmsTimer = setInterval(() => { registerSmsCountdown.value--; if (registerSmsCountdown.value <= 0) clearInterval(registerSmsTimer) }, 1000)
+  } catch (error: any) { AppleAlert.error("发送失败", error.message) }
 }
 
 const handleRegisterVerifyCode = async () => {
-  // Sync before checking just in case
   syncCode()
-
-  if (!registerForm.code) { return registerErrors.code = ' 请输入验证码 ' }
+  if (!registerForm.code) { return registerErrors.code = '请输入验证码' }
   try {
-    // 假设有一个验证 API，这里复用 login 的 verify 或者单独的接口
     await verifyCaptcha(registerForm.phone, registerForm.code)
-    isPhoneVerified.value = true
-    showRegisterCodeInput.value = false // Hide input on success
-    AppleAlert.success(" 验证成功 ", " 手机号已验证 ")
-  } catch (error: any) {
-    registerErrors.code = ' 验证码错误 '
-    AppleAlert.error(" 验证失败 ", error.message)
-  }
+    isPhoneVerified.value = true; showRegisterCodeInput.value = false
+    AppleAlert.success("验证成功", "手机号已验证")
+  } catch (error: any) { registerErrors.code = '验证码错误'; AppleAlert.error("验证失败", error.message) }
 }
 
 const handleRegister = async () => {
-  // Validate
-  if (!registerForm.username) registerErrors.username = ' 请输入用户名 '
-  if (!registerForm.nickname) registerErrors.nickname = ' 请输入昵称 '
-  if (!registerForm.email) registerErrors.email = ' 请输入电子邮箱 '
-  if (!registerForm.phone) registerErrors.phone = ' 请输入手机号码 '
-  if (!isPhoneVerified.value) registerErrors.phone = ' 请先验证手机号码 '
-  if (!registerForm.password) registerErrors.password = ' 请输入密码 '
-  if (registerForm.password !== registerForm.confirmPassword) registerErrors.confirmPassword = ' 两次密码不一致 '
-
+  if (!registerForm.username) registerErrors.username = '请输入用户名'
+  if (!registerForm.nickname) registerErrors.nickname = '请输入昵称'
+  if (!registerForm.email) registerErrors.email = '请输入电子邮箱'
+  if (!registerForm.phone) registerErrors.phone = '请输入手机号码'
+  if (!isPhoneVerified.value) registerErrors.phone = '请先验证手机号码'
+  if (!registerForm.password) registerErrors.password = '请输入密码'
+  if (registerForm.password !== registerForm.confirmPassword) registerErrors.confirmPassword = '两次密码不一致'
   if (Object.values(registerErrors).some(x => x)) return
 
   isLoading.value = true
   try {
-    // 确保有头像文件
-    let avatarFile = registerForm.avatar;
-    if (!avatarFile) {
-      console.log(' 没有上传头像，生成默认头像 ');
-      avatarFile = await generateDefaultAvatar();
-    }
-
-    // 构造注册数据
-    const registerData = {
-      username: registerForm.username,
-      nickname: registerForm.nickname,
-      email: registerForm.email,
-      phone: registerForm.phone,
-      avatar: avatarFile, // 确保有文件对象
-      password: registerForm.password,
-      confirmPassword: registerForm.confirmPassword,
-      captcha: registerForm.code // 修复字段名不一致问题： code -> captcha
-    }
-
+    let avatarFile = registerForm.avatar; if (!avatarFile) { avatarFile = await generateDefaultAvatar(); }
+    const registerData = { username: registerForm.username, nickname: registerForm.nickname, email: registerForm.email, phone: registerForm.phone, avatar: avatarFile, password: registerForm.password, confirmPassword: registerForm.confirmPassword, captcha: registerForm.code }
     await userStore.register(registerData)
-    AppleAlert.success(" 注册成功 ", " 请登录您的账户 ")
+    AppleAlert.success("注册成功", "请登录您的账户")
     viewMode.value = 'auth'
-    clearRegisterForm() // 注册成功后清理表单数据
-  } catch (error: any) {
-    AppleAlert.error(" 注册失败 ", error.message)
-  } finally {
-    isLoading.value = false
-  }
+  } catch (error: any) { AppleAlert.error("注册失败", error.message) }
+  finally { isLoading.value = false }
 }
 
-// ----------------------
-// New Function added for checking password match on blur
 const handleRegisterInputBlur = (field: string) => {
   if (field === 'confirmPassword') {
-    if (registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword) {
-      registerErrors.confirmPassword = ' 两次密码不一致 '
-    } else {
-      registerErrors.confirmPassword = ''
-    }
+    if (registerForm.confirmPassword && registerForm.password !== registerForm.confirmPassword) { registerErrors.confirmPassword = '两次密码不一致' }
+    else { registerErrors.confirmPassword = '' }
   }
 }
-// ----------------------
-
 
 /* ----------------- Carousel Logic ----------------- */
 const currentSlide = ref(0)
@@ -1590,18 +1356,18 @@ let carouselTimer: any = null
 const slides = [
   {
     image: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop',
-    title: ' 高效构建知识库 ',
-    desc: ' 在一个统一的平台轻松追踪笔记、任务与数据流，告别繁琐的手动管理，让知识产生复利。'
+    title: '高效构建知识库',
+    desc: '在一个统一的平台轻松追踪笔记、任务与数据流，告别繁琐的手动管理，让知识产生复利。'
   },
   {
     image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop',
-    title: ' 无缝连接工作流 ',
-    desc: ' 深度集成 Spotify、 Linear、 Google Calendar 等您喜爱的工具，打破数据孤岛，实现自动化流转。'
+    title: '无缝连接工作流',
+    desc: '深度集成 Spotify、Linear、Google Calendar 等您喜爱的工具，打破数据孤岛，实现自动化流转。'
   },
   {
     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop',
-    title: ' 数据可视化洞察 ',
-    desc: ' 通过强大的可视化仪表盘，将枯燥的原始数据转化为直观的图表与洞察，助力科学决策。'
+    title: '数据可视化洞察',
+    desc: '通过强大的可视化仪表盘，将枯燥的原始数据转化为直观的图表与洞察，助力科学决策。'
   }
 ]
 
@@ -1609,7 +1375,7 @@ const startCarousel = () => {
   stopCarousel()
   carouselTimer = setInterval(() => {
     currentSlide.value = (currentSlide.value + 1) % slides.length
-  }, 5000) // Change slide every 5 seconds
+  }, 5000)
 }
 
 const stopCarousel = () => {
@@ -1618,21 +1384,38 @@ const stopCarousel = () => {
 
 const setSlide = (index: number) => {
   currentSlide.value = index
-  startCarousel() // Reset timer on manual interaction
+  startCarousel()
 }
 
-// Start/Stop carousel based on viewMode
-watch(viewMode, (newVal) => {
-  // Now checks for any auth-related mode
-  if (['auth', 'forgot-password', 'register', 'phone-login'].includes(newVal)) {
+/* ----------------- Watcher for Auth Modal Entry/Exit ----------------- */
+// 侦听视图切换，进入或退出 Auth 模态框时做相应的初始化和清空工作
+watch(viewMode, (newVal, oldVal) => {
+  const authModes = ['auth', 'forgot-password', 'register', 'phone-login']
+  const isEnteringAuth = authModes.includes(newVal)
+  const isLeavingAuth = authModes.includes(oldVal) && !authModes.includes(newVal)
+
+  // 1. 如果完全退出了弹窗，清空所有表单数据
+  if (isLeavingAuth) {
+    clearAllAuthForms()
+  }
+
+  // 2. 状态调整与滚动监听
+  if (isEnteringAuth) {
     startCarousel()
+    nextTick(() => {
+      // 重置滚动条并启动高度轮询检测
+      if (authScrollRef.value) authScrollRef.value.scrollTop = 0
+      handleAuthScroll()
+      startScrollCheck()
+    })
   } else {
     stopCarousel()
+    showScrollHint.value = false
+    stopScrollCheck()
   }
 })
 
 /* ----------------- Other Logic ----------------- */
-
 const handleScroll = () => {
   if (!extGridRef.value) return
   const { scrollLeft, scrollWidth, clientWidth } = extGridRef.value
@@ -1640,11 +1423,20 @@ const handleScroll = () => {
   showMaskRight.value = (scrollLeft + clientWidth) < (scrollWidth - 10)
 }
 
-const handleResize = () => handleScroll()
+const handleResize = () => {
+  handleScroll()
+  if (['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode.value)) {
+    handleAuthScroll()
+  }
+}
+
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape' && (viewMode.value !== 'landing')) {
-    // 允许 ESC 返回首页
-    viewMode.value = 'landing'
+  // ESC 键触发全局退出并清空数据
+  if (e.key === 'Escape') {
+    const authModes = ['auth', 'forgot-password', 'register', 'phone-login']
+    if (authModes.includes(viewMode.value)) {
+      viewMode.value = 'landing' // 此处触发 watch 自动清空表单
+    }
   }
 }
 
@@ -1658,6 +1450,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('keydown', handleKeydown)
   stopCarousel()
+  stopScrollCheck()
 })
 
 const switchToAuth = () => viewMode.value = 'auth'
@@ -1671,11 +1464,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 /* ================= 全局变量 ================= */
 :root {
   --bg-color: #0b0c0e;
-  --nav-bg: rgba(20, 20, 20, 0.75);
   --text-white: #ffffff;
-  --text-grey: #8e8e93;
-  --ray-red: #FF6363;
-  --card-bg: #131313;
 }
 
 .app-root { width: 100%; min-height: 100vh; background-color: var(--bg-color); font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; color: var(--text-white); overflow-x: hidden; position: relative; }
@@ -1701,7 +1490,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 
 /* ================= 2. 顶部导航栏 ================= */
 .nav-container { position: fixed; top: 20px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 100; padding: 0 24px; box-sizing: border-box; }
-.ray-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 960px; height: 48px; background: #151515; border: 1px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 0 6px 0 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); cursor: default; transition: all 0.3s ease; }
+.ray-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 960px; height: 48px; background: #151515; border: 1px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 0 6px 0 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transition: all 0.3s ease; }
 .nav-left { display: flex; align-items: center; height: 100%; }
 .ray-logo { display: flex; align-items: center; gap: 8px; cursor: pointer; height: 100%; }
 .logo-svg { width: 20px; height: 20px; display: block; object-fit: contain; }
@@ -1717,7 +1506,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .download-btn-white:hover { transform: scale(1.02); }
 
 @media (max-width: 768px) {
-  .nav-center { display: none; } /* 移动端隐藏中部导航 */
+  .nav-center { display: none; }
   .ray-nav { padding: 0 6px 0 16px; }
   .login-btn-text { font-size: 13px; }
   .download-btn-white { padding: 0 14px; height: 34px; font-size: 13px; }
@@ -1732,41 +1521,23 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .glow-text { text-shadow: 0 0 50px rgba(255,255,255,0.3); }
 .hero-sub { font-size: clamp(16px, 2vw, 20px); color: #999; line-height: 1.5; margin-bottom: 48px; max-width: 800px; margin-left: auto; margin-right: auto; }
 
-/* ================= Extensions Section ================= */
+/* ================= 4. Extensions Section ================= */
 .extensions-section { position: relative; z-index: 10; max-width: 1200px; margin: 0 auto; padding: 0 24px 100px; box-sizing: border-box; }
 .ext-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
 .ext-title { font-size: clamp(24px, 4vw, 32px); font-weight: 700; color: #fff; margin-bottom: 8px; }
 .ext-sub { font-size: clamp(14px, 2vw, 16px); color: #888; }
 .ext-tags { display: none; }
 
-.ext-grid-wrapper {
-  overflow-x: auto;
-  margin: 0 -24px;
-  padding: 40px 24px 10px;
-  scrollbar-width: none;
-  -webkit-mask-image: none;
-  mask-image: none;
-  transition: mask-image 0.3s;
-}
-
+.ext-grid-wrapper { overflow-x: auto; margin: 0 -24px; padding: 40px 24px 10px; scrollbar-width: none; transition: mask-image 0.3s; }
 .ext-grid-wrapper.mask-l { mask-image: linear-gradient(to right, transparent 0, black 80px, black 100%); -webkit-mask-image: linear-gradient(to right, transparent 0, black 80px, black 100%); }
 .ext-grid-wrapper.mask-r { mask-image: linear-gradient(to right, black 0, black calc(100% - 80px), transparent 100%); -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 80px), transparent 100%); }
 .ext-grid-wrapper.mask-l.mask-r { mask-image: linear-gradient(to right, transparent 0, black 80px, black calc(100% - 80px), transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0, black 80px, black calc(100% - 80px), transparent 100%); }
 .ext-grid-wrapper::-webkit-scrollbar { display: none; }
 .ext-cards-grid { display: flex; gap: 24px; padding-bottom: 20px; }
 
-.ext-card {
-  flex-shrink: 0; width: 340px; height: 450px;
-  background: var(--card-bg);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-  border-radius: 24px;
-  padding: 32px;
-  display: flex; flex-direction: column; position: relative; overflow: hidden;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s, border-color 0.4s;
-}
+.ext-card { flex-shrink: 0; width: 340px; height: 450px; background: #131313; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); border-radius: 24px; padding: 32px; display: flex; flex-direction: column; position: relative; overflow: hidden; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s, border-color 0.4s; }
 .ext-card:hover { transform: translateY(-8px); }
 
-/* ... (Card Color Styles Remaining Unchanged for brevity, preserving functionality) ... */
 .card-linear { background: radial-gradient(circle at top right, rgba(99,102,241,0.15), transparent 60%), #131316; }
 .card-linear:hover { border-color: rgba(99, 102, 241, 0.5); box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(99, 102, 241, 0.3), 0 20px 50px -10px rgba(0,0,0,0.8), 0 0 40px -10px rgba(99, 102, 241, 0.4); }
 .card-translate { background: radial-gradient(circle at top right, rgba(59,130,246,0.15), transparent 60%), #131316; }
@@ -1829,53 +1600,19 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .nav-circle:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
 .landing-footer { position: absolute; bottom: 30px; width: 100%; text-align: center; color: #444; font-size: 12px; pointer-events: none; }
 
-/* ================= 6. Integrations Page (Store Page) ================= */
-.store-view {
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 120px;
-  padding-bottom: 100px;
-  box-sizing: border-box;
-}
-
-.store-bg-glow {
-  position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 800px; height: 600px;
-  background: radial-gradient(circle, rgba(255, 99, 99, 0.1) 0%, rgba(59, 130, 246, 0.05) 40%, transparent 70%);
-  pointer-events: none; filter: blur(80px); z-index: -1;
-}
-
+/* ================= 5. Integrations Page ================= */
+.store-view { position: relative; width: 100%; min-height: 100vh; z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 120px; padding-bottom: 100px; box-sizing: border-box; }
+.store-bg-glow { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; height: 600px; background: radial-gradient(circle, rgba(255, 99, 99, 0.1) 0%, rgba(59, 130, 246, 0.05) 40%, transparent 70%); pointer-events: none; filter: blur(80px); z-index: -1; }
 .store-content-wrapper { position: relative; z-index: 10; width: 100%; max-width: 1000px; padding: 0 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center; }
 
-/* Icon Cloud */
 .store-icon-cloud { display: flex; flex-direction: column; align-items: center; gap: 24px; margin-bottom: 60px; perspective: 1000px; width: 100%; }
 .cloud-row { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
 .row-top { margin-bottom: -10px; }
-
-.store-app-icon {
-  width: 72px; height: 72px; border-radius: 20px;
-  background: rgba(30,30,30,0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px; color: #fff;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  overflow: hidden;
-}
-
+.store-app-icon { width: 72px; height: 72px; border-radius: 20px; background: rgba(30,30,30,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 32px; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); overflow: hidden; }
 .icon-focus { width: 96px; height: 96px; z-index: 10; font-size: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.4); background: #111; transform: scale(1.05); }
-
-/* 修复 Notion 图标样式 */
 .notion-n { width: 60%; height: 60%; object-fit: contain; display: block; border-radius: 4px; }
 .icon-blur-1 { opacity: 0.6; transform: scale(0.9); filter: blur(0.5px); }
 .icon-blur-2 { opacity: 0.3; transform: scale(0.8); filter: blur(1.5px); }
-
 .icon-figma { color: #f24e1e; }
 .icon-spotify { color: #1db954; }
 .icon-vscode { color: #007acc; }
@@ -1883,41 +1620,12 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .icon-slack { background: #4a154b; color: #fff; }
 
 .store-hero-text { margin-bottom: 50px; width: 100%; }
-.store-title {
-  font-size: clamp(40px, 6vw, 64px);
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 16px;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+.store-title { font-size: clamp(40px, 6vw, 64px); font-weight: 800; color: #fff; margin-bottom: 16px; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 0%, #ccc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .store-subtitle { font-size: clamp(15px, 2vw, 18px); color: #888; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 0 10px; }
 
-/* Top Picks Section - Grid Responsive */
 .top-picks-section { width: 100%; margin-top: 80px; text-align: left; }
-.picks-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  width: 100%;
-}
-
-.pick-card {
-  background: #111;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 16px;
-  padding: 40px 24px 32px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  text-decoration: none;
-}
-
+.picks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; }
+.pick-card { background: #111; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 40px 24px 32px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); position: relative; text-decoration: none; }
 .glass-card { background: rgba(20, 20, 20, 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .pick-card:hover { border-color: rgba(255,255,255,0.25); transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); background: #141414; }
 .glass-card:hover { background: rgba(30, 30, 30, 0.7); }
@@ -1930,13 +1638,12 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .bg-green-douban { background: #00b51d; color: #fff; }
 .bg-apple-music { background: #ff2f56; color: #fff; }
 .bg-orange-finance { background: #f97316; color: #fff; }
-
 .pick-icon { font-size: 36px; }
 img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; }
 .pick-name { font-size: 18px; font-weight: 700; color: #fff; margin: 0 0 10px; }
 .pick-desc { font-size: 14px; color: #888; line-height: 1.5; margin-bottom: 24px; flex-grow: 1; }
 
-/* ================= 8. Download Page ================= */
+/* ================= 6. Download Page ================= */
 .download-view { position: relative; width: 100%; min-height: 100vh; z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 100px; padding-bottom: 100px; box-sizing: border-box; }
 .download-bg-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.03) 0%, transparent 50%); pointer-events: none; z-index: -1; }
 .download-container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 24px; box-sizing: border-box; }
@@ -1944,12 +1651,8 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .download-title { font-size: clamp(36px, 6vw, 64px); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 20px; background: linear-gradient(135deg, #fff 0%, #ccc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .download-subtitle { font-size: clamp(15px, 2vw, 20px); color: #888; line-height: 1.5; font-weight: 400; max-width: 600px; margin: 0 auto; }
 
-.primary-dl-card {
-  width: 100%; height: 380px; background: #0d0d0d; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
-  display: flex; align-items: stretch; overflow: hidden; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transition: transform 0.3s;
-}
+.primary-dl-card { width: 100%; height: 380px; background: #0d0d0d; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; display: flex; align-items: stretch; overflow: hidden; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transition: transform 0.3s; }
 .primary-dl-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
-
 .primary-content { flex: 1; padding: 48px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; justify-content: space-between; z-index: 2; position: relative; }
 .os-icon-large { font-size: 48px; color: #fff; margin-bottom: 20px; }
 .dl-info { margin-bottom: 30px; }
@@ -1958,13 +1661,11 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .dl-meta { display: flex; gap: 12px; align-items: center; }
 .version-badge { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #ccc; }
 .req-text { font-size: 13px; color: #666; }
-
 .dl-actions { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .dl-btn-primary { background: #fff; color: #000; border: none; padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
 .dl-btn-primary:hover { transform: scale(1.02); background: #f0f0f0; box-shadow: 0 6px 16px rgba(255,255,255,0.2); }
 
 .primary-visual { flex: 1.2; background: radial-gradient(circle at bottom right, rgba(255, 69, 58, 0.05), transparent 70%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-
 .app-window-mock { width: 85%; height: auto; aspect-ratio: 16/10; background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(20px); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; transform: translateY(20px) rotateX(5deg) rotateY(-5deg); transition: transform 0.5s ease; padding: 12px; box-sizing: border-box; }
 .primary-dl-card:hover .app-window-mock { transform: translateY(10px) rotateX(0deg) rotateY(0deg); }
 .win-bar { height: 44px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #888; font-size: 14px; gap: 12px; margin-bottom: 4px; }
@@ -1978,7 +1679,6 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .item-key { opacity: 0.6; font-size: 11px; font-family: monospace; }
 
 .platforms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; width: 100%; }
-
 .plat-item-card { background: rgba(20,20,20,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; transition: all 0.3s; position: relative; overflow: hidden; box-sizing: border-box; }
 .plat-item-card:hover { transform: translateY(-4px); background: rgba(30,30,30,0.8); border-color: rgba(255,255,255,0.2); }
 .win-card:hover { box-shadow: 0 10px 30px -5px rgba(0, 164, 239, 0.15); border-color: rgba(0, 164, 239, 0.3); }
@@ -2000,7 +1700,7 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .plat-dl-btn.disabled:hover { background: rgba(255,255,255,0.08); border-color: transparent; }
 .coming-soon { opacity: 0.7; }
 
-/* ================= 9. Changelog Page ================= */
+/* ================= 7. Changelog Page ================= */
 .changelog-view { position: relative; width: 100%; min-height: 100vh; z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 120px; padding-bottom: 100px; box-sizing: border-box; }
 .changelog-bg-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.03) 0%, transparent 50%); pointer-events: none; z-index: -1; }
 .changelog-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; padding: 0 24px; box-sizing: border-box; }
@@ -2010,7 +1710,8 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 
 .timeline-wrapper { position: relative; width: 100%; padding-left: 120px; box-sizing: border-box; }
 .timeline-line { position: absolute; left: 120px; top: 20px; bottom: 0; width: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
-.release-item { position: relative; margin-bottom: 60px; animation: slideUp 0.6s ease forwards; opacity: 0; }
+
+.release-item { position: relative; margin-bottom: 60px; animation: slideUp 0.6s ease both; }
 .release-item:nth-child(2) { animation-delay: 0.1s; }
 .release-item:nth-child(3) { animation-delay: 0.2s; }
 .release-item:nth-child(4) { animation-delay: 0.3s; }
@@ -2049,231 +1750,327 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .cl-link { color: #888; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; padding-bottom: 2px; }
 .cl-link:hover { color: #fff; border-bottom-color: #fff; }
 
-/* ================= 10. Auth Wrapper (Auth/Forgot/Register) ================= */
-.auth-wrapper-new { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 999; background: #E6E6E6; display: flex; align-items: center; justify-content: center; padding: 0; }
-.auth-card-new { width: 100%; max-width: none; height: 100vh; min-height: 600px; background: #ffffff; border-radius: 0; box-shadow: none; display: flex; overflow: hidden; position: relative; }
+/* ================= 8. Animations ================= */
+.fade-slow-enter-active, .fade-slow-leave-active { transition: opacity 0.5s ease; }
+.fade-slow-enter-from, .fade-slow-leave-to { opacity: 0; }
+
+.reveal-1 { animation: slideUp 0.8s 0.1s both; }
+.reveal-2 { animation: slideUp 0.8s 0.2s both; }
+.reveal-3 { animation: slideUp 0.8s 0.3s both; }
+.reveal-4 { animation: slideUp 0.8s 0.4s both; }
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-down { animation: slideDown 0.8s forwards; opacity: 0; transform: translateY(-20px); }
+@keyframes slideDown { to { opacity: 1; transform: translateY(0); } }
+
+.scale-in { animation: scaleIn 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; opacity: 0; transform: scale(0.9); }
+@keyframes scaleIn { to { opacity: 1; transform: scale(1); } }
+
+
+/* ================= 9. Auth Wrapper ( 高级深色毛玻璃左右分栏 ) ================= */
+.auth-wrapper-new {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 999;
+  /* 弱化外层遮罩，使得底部的动画与线条能够隐约透出来 */
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+}
+
+.auth-card-new {
+  width: 100%; max-width: 1000px; height: 600px; min-height: 600px;
+  /* 弹窗自身采用高透光的深空灰玻璃质感，让底部着陆页完美融合进来 */
+  background: rgba(20, 20, 22, 0.5);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border-radius: 24px; overflow: hidden;
+  display: flex;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+/* 全局独立层级的悬浮关闭按钮，放置于 card 的最顶层，不被滚动区域切断 */
+.close-auth-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+.close-auth-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
 
 /* Left Side: Visual */
-.auth-visual-side { flex: 0.45; position: relative; background-color: #000; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box; }
+.auth-visual-side {
+  flex: 0.45; position: relative; background-color: transparent;
+  padding: 40px; display: flex; flex-direction: column; justify-content: space-between;
+  overflow: hidden; box-sizing: border-box;
+}
 .carousel-bg-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-.carousel-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; }
+.carousel-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 6s ease; transform: scale(1.05); }
+.carousel-slide[style*="display: none"] { transform: scale(1); }
+
 .fade-slide-enter-active, .fade-slide-leave-active { transition: opacity 1s ease; }
 .fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; }
-.visual-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%); z-index: 1; pointer-events: none; }
-.auth-logo-badge { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); padding: 8px 16px; border-radius: 50px; display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: #fff; font-weight: 600; font-size: 14px; }
+.visual-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); z-index: 1; pointer-events: none; }
+
+.auth-logo-badge { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); padding: 10px 16px; border-radius: 50px; display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: #fff; font-weight: 600; font-size: 14px; }
 .badge-icon { font-size: 16px; }
-.visual-content { position: relative; z-index: 2; color: #fff; margin-bottom: 40px; display: flex; flex-direction: column; gap: 20px; }
+
+.visual-content { position: relative; z-index: 2; color: #fff; display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px; }
 .slide-text-group { margin-bottom: 10px; }
-.visual-heading { font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.02em; }
-.visual-desc { font-size: 16px; opacity: 0.9; line-height: 1.6; max-width: 80%; }
+.visual-heading { font-size: 36px; font-weight: 700; margin-bottom: 12px; line-height: 1.2; letter-spacing: -0.02em; }
+.visual-desc { font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.6; max-width: 90%; }
 .fade-text-enter-active, .fade-text-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
 .fade-text-enter-from { opacity: 0; transform: translateY(10px); }
 .fade-text-leave-to { opacity: 0; transform: translateY(-10px); }
-.visual-dots { display: flex; gap: 10px; margin-top: 10px; }
-.dot-wrapper { width: 48px; height: 4px; background: rgba(255, 255, 255, 0.3); border-radius: 2px; overflow: hidden; cursor: pointer; position: relative; }
+
+.visual-dots { display: flex; gap: 8px; margin-top: 10px; }
+.dot-wrapper { width: 40px; height: 4px; background: rgba(255, 255, 255, 0.2); border-radius: 2px; overflow: hidden; cursor: pointer; position: relative; }
 .dot-progress { width: 0; height: 100%; background: #fff; border-radius: 2px; }
 .dot-progress.animating { animation: progressFill 5s linear forwards; }
 @keyframes progressFill { 0% { width: 0; } 100% { width: 100%; } }
 
-/* Right Side: Form */
-.auth-form-side { flex: 0.55; width: auto; min-width: 500px; max-width: none; background: #fff; display: flex; flex-direction: column; position: relative; overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.05); }
-.form-scroll-container { padding: 40px 40px; width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; min-height: 100%; box-sizing: border-box; }
-.auth-inner-box { width: 100%; margin-top: auto; margin-bottom: auto; padding-bottom: 0; }
 
-.visual-home-btn { position: absolute; top: 40px; right: 40px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 24px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; transition: all 0.2s; z-index: 10; display: flex; align-items: center; gap: 8px; }
-.visual-home-btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.3); }
-.btn-icon { font-size: 16px; }
+/* ================= 10. Right Side: Form & Scroll Logic ================= */
+.auth-form-side {
+  flex: 0.55; position: relative;
+  background: transparent; /* 完全透明，只透出底层深色卡片的玻璃质感 */
+  display: flex; flex-direction: column;
+  border-left: 1px solid rgba(255,255,255,0.05);
+  overflow: hidden;
+}
 
-/* 移动端顶部 Navbar ( 仅在移动端显示 ) */
+/* 内部的独立滚动区域 */
+.auth-scroll-area {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  /* 彻底隐藏原生滚动条 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  /* 精美渐隐遮罩 */
+  mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
+}
+
+/* 终极解法：使用伪元素在 flex-column 中吸收空间实现 Safe Center，不产生假 height */
+.auth-scroll-area::before,
+.auth-scroll-area::after {
+  content: '';
+  flex: auto;
+}
+
+.auth-scroll-area::-webkit-scrollbar {
+  display: none;
+}
+
 .mobile-auth-header { display: none; }
 
-.form-header-new { margin-bottom: 20px; text-align: left; }
-.welcome-title { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 4px; letter-spacing: -0.02em; }
-.welcome-sub { color: #6b7280; font-size: 13px; }
+.form-scroll-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 40px 48px 80px; /* 加大底部 Padding，防止内容被遮罩挡住 */
+  flex-shrink: 0; /* 关键：防止内容被挤压 */
+  box-sizing: border-box;
+}
 
-.form-fields-new { display: flex; flex-direction: column; gap: 16px; } /* 增加各输入组之间的间距 */
-.input-group { display: flex; flex-direction: column; gap: 8px; width: 100%; } /* 增加标签和输入框之间的间距 */
-.input-group label { font-size: 12px; font-weight: 600; color: #374151; }
+/* -------- 动态滚动提示 (浮动在右下角) -------- */
+.scroll-bottom-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  z-index: 100;
+}
+.scroll-bottom-hint .hint-text {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 12px;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.scroll-bottom-hint .bounce-icon {
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: bounce-down 2s infinite ease-in-out;
+}
+@keyframes bounce-down {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(6px); opacity: 1; }
+}
 
-.input-wrapper { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 12px; display: flex; align-items: center; transition: border-color 0.2s, box-shadow 0.2s; height: 40px; box-sizing: border-box; }
-.input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
-.input-wrapper.has-error { border-color: #ef4444; }
-.input-wrapper.has-error:focus-within { border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); }
-.input-wrapper input { border: none; outline: none; width: 100%; font-size: 13px; color: #1f2937; background: transparent; }
-.input-wrapper input::placeholder { color: #9ca3af; }
-.input-suffix-icon { color: #9ca3af; cursor: pointer; font-size: 16px; display: flex; align-items: center; }
-.error-message { color: #ef4444; font-size: 11px; font-weight: 500; margin-top: 2px; padding-left: 2px; display: block; }
+/* ---------------- 统一的暗黑风格输入表单样式 ---------------- */
+.form-header-new { margin-bottom: 32px; text-align: left; }
+.welcome-title { font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 8px; letter-spacing: -0.01em; }
+.welcome-sub { color: #a1a1aa; font-size: 14px; }
+
+.form-fields-new { display: flex; flex-direction: column; gap: 20px; }
+.input-group { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.input-group label { font-size: 13px; font-weight: 500; color: #d1d5db; display: inline-block; }
+
+.input-wrapper { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0 16px; display: flex; align-items: center; transition: all 0.2s ease; height: 48px; box-sizing: border-box; }
+.input-wrapper:focus-within { background: rgba(255,255,255,0.08); border-color: #0A84FF; box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2); }
+.input-wrapper.has-error { border-color: #FF453A; background: rgba(255, 69, 58, 0.05); }
+.input-wrapper.has-error:focus-within { box-shadow: 0 0 0 4px rgba(255, 69, 58, 0.2); }
+
+.input-prefix-icon { color: rgba(255,255,255,0.4); font-size: 16px; margin-right: 12px; transition: color 0.2s ease; display: flex; align-items: center; }
+.input-wrapper:focus-within .input-prefix-icon { color: #0A84FF; }
+.input-wrapper.has-error .input-prefix-icon { color: #FF453A; }
+.success-prefix-icon { color: #32D74B; font-size: 16px; margin-right: 12px; display: flex; align-items: center; }
+
+/* 增加 input { min-width: 0 } 防止默认 size="20" 撑破 flex/grid */
+.input-wrapper input { flex: 1; min-width: 0; border: none; outline: none; width: 100%; font-size: 14px; color: #ffffff; background: transparent; }
+.input-wrapper input::placeholder { color: rgba(255,255,255,0.3); }
+.input-suffix-icon { color: rgba(255,255,255,0.4); cursor: pointer; font-size: 16px; display: flex; align-items: center; transition: color 0.2s; }
+.input-suffix-icon:hover { color: #fff; }
+
+.error-message { color: #FF453A; font-size: 12px; font-weight: 500; margin-top: 2px; padding-left: 4px; display: block; }
 
 .slide-fade-enter-active { transition: all 0.3s ease-out; }
 .slide-fade-leave-active { transition: all 0.2s ease-in; }
-.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-8px); }
+.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 
-.form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: -4px; }
-.forgot-link { color: #6b7280; font-size: 13px; text-decoration: none; font-weight: 500; }
-.forgot-link:hover { color: #2563eb; }
+.form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: -8px; }
+.forgot-link { color: #0A84FF; font-size: 13px; text-decoration: none; font-weight: 500; }
+.forgot-link:hover { text-decoration: underline; }
 
-.auth-btn-primary { width: 100%; height: 40px; background: #2563eb; color: #fff; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-top: 4px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06); display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
-.auth-btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.15); }
-.auth-btn-primary:active { transform: translateY(0); box-shadow: none; }
-.auth-btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+.auth-btn-primary { width: 100%; height: 48px; background: #0A84FF; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-top: 12px; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
+.auth-btn-primary:hover { background: #0071E3; transform: scale(0.99); }
+.auth-btn-primary:active { transform: scale(0.97); }
+.auth-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-.spin-icon { font-size: 24px; color: #fff; animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin-icon { font-size: 20px; color: #fff; animation: spin 1s linear infinite; }
 
-.auth-divider { position: relative; text-align: center; margin: 16px 0; }
-.auth-divider::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb; }
-.auth-divider span { position: relative; background: #fff; padding: 0 16px; color: #9ca3af; font-size: 12px; font-weight: 500; }
+.auth-divider { display: flex; align-items: center; text-align: center; margin: 24px 0; }
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1); }
+.auth-divider span { padding: 0 12px; color: rgba(255, 255, 255, 0.4); font-size: 13px; font-weight: 500; background: transparent; }
 
 .social-row { display: flex; gap: 16px; }
-.auth-btn-secondary { width: 100%; height: 40px; background: #000000; border: 1px solid #000000; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 600; color: #ffffff; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
-.auth-btn-secondary:hover { background: #333333; border-color: #333333; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
-.auth-btn-secondary .s-icon { font-size: 16px; transition: color 0.3s; color: #ffffff; }
+.auth-btn-secondary { width: 100%; height: 48px; background: rgba(255,255,255,0.08); border: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600; color: #ffffff; cursor: pointer; transition: all 0.2s ease; box-sizing: border-box; }
+.auth-btn-secondary:hover { background: rgba(255,255,255,0.12); }
+.auth-btn-secondary .s-icon { font-size: 16px; color: #ffffff; }
 
-.auth-footer-text { text-align: center; font-size: 12px; color: #6b7280; margin-top: 16px; font-weight: 500; padding-bottom: 0; }
-.register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
+.auth-footer-text { text-align: center; font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 24px; padding-bottom: 20px; font-weight: 500; }
+.register-link { color: #0A84FF; font-weight: 600; text-decoration: none; margin-left: 4px; }
 .register-link:hover { text-decoration: underline; }
 
-.sms-btn { border: none; background: none; color: #2563eb; font-weight: 600; font-size: 12px; cursor: pointer; padding: 4px 8px; white-space: nowrap; transition: color 0.2s; }
-.sms-btn:hover { color: #1d4ed8; }
-.sms-btn:disabled { color: #9ca3af; cursor: not-allowed; }
+.sms-btn { border: none; background: none; color: #0A84FF; font-weight: 600; font-size: 13px; cursor: pointer; padding: 4px 8px; white-space: nowrap; transition: color 0.2s; }
+.sms-btn:hover { color: #0071E3; }
+.sms-btn:disabled { color: rgba(255,255,255,0.3); cursor: not-allowed; }
 
-/* ---------------- 验证码输入框 (OTP) ---------------- */
+/* 验证码框 */
 .otp-box-container { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
-.otp-input { flex: 1; min-width: 0; max-width: 48px; aspect-ratio: 1 / 1; height: auto; border-radius: 12px; border: 1px solid #E5E7EB; text-align: center; font-size: 20px; font-weight: 600; background: #fff; color: #111827; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-sizing: border-box; padding: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-.otp-input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 2px 6px rgba(0,0,0,0.05); transform: translateY(-2px); }
-.otp-input.has-error { border-color: #ef4444; box-shadow: 0 1px 2px rgba(239,68,68,0.05); }
+.otp-input { flex: 1; min-width: 0; max-width: 54px; aspect-ratio: 1 / 1.1; height: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); text-align: center; font-size: 24px; font-weight: 600; background: rgba(255,255,255,0.05); color: #fff; outline: none; transition: all 0.2s ease; box-sizing: border-box; padding: 0; }
+.otp-input:focus { border-color: #0A84FF; background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2); }
+.otp-input.has-error { border-color: #FF453A; color: #FF453A; }
 
-.password-strength-container { margin-top: 4px; display: flex; flex-direction: column; gap: 4px; }
+.password-strength-container { margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
 .strength-bars { display: flex; gap: 4px; height: 4px; width: 100%; }
-.strength-segment { flex: 1; background-color: #e5e7eb; border-radius: 2px; transition: all 0.3s ease; }
-.strength-segment.active.weak { background-color: #ef4444; }
-.strength-segment.active.medium { background-color: #f59e0b; }
-.strength-segment.active.strong { background-color: #10b981; }
+.strength-segment { flex: 1; background-color: rgba(255,255,255,0.1); border-radius: 2px; transition: all 0.3s ease; }
+.strength-segment.active.weak { background-color: #FF453A; }
+.strength-segment.active.medium { background-color: #FF9F0A; }
+.strength-segment.active.strong { background-color: #32D74B; }
 .strength-label { font-size: 11px; font-weight: 600; text-align: right; transition: color 0.3s ease; min-height: 16px; }
-.text-weak { color: #ef4444; }
-.text-medium { color: #f59e0b; }
-.text-strong { color: #10b981; }
+.text-weak { color: #FF453A; }
+.text-medium { color: #FF9F0A; }
+.text-strong { color: #32D74B; }
 
+/* 头像上传区 */
 .avatar-upload-container { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 8px; }
-.avatar-wrapper { position: relative; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.avatar-wrapper { position: relative; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 .avatar-wrapper:hover { transform: scale(1.05); }
 .avatar-img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-placeholder { width: 100%; height: 100%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; font-weight: 700; }
+.avatar-placeholder { width: 100%; height: 100%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; font-weight: 700; }
 .avatar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
 .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
 .camera-icon { color: #fff; font-size: 20px; }
+.avatar-text-hint { font-size: 12px; color: rgba(255,255,255,0.4); }
 
-.form-row-group { display: flex; gap: 12px; width: 100%; }
-.flex-1 { flex: 1; min-width: 0; }
-.verified-badge { font-size: 12px; color: #10b981; font-weight: 600; padding: 0 8px; white-space: nowrap; }
+/* 并排输入框彻底修复挤压：升级为 CSS Grid 网格布局 */
+.form-row-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+.flex-1 { min-width: 0; }
+.verified-badge { font-size: 12px; color: #32D74B; font-weight: 600; padding: 0 8px; white-space: nowrap; display: flex; align-items: center; }
 
-/* Animations */
-.fade-slow-enter-active, .fade-slow-leave-active { transition: opacity 0.5s ease; }
-.fade-slow-enter-from, .fade-slow-leave-to { opacity: 0; }
-.reveal-1 { animation: slideUp 0.8s 0.1s forwards; opacity: 0; }
-.reveal-2 { animation: slideUp 0.8s 0.2s forwards; opacity: 0; }
-.reveal-3 { animation: slideUp 0.8s 0.3s forwards; opacity: 0; }
-.reveal-4 { animation: slideUp 0.8s 0.4s forwards; opacity: 0; }
-@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.slide-down { animation: slideDown 0.8s forwards; opacity: 0; transform: translateY(-20px); }
-@keyframes slideDown { to { opacity: 1; transform: translateY(0); } }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.zoom-fade-enter-active, .zoom-fade-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-.zoom-fade-enter-from { opacity: 0; transform: scale(0.95); }
-.zoom-fade-leave-to { opacity: 0; transform: scale(1.05); }
-
-
-/* ========================================================= */
-/* 全新移动端原生化适配 (Native App Mobile Layout)       */
-/* ========================================================= */
+/* ================= 11. 全新移动端原生化适配 (Native App Mobile Layout) ================= */
 @media (max-width: 768px) {
-  /* 基础结构全屏覆盖，摒弃 PC 居中盒子的概念 */
-  .auth-wrapper-new { padding: 0; background: #ffffff; align-items: flex-start; }
-  .auth-card-new { flex-direction: column; height: 100vh; min-height: 100vh; border-radius: 0; }
-
-  /* 完全隐藏画报侧边 */
+  /* 移动端降低大遮罩，保证通透 */
+  .auth-wrapper-new { padding: 0; background: rgba(11, 12, 14, 0.2); align-items: flex-end; }
+  .auth-card-new { flex-direction: column; height: auto; max-height: 90vh; min-height: auto; border-radius: 24px 24px 0 0; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(20px) saturate(150%); }
   .auth-visual-side { display: none; }
 
-  /* 表单区域铺满，移除所有多余边框 */
-  .auth-form-side { flex: 1; width: 100%; min-width: auto; border-left: none; }
-
-  /* 原生化 Header，带巨大的返回箭头 */
-  .mobile-auth-header {
-    display: flex;
-    align-items: center;
-    padding: 16px 20px;
-    background: #ffffff;
-    position: sticky; top: 0; z-index: 50;
+  /* 移动端由于屏幕小且有自身边界，移除 mask-image 以免遮挡文字 */
+  .auth-form-side {
+    flex: 1; width: 100%; min-width: auto; border-left: none; background: transparent;
   }
-  .mobile-back-icon {
-    background: transparent; border: none; font-size: 22px; color: #111827;
-    cursor: pointer; padding: 8px; margin-left: -8px;
+  .auth-scroll-area {
+    -webkit-mask-image: none; mask-image: none;
   }
-  .visual-home-btn { display: none; } /* 隐藏PC端返回按钮 */
+  .auth-scroll-area::before, .auth-scroll-area::after { content: none; }
 
-  /* 释放表单内部空间，移除居中限制，改为靠上排列 */
-  .form-scroll-container { padding: 10px 24px 40px; justify-content: flex-start; max-width: 100%; }
-  .auth-inner-box { margin-top: 0; }
+  /* 增加移动端顶部拖拽把手指示器 */
+  .auth-card-new::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 36px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); z-index: 50; }
 
-  /* 标题变大，更像 App 的欢迎页 */
-  .welcome-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
-  .welcome-sub { font-size: 14px; margin-bottom: 24px; color: #6b7280; }
+  /* 移动端自带返回头部，隐藏悬浮的 PC 独立关闭按钮 */
+  .close-auth-btn { display: none; }
+  .mobile-auth-header { display: flex; align-items: center; padding: 20px 20px 0; background: transparent; z-index: 10; position: relative; }
+  .mobile-back-icon { background: rgba(255,255,255,0.08); border: none; font-size: 16px; color: #fff; width: 32px; height: 32px; border-radius: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+  .mobile-back-icon:active { background: rgba(255,255,255,0.15); }
 
-  /* ------------------- 表单控件 App 化 ------------------- */
+  .form-scroll-container { padding: 10px 24px 80px; justify-content: flex-start; max-width: 100%; margin: 0; }
+  .scroll-bottom-hint { bottom: 12px; } /* 移动端滚动提示往上移一点 */
 
-  /* 增加控件间的呼吸感 */
-  .form-fields-new { gap: 20px; }
-  .input-group { gap: 8px; }
+  .welcome-title { font-size: 24px; margin-bottom: 6px; }
+  .welcome-sub { font-size: 13px; margin-bottom: 24px; color: rgba(255,255,255,0.6); }
 
-  /* 文字标签更清晰 */
-  .input-group label { font-size: 13px; color: #4b5563; }
+  .form-fields-new { gap: 16px; }
+  .input-wrapper { height: 50px; background: rgba(255,255,255,0.06); }
+  .input-wrapper input { font-size: 16px; } /* 防止 iOS Safari 自动缩放 */
 
-  /* 输入框：加高，采用背景填充无边框的原生设计 */
-  .input-wrapper {
-    height: 50px; /* 原生推荐最小触摸高度 */
-    border-radius: 12px;
-    background: #f3f4f6; /* iOS 风格的浅灰背景 */
-    border: 1px solid transparent;
-    padding: 0 16px;
-    box-shadow: none;
-  }
-  .input-wrapper:focus-within {
-    background: #ffffff;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
-  }
+  /* 移动端为了触控面积，将原来并排的全部折行为上下排列 */
+  .form-row-group { display: flex; flex-direction: column; gap: 16px; }
 
-  /* 【关键】字号提升至 16px 阻止 iOS Safari 自动缩放 */
-  .input-wrapper input { font-size: 16px; }
-  .input-suffix-icon { font-size: 18px; }
+  .auth-btn-primary, .auth-btn-secondary { height: 50px; font-size: 16px; border-radius: 14px; }
+  .otp-input { height: 50px; font-size: 22px; }
 
-  /* 所有原本在一行的元素强制打散换行，给手机足够的输入空间 */
-  .form-row-group { flex-direction: column; gap: 20px; }
-
-  /* 头像上传放大 */
-  .avatar-upload-container { gap: 12px; margin-bottom: 12px; }
-  .avatar-wrapper { width: 72px; height: 72px; }
-  .avatar-placeholder { font-size: 32px; }
-
-  /* 按钮加高加圆角，方便点击 */
-  .auth-btn-primary, .auth-btn-secondary {
-    height: 50px;
-    border-radius: 25px;
-    font-size: 15px;
-    margin-top: 12px;
-  }
-
-  /* 验证码框适配 (如果横屏太挤可以稍微收缩，但不改正方形属性) */
-  .otp-box-container { gap: 8px; justify-content: space-between; }
-  .otp-input { max-width: none; height: auto; font-size: 24px; border-radius: 12px; background: #f3f4f6; border-color: transparent;}
-  .otp-input:focus { background: #fff; }
-
-  /* ------------------- 集成页、下载页、更新日志等全站优化 ------------------- */
-
-  /* 集成页 (Store) */
+  /* 集成页等适配保持原状 */
   .store-title { font-size: 36px; }
-  .picks-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } /* 强制两列 */
-  .pick-card { padding: 20px 12px 16px; border-radius: 14px; min-height: 160px; } /* 适配双列缩小体积，设置最小高度保证对齐 */
+  .picks-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pick-card { padding: 20px 12px 16px; border-radius: 14px; min-height: 160px; }
   .pick-icon-wrapper { width: 52px; height: 52px; margin-bottom: 12px; border-radius: 14px; }
   img.pick-icon { width: 32px; height: 32px; border-radius: 6px; }
   .pick-name { font-size: 15px; margin-bottom: 6px; }
@@ -2289,22 +2086,18 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
   .dl-btn-primary { width: 100%; justify-content: center; height: 50px; border-radius: 16px; }
   .primary-visual { padding: 40px 20px; }
   .app-window-mock { width: 100%; max-width: 100%; transform: none; }
-  .platforms-grid { grid-template-columns: 1fr 1fr; gap: 16px; } /* 小平台卡片两列 */
+  .platforms-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
 
-  /* 更新日志 (Changelog) - 改为左侧靠边的瀑布流 */
+  /* 更新日志 (Changelog) */
   .timeline-wrapper { padding-left: 24px; margin-top: 20px; }
   .timeline-line { left: 8px; }
   .release-dot { left: -22px; width: 12px; height: 12px; }
-  .release-meta {
-    position: relative; left: 0; width: 100%; text-align: left;
-    flex-direction: row; align-items: center; gap: 12px; margin-bottom: 12px;
-  }
+  .release-meta { position: relative; left: 0; width: 100%; text-align: left; flex-direction: row; align-items: center; gap: 12px; margin-bottom: 12px; }
   .glass-card-premium { padding: 24px; border-radius: 16px; }
   .rc-header { flex-direction: column; gap: 8px; align-items: flex-start; }
 }
 
 @media (max-width: 480px) {
-  .platforms-grid { grid-template-columns: 1fr; } /* 极窄屏幕平台卡片单列 */
+  .platforms-grid { grid-template-columns: 1fr; }
 }
-
 </style>
