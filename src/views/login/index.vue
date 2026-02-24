@@ -595,9 +595,9 @@
                 <!-- D. 手机号登录表单 (Phone Login Form) -->
                 <div v-else-if="viewMode === 'phone-login'" key="phone-login-form" class="auth-inner-box">
                   <div class="form-header-new">
-                    <h2 class="welcome-title"> 手机号快捷登录 📱 </h2>
+                    <h2 class="welcome-title"> 快捷登录</h2>
                     <p class="welcome-sub">
-                      未注册手机号验证后将自动创建账户
+                      通过手机号登录
                     </p>
                   </div>
 
@@ -651,7 +651,7 @@
                     </button>
 
                     <div class="auth-footer-text">
-                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回账号密码登录 </a>
+                      <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 返回账密登录 </a>
                     </div>
                   </div>
                 </div>
@@ -659,7 +659,7 @@
                 <!-- B. 忘记密码表单 (Forgot Password Form) - Revised to 2 Steps -->
                 <div v-else-if="viewMode === 'forgot-password'" key="forgot-form" class="auth-inner-box">
                   <div class="form-header-new">
-                    <h2 class="welcome-title">{{ forgotStep === 1 ? ' 安全验证 🔐 ' : ' 重置密码 🔑 ' }}</h2>
+                    <h2 class="welcome-title">{{ forgotStep === 1 ? ' 安全验证 ' : ' 重置密码 ' }}</h2>
                     <p class="welcome-sub">
                       {{ forgotStep === 1 ? ' 请验证您的手机号以继续 ' : ' 设置您的新密码 ' }}
                     </p>
@@ -788,7 +788,7 @@
                 <!-- C. 注册表单 (Register Form) - UPDATED -->
                 <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
                   <div class="form-header-new">
-                    <h2 class="welcome-title"> 创建账户 🚀 </h2>
+                    <h2 class="welcome-title"> 创建账户</h2>
                     <p class="welcome-sub"> 免费开始您的 Notion Mate 之旅 </p>
                   </div>
 
@@ -939,7 +939,7 @@
                     </button>
 
                     <div class="auth-footer-text">
-                      已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 立即登录 </a>
+                      已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'; clearRegisterForm()"> 立即登录 </a>
                     </div>
                   </div>
                 </div>
@@ -1375,28 +1375,64 @@ const handleFileChange = (e: Event) => {
   }
 }
 
+// 清除注册表单所有数据与状态的方法
+const clearRegisterForm = () => {
+  // 清空表单字段
+  registerForm.username = ''
+  registerForm.nickname = ''
+  registerForm.email = ''
+  registerForm.phone = ''
+  registerForm.code = ''
+  registerForm.password = ''
+  registerForm.confirmPassword = ''
+  registerForm.avatar = null as unknown as File
+
+  // 清空错误提示
+  Object.keys(registerErrors).forEach(key => registerErrors[key as keyof typeof registerErrors] = '')
+
+  // 重置各种状态
+  isPhoneVerified.value = false
+  showRegisterCodeInput.value = false
+  showPassword.value = false
+  showConfirmPassword.value = false
+
+  // 清除验证码倒计时
+  registerSmsCountdown.value = 0
+  if (registerSmsTimer) {
+    clearInterval(registerSmsTimer)
+    registerSmsTimer = null
+  }
+
+  // 清空 OTP 输入框
+  if (viewMode.value === 'register' || viewMode.value === 'auth') {
+    for (let i = 0; i < 6; i++) {
+      otpDigits[i] = ''
+    }
+  }
+}
+
 // 生成默认头像的函数
 const generateDefaultAvatar = async (): Promise<File> => {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 200;
   const ctx = canvas.getContext('2d');
-  
+
   if (ctx) {
     // 设置背景色（蓝色）
     ctx.fillStyle = '#2563eb';
     ctx.fillRect(0, 0, 200, 200);
-    
+
     // 绘制文字
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 80px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
     const char = registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U';
     ctx.fillText(char, 100, 100);
   }
-  
+
   // 转换为 blob
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
@@ -1506,7 +1542,7 @@ const handleRegister = async () => {
       console.log(' 没有上传头像，生成默认头像 ');
       avatarFile = await generateDefaultAvatar();
     }
-      
+
     // 构造注册数据
     const registerData = {
       username: registerForm.username,
@@ -1518,10 +1554,11 @@ const handleRegister = async () => {
       confirmPassword: registerForm.confirmPassword,
       captcha: registerForm.code // 修复字段名不一致问题： code -> captcha
     }
-      
+
     await userStore.register(registerData)
     AppleAlert.success(" 注册成功 ", " 请登录您的账户 ")
     viewMode.value = 'auth'
+    clearRegisterForm() // 注册成功后清理表单数据
   } catch (error: any) {
     AppleAlert.error(" 注册失败 ", error.message)
   } finally {
