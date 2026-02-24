@@ -364,7 +364,7 @@
         </div>
       </div>
 
-      <!-- ================= 视图 4: Changelog Page ( 更新日志页 - 已修复 ) ================= -->
+      <!-- ================= 视图 4: Changelog Page ( 更新日志页 ) ================= -->
       <div v-else-if="viewMode === 'changelog'" key="changelog" class="changelog-view">
         <div class="changelog-bg-glow"></div>
 
@@ -509,6 +509,14 @@
 
           <!-- 右侧：表单区域 ( 通过 v-if/v-else-if 切换内部内容 ) -->
           <div class="auth-form-side">
+
+            <!-- 移动端专属顶部导航栏 (Native App Header Style) -->
+            <div class="mobile-auth-header">
+              <button class="mobile-back-icon" @click="viewMode = 'landing'">
+                <arrow-left-outlined />
+              </button>
+            </div>
+
             <div class="form-scroll-container">
 
               <!-- A. 登录表单 (Login Form) -->
@@ -524,7 +532,7 @@
                     <div class="input-group">
                       <label> 用户名 </label>
                       <div class="input-wrapper" :class="{ 'has-error': errors.username }">
-                        <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                         <input
                             type="text"
                             placeholder=" 请输入用户名 "
@@ -542,7 +550,7 @@
                     <div class="input-group">
                       <label> 密码 </label>
                       <div class="input-wrapper" :class="{ 'has-error': errors.password }">
-                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                         <input
                             :type="showPassword ? 'text' : 'password'"
                             placeholder=" 请输入密码 "
@@ -578,7 +586,6 @@
 
                     <!-- Social Buttons -->
                     <div class="social-row">
-                      <!-- 移除 Google 按钮，仅保留手机号登录并优化样式 -->
                       <button class="auth-btn-secondary" @click="viewMode = 'phone-login'; clearPhoneLoginForm()">
                         <mobile-outlined class="s-icon" />
                         手机号登录
@@ -596,9 +603,7 @@
                 <div v-else-if="viewMode === 'phone-login'" key="phone-login-form" class="auth-inner-box">
                   <div class="form-header-new">
                     <h2 class="welcome-title"> 快捷登录</h2>
-                    <p class="welcome-sub">
-                      通过手机号登录
-                    </p>
+                    <p class="welcome-sub"> 通过手机号登录 </p>
                   </div>
 
                   <div class="form-fields-new">
@@ -606,7 +611,7 @@
                     <div class="input-group">
                       <label> 手机号码 </label>
                       <div class="input-wrapper" :class="{ 'has-error': phoneLoginErrors.phone }" style="padding-right: 8px;">
-                        <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                         <input
                             type="text"
                             placeholder=" 请输入手机号码 "
@@ -656,7 +661,7 @@
                   </div>
                 </div>
 
-                <!-- B. 忘记密码表单 (Forgot Password Form) - Revised to 2 Steps -->
+                <!-- B. 忘记密码表单 (Forgot Password Form) -->
                 <div v-else-if="viewMode === 'forgot-password'" key="forgot-form" class="auth-inner-box">
                   <div class="form-header-new">
                     <h2 class="welcome-title">{{ forgotStep === 1 ? ' 安全验证 ' : ' 重置密码 ' }}</h2>
@@ -670,9 +675,8 @@
                     <template v-if="forgotStep === 1">
                       <div class="input-group">
                         <label> 手机号码 </label>
-                        <!-- Updated Input Wrapper: Contains SMS Button now -->
                         <div class="input-wrapper" :class="{ 'has-error': forgotErrors.phone }" style="padding-right: 8px;">
-                          <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <mobile-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                           <input
                               type="text"
                               placeholder=" 请输入手机号码 "
@@ -719,58 +723,59 @@
 
                     <!-- Step 2: New Password -->
                     <template v-else>
-                      <div class="input-group">
-                        <label> 新密码 </label>
-                        <div class="input-wrapper" :class="{ 'has-error': forgotErrors.newPassword }">
-                          <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                          <input
-                              :type="showNewPassword ? 'text' : 'password'"
-                              placeholder=" 请输入新密码 "
-                              v-model="forgotForm.newPassword"
-                              @blur="handleResetInputBlur('newPassword')"
-                              @input="forgotErrors.newPassword = ''"
-                          >
-                          <span class="input-suffix-icon" @click="showNewPassword = !showNewPassword">
-                            <eye-outlined v-if="showNewPassword" />
-                            <eye-invisible-outlined v-else />
-                          </span>
-                        </div>
-
-                        <!-- UI 优化的密码强度指示器 -->
-                        <div class="password-strength-container" v-if="forgotForm.newPassword">
-                          <div class="strength-bars">
-                            <div class="strength-segment" :class="{ active: passwordStrength >= 1, [strengthLevel]: passwordStrength >= 1 }"></div>
-                            <div class="strength-segment" :class="{ active: passwordStrength >= 2, [strengthLevel]: passwordStrength >= 2 }"></div>
-                            <div class="strength-segment" :class="{ active: passwordStrength >= 3, [strengthLevel]: passwordStrength >= 3 }"></div>
-                            <div class="strength-segment" :class="{ active: passwordStrength >= 4, [strengthLevel]: passwordStrength >= 4 }"></div>
+                      <div class="form-row-group">
+                        <div class="input-group flex-1">
+                          <label> 新密码 </label>
+                          <div class="input-wrapper" :class="{ 'has-error': forgotErrors.newPassword }">
+                            <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                            <input
+                                :type="showNewPassword ? 'text' : 'password'"
+                                placeholder=" 请输入新密码 "
+                                v-model="forgotForm.newPassword"
+                                @blur="handleResetInputBlur('newPassword')"
+                                @input="forgotErrors.newPassword = ''"
+                            >
+                            <span class="input-suffix-icon" @click="showNewPassword = !showNewPassword">
+                              <eye-outlined v-if="showNewPassword" />
+                              <eye-invisible-outlined v-else />
+                            </span>
                           </div>
-                          <span class="strength-label" :class="strengthClass">{{ strengthLabel }}</span>
+                          <transition name="slide-fade">
+                            <span class="error-message" v-if="forgotErrors.newPassword">{{ forgotErrors.newPassword }}</span>
+                          </transition>
                         </div>
 
-                        <transition name="slide-fade">
-                          <span class="error-message" v-if="forgotErrors.newPassword">{{ forgotErrors.newPassword }}</span>
-                        </transition>
+                        <div class="input-group flex-1">
+                          <label> 确认密码 </label>
+                          <div class="input-wrapper" :class="{ 'has-error': forgotErrors.confirmPassword }">
+                            <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                            <input
+                                :type="showConfirmPassword ? 'text' : 'password'"
+                                placeholder=" 请再次输入 "
+                                v-model="forgotForm.confirmPassword"
+                                @blur="handleResetInputBlur('confirmPassword')"
+                                @input="forgotErrors.confirmPassword = ''"
+                            >
+                            <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
+                              <eye-outlined v-if="showConfirmPassword" />
+                              <eye-invisible-outlined v-else />
+                            </span>
+                          </div>
+                          <transition name="slide-fade">
+                            <span class="error-message" v-if="forgotErrors.confirmPassword">{{ forgotErrors.confirmPassword }}</span>
+                          </transition>
+                        </div>
                       </div>
 
-                      <div class="input-group">
-                        <label> 确认密码 </label>
-                        <div class="input-wrapper" :class="{ 'has-error': forgotErrors.confirmPassword }">
-                          <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                          <input
-                              :type="showConfirmPassword ? 'text' : 'password'"
-                              placeholder=" 请再次输入新密码 "
-                              v-model="forgotForm.confirmPassword"
-                              @blur="handleResetInputBlur('confirmPassword')"
-                              @input="forgotErrors.confirmPassword = ''"
-                          >
-                          <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
-                            <eye-outlined v-if="showConfirmPassword" />
-                            <eye-invisible-outlined v-else />
-                          </span>
+                      <!-- UI 优化的密码强度指示器 -->
+                      <div class="password-strength-container" v-if="forgotForm.newPassword">
+                        <div class="strength-bars">
+                          <div class="strength-segment" :class="{ active: passwordStrength >= 1, [strengthLevel]: passwordStrength >= 1 }"></div>
+                          <div class="strength-segment" :class="{ active: passwordStrength >= 2, [strengthLevel]: passwordStrength >= 2 }"></div>
+                          <div class="strength-segment" :class="{ active: passwordStrength >= 3, [strengthLevel]: passwordStrength >= 3 }"></div>
+                          <div class="strength-segment" :class="{ active: passwordStrength >= 4, [strengthLevel]: passwordStrength >= 4 }"></div>
                         </div>
-                        <transition name="slide-fade">
-                          <span class="error-message" v-if="forgotErrors.confirmPassword">{{ forgotErrors.confirmPassword }}</span>
-                        </transition>
+                        <span class="strength-label" :class="strengthClass">{{ strengthLabel }}</span>
                       </div>
 
                       <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleResetConfirm" :disabled="isLoading">
@@ -785,7 +790,7 @@
                   </div>
                 </div>
 
-                <!-- C. 注册表单 (Register Form) - UPDATED -->
+                <!-- C. 注册表单 (Register Form) -->
                 <div v-else-if="viewMode === 'register'" key="register-form" class="auth-inner-box">
                   <div class="form-header-new">
                     <h2 class="welcome-title"> 创建账户</h2>
@@ -805,15 +810,14 @@
                         </div>
                       </div>
                       <input type="file" ref="fileInput" accept="image/*" style="display: none" @change="handleFileChange" />
-                      <span class="avatar-hint"> 点击上传头像 </span>
                     </div>
 
-                    <!-- Username & Nickname (Parallel) -->
+                    <!-- Username & Nickname -->
                     <div class="form-row-group">
                       <div class="input-group flex-1">
                         <label> 用户名 </label>
                         <div class="input-wrapper" :class="{ 'has-error': registerErrors.username }">
-                          <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <user-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                           <input type="text" placeholder=" 用户名 " v-model="registerForm.username" @input="registerErrors.username = ''" />
                         </div>
                         <transition name="slide-fade">
@@ -824,48 +828,52 @@
                       <div class="input-group flex-1">
                         <label> 昵称 </label>
                         <div class="input-wrapper" :class="{ 'has-error': registerErrors.nickname }">
-                          <deployment-unit-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                          <AlignLeftOutlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                           <input type="text" placeholder=" 昵称 " v-model="registerForm.nickname" @input="registerErrors.nickname = ''" />
                         </div>
                       </div>
                     </div>
 
-                    <!-- Email Field (New) -->
-                    <div class="input-group">
-                      <label> 电子邮箱 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.email }">
-                        <mail-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <input type="email" placeholder=" name@example.com " v-model="registerForm.email" @input="registerErrors.email = ''" />
+                    <!-- Email & Phone ( 并排显示 ) -->
+                    <div class="form-row-group">
+                      <!-- Email Field -->
+                      <div class="input-group flex-1">
+                        <label> 电子邮箱 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.email }">
+                          <mail-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                          <input type="email" placeholder=" name@example.com " v-model="registerForm.email" @input="registerErrors.email = ''" />
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="registerErrors.email">{{ registerErrors.email }}</span>
+                        </transition>
                       </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="registerErrors.email">{{ registerErrors.email }}</span>
-                      </transition>
+
+                      <!-- Phone -->
+                      <div class="input-group flex-1">
+                        <label> 手机号码 </label>
+                        <div class="input-wrapper" :class="{ 'has-error': registerErrors.phone }" style="padding-right: 8px;">
+                          <mobile-outlined v-if="!isPhoneVerified" style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
+                          <check-outlined v-else style="color: #10b981; margin-right: 8px; font-size: 16px;" />
+                          <input
+                              type="text"
+                              placeholder=" 输入手机号 "
+                              v-model="registerForm.phone"
+                              :disabled="isPhoneVerified"
+                              @input="registerErrors.phone = ''"
+                              style="min-width: 50px;"
+                          >
+                          <span v-if="isPhoneVerified" class="verified-badge"> 已验证 </span>
+                          <button v-else class="sms-btn" :disabled="registerSmsCountdown > 0" @click="handleRegisterSms">
+                            {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 获取验证码 ' }}
+                          </button>
+                        </div>
+                        <transition name="slide-fade">
+                          <span class="error-message" v-if="registerErrors.phone">{{ registerErrors.phone }}</span>
+                        </transition>
+                      </div>
                     </div>
 
-                    <!-- Phone -->
-                    <div class="input-group">
-                      <label> 手机号码 </label>
-                      <div class="input-wrapper" :class="{ 'has-error': registerErrors.phone }" style="padding-right: 8px;">
-                        <mobile-outlined v-if="!isPhoneVerified" style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
-                        <check-outlined v-else style="color: #10b981; margin-right: 8px; font-size: 18px;" />
-                        <input
-                            type="text"
-                            placeholder=" 请输入手机号码 "
-                            v-model="registerForm.phone"
-                            :disabled="isPhoneVerified"
-                            @input="registerErrors.phone = ''"
-                        >
-                        <span v-if="isPhoneVerified" class="verified-badge"> 已验证 </span>
-                        <button v-else class="sms-btn" :disabled="registerSmsCountdown > 0" @click="handleRegisterSms">
-                          {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 获取验证码 ' }}
-                        </button>
-                      </div>
-                      <transition name="slide-fade">
-                        <span class="error-message" v-if="registerErrors.phone">{{ registerErrors.phone }}</span>
-                      </transition>
-                    </div>
-
-                    <!-- Verification Code (Conditional - 6 Digit Box) -->
+                    <!-- Verification Code -->
                     <transition name="slide-fade">
                       <div class="input-group" v-if="showRegisterCodeInput">
                         <label> 验证码 </label>
@@ -891,17 +899,18 @@
                       </div>
                     </transition>
 
-                    <!-- Password -->
+                    <!-- Password ( 独立占据一行 ) -->
                     <div class="input-group">
                       <label> 设置密码 </label>
                       <div class="input-wrapper" :class="{ 'has-error': registerErrors.password }">
-                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <lock-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                         <input :type="showPassword ? 'text' : 'password'" placeholder=" 至少 8 位字符 " v-model="registerForm.password" @input="registerErrors.password = ''" />
                         <span class="input-suffix-icon" @click="showPassword = !showPassword">
                           <eye-outlined v-if="showPassword" />
                           <eye-invisible-outlined v-else />
                         </span>
                       </div>
+
                       <!-- Password Strength -->
                       <div class="password-strength-container" v-if="registerForm.password">
                         <div class="strength-bars">
@@ -912,16 +921,17 @@
                         </div>
                         <span class="strength-label" :class="registerStrengthClass">{{ registerStrengthLabel }}</span>
                       </div>
+
                       <transition name="slide-fade">
                         <span class="error-message" v-if="registerErrors.password">{{ registerErrors.password }}</span>
                       </transition>
                     </div>
 
-                    <!-- Confirm Password -->
+                    <!-- Confirm Password ( 独立占据一行 ) -->
                     <div class="input-group">
                       <label> 确认密码 </label>
                       <div class="input-wrapper" :class="{ 'has-error': registerErrors.confirmPassword }">
-                        <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 18px;" />
+                        <check-outlined style="color: #9ca3af; margin-right: 8px; font-size: 16px;" />
                         <input :type="showConfirmPassword ? 'text' : 'password'" placeholder=" 请再次输入密码 " v-model="registerForm.confirmPassword" @blur="handleRegisterInputBlur('confirmPassword')" @input="registerErrors.confirmPassword = ''" />
                         <span class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
                           <eye-outlined v-if="showConfirmPassword" />
@@ -958,16 +968,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue'
 import {
-  DatabaseOutlined, CloseOutlined,
-  AppleFilled, WindowsFilled, AndroidFilled, TabletFilled,
-  ArrowLeftOutlined, UserOutlined, LockOutlined, MailOutlined, GoogleCircleFilled,
-  SearchOutlined, ArrowRightOutlined, FileTextFilled,
-  LeftOutlined, RightOutlined,
-  RadarChartOutlined, TranslationOutlined, CustomerServiceFilled, CheckOutlined,
-  StepBackwardFilled, PlayCircleFilled, StepForwardFilled, CaretRightFilled,
-  ThunderboltFilled, BgColorsOutlined, CodeFilled, CompassFilled, SlackCircleFilled,
-  CalendarFilled, DeploymentUnitOutlined, SyncOutlined, VideoCameraFilled, BankOutlined, BarChartOutlined,
-  ReadOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined, MobileOutlined, SafetyCertificateOutlined,
+  DatabaseOutlined, AppleFilled, WindowsFilled, AndroidFilled, ArrowLeftOutlined, UserOutlined, LockOutlined, MailOutlined, GoogleCircleFilled,
+  SearchOutlined, ArrowRightOutlined, FileTextFilled, LeftOutlined, RightOutlined, RadarChartOutlined, TranslationOutlined, CustomerServiceFilled, CheckOutlined,
+  StepBackwardFilled, StepForwardFilled, CaretRightFilled, CodeFilled,DeploymentUnitOutlined, SyncOutlined, VideoCameraFilled, BankOutlined, EyeInvisibleOutlined, EyeOutlined, LoadingOutlined, MobileOutlined, AlignLeftOutlined,
   CameraFilled
 } from '@ant-design/icons-vue'
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
@@ -1697,35 +1700,43 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .landing-view { position: relative; min-height: 100vh; z-index: 1; cursor: default; }
 
 /* ================= 2. 顶部导航栏 ================= */
-.nav-container { position: fixed; top: 20px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 100; padding: 0 24px; }
-.ray-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 960px; height: 48px; background: #151515; border: 1px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 0 6px 0 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); cursor: default; }
-.nav-left { display: flex; align-items: center; }
-.ray-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-.logo-svg { width: 20px; height: 20px; }
-.logo-text { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: #fff; }
-.nav-center { display: flex; gap: 24px; }
-.nav-link { color: #888; font-size: 13px; font-weight: 500; text-decoration: none; transition: color 0.2s; }
+.nav-container { position: fixed; top: 20px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 100; padding: 0 24px; box-sizing: border-box; }
+.ray-nav { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 960px; height: 48px; background: #151515; border: 1px solid rgba(255,255,255,0.08); border-radius: 99px; padding: 0 6px 0 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); cursor: default; transition: all 0.3s ease; }
+.nav-left { display: flex; align-items: center; height: 100%; }
+.ray-logo { display: flex; align-items: center; gap: 8px; cursor: pointer; height: 100%; }
+.logo-svg { width: 20px; height: 20px; display: block; object-fit: contain; }
+.logo-text { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; color: #fff; white-space: nowrap; line-height: 1; display: flex; align-items: center; }
+.nav-center { display: flex; gap: 24px; align-items: center; height: 100%; }
+.nav-link { color: #888; font-size: 13px; font-weight: 500; text-decoration: none; transition: color 0.2s; white-space: nowrap; display: flex; align-items: center; line-height: 1; }
 .nav-link:hover, .nav-link.active { color: #fff; }
 .link-pricing { color: #888; font-size: 13px; font-weight: 500; }
-.nav-right { display: flex; align-items: center; gap: 12px; }
-.login-btn-text { background: none; border: none; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+.nav-right { display: flex; align-items: center; gap: 12px; height: 100%; }
+.login-btn-text { background: none; border: none; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; display: flex; align-items: center; line-height: 1; padding: 0; }
 .login-btn-text:hover { opacity: 0.7; }
-.download-btn-white { background: #ffffff; color: #000000; border: none; height: 36px; padding: 0 18px; border-radius: 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+.download-btn-white { background: #ffffff; color: #000000; border: none; height: 36px; padding: 0 18px; border-radius: 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 0.1s; white-space: nowrap; display: flex; align-items: center; justify-content: center; line-height: 1; }
 .download-btn-white:hover { transform: scale(1.02); }
 
+@media (max-width: 768px) {
+  .nav-center { display: none; } /* 移动端隐藏中部导航 */
+  .ray-nav { padding: 0 6px 0 16px; }
+  .login-btn-text { font-size: 13px; }
+  .download-btn-white { padding: 0 14px; height: 34px; font-size: 13px; }
+  .logo-text { font-size: 15px; }
+}
+
 /* ================= 3. Hero Section ================= */
-.hero-section { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-top: 0; pointer-events: none; min-height: 600px; }
-.hero-inner { pointer-events: auto; margin-bottom: 20px; }
-.hero-title { font-size: clamp(48px, 6vw, 80px); font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 24px; color: #fff; }
+.hero-section { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-top: 0; pointer-events: none; min-height: 600px; padding: 0 20px; box-sizing: border-box; }
+.hero-inner { pointer-events: auto; margin-bottom: 20px; width: 100%; }
+.hero-title { font-size: clamp(36px, 6vw, 80px); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 24px; color: #fff; }
 .hero-title .line { display: block; }
 .glow-text { text-shadow: 0 0 50px rgba(255,255,255,0.3); }
-.hero-sub { font-size: 20px; color: #999; line-height: 1.5; margin-bottom: 48px; }
+.hero-sub { font-size: clamp(16px, 2vw, 20px); color: #999; line-height: 1.5; margin-bottom: 48px; max-width: 800px; margin-left: auto; margin-right: auto; }
 
 /* ================= Extensions Section ================= */
-.extensions-section { position: relative; z-index: 10; max-width: 1200px; margin: 0 auto; padding: 0 24px 100px; }
+.extensions-section { position: relative; z-index: 10; max-width: 1200px; margin: 0 auto; padding: 0 24px 100px; box-sizing: border-box; }
 .ext-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
-.ext-title { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-.ext-sub { font-size: 16px; color: #888; }
+.ext-title { font-size: clamp(24px, 4vw, 32px); font-weight: 700; color: #fff; margin-bottom: 8px; }
+.ext-sub { font-size: clamp(14px, 2vw, 16px); color: #888; }
 .ext-tags { display: none; }
 
 .ext-grid-wrapper {
@@ -1755,6 +1766,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 }
 .ext-card:hover { transform: translateY(-8px); }
 
+/* ... (Card Color Styles Remaining Unchanged for brevity, preserving functionality) ... */
 .card-linear { background: radial-gradient(circle at top right, rgba(99,102,241,0.15), transparent 60%), #131316; }
 .card-linear:hover { border-color: rgba(99, 102, 241, 0.5); box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(99, 102, 241, 0.3), 0 20px 50px -10px rgba(0,0,0,0.8), 0 0 40px -10px rgba(99, 102, 241, 0.4); }
 .card-translate { background: radial-gradient(circle at top right, rgba(59,130,246,0.15), transparent 60%), #131316; }
@@ -1817,437 +1829,7 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .nav-circle:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
 .landing-footer { position: absolute; bottom: 30px; width: 100%; text-align: center; color: #444; font-size: 12px; pointer-events: none; }
 
-/* ================= 4. Download Modal ================= */
-.download-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; display: flex; align-items: center; justify-content: center; }
-.modal-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); }
-.modal-content { position: relative; z-index: 10; width: 100%; max-width: 1200px; padding: 40px; text-align: center; animation: pop-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-@keyframes pop-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-.modal-close { position: absolute; top: 0; right: 40px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-.modal-close:hover { background: rgba(255,255,255,0.15); transform: rotate(90deg); }
-.modal-header { margin-bottom: 60px; }
-.modal-header h2 { font-size: 42px; font-weight: 800; margin-bottom: 12px; color: #fff; }
-.modal-header p { font-size: 16px; color: #888; }
-.platform-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; justify-content: center; }
-.plat-card { background: linear-gradient(180deg, #1a1a1a, #161616); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 32px 24px; display: flex; flex-direction: column; align-items: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); position: relative; overflow: hidden; }
-.plat-card:hover { transform: translateY(-8px); background: linear-gradient(180deg, #222, #1a1a1a); border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
-.plat-icon-wrapper { width: 64px; height: 64px; border-radius: 18px; background: #000; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 32px; color: #fff; margin-bottom: 24px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
-.plat-title { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 6px; }
-.plat-desc { font-size: 13px; color: #666; margin-bottom: 28px; font-weight: 500; }
-.plat-action-btn { width: 100%; height: 40px; background: #fff; color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-.plat-action-btn:hover { background: #e0e0e0; }
-
-/* ================= 5. Auth Split Container (NEW & OPTIMIZED) ================= */
-.auth-wrapper-new {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-  z-index: 999;
-  background: #E6E6E6; /* Light gray background like image */
-  display: flex; align-items: center; justify-content: center;
-  padding: 0; /* REMOVED PADDING */
-}
-
-.auth-card-new {
-  width: 100%; max-width: none; /* REMOVED MAX-WIDTH */
-  height: 100vh; /* FULL HEIGHT */
-  min-height: 600px;
-  background: #ffffff;
-  border-radius: 0; /* REMOVED RADIUS */
-  box-shadow: none; /* REMOVED SHADOW */
-  display: flex;
-  overflow: hidden;
-  position: relative;
-}
-
-/* Left Side: Visual */
-.auth-visual-side {
-  flex: 0.45; /* 增大左侧占比至 45% */
-  position: relative;
-  /* Background logic moved to inline style in template for carousel */
-  background-color: #000;
-  padding: 40px;
-  display: flex; flex-direction: column; justify-content: space-between;
-  overflow: hidden;
-}
-
-.carousel-bg-wrapper {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  z-index: 0;
-}
-
-.carousel-slide {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background-size: cover; background-position: center;
-}
-
-/* Carousel Transitions */
-.fade-slide-enter-active, .fade-slide-leave-active { transition: opacity 1s ease; }
-.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; }
-
-.visual-overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%);
-  z-index: 1; pointer-events: none;
-}
-
-.auth-logo-badge {
-  position: relative; z-index: 2;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  padding: 8px 16px;
-  border-radius: 50px;
-  display: inline-flex; align-items: center; gap: 8px;
-  width: fit-content;
-  color: #fff; font-weight: 600; font-size: 14px;
-}
-.badge-icon { font-size: 16px; }
-
-.visual-content { position: relative; z-index: 2; color: #fff; margin-bottom: 40px; display: flex; flex-direction: column; gap: 20px; }
-.slide-text-group { margin-bottom: 10px; }
-.visual-heading { font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.02em; }
-.visual-desc { font-size: 16px; opacity: 0.9; line-height: 1.6; max-width: 80%; }
-
-/* Text Transition */
-.fade-text-enter-active, .fade-text-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
-.fade-text-enter-from { opacity: 0; transform: translateY(10px); }
-.fade-text-leave-to { opacity: 0; transform: translateY(-10px); }
-
-/* --- Carousel Indicators with Progress Animation --- */
-.visual-dots { display: flex; gap: 10px; margin-top: 10px; }
-
-.dot-wrapper {
-  width: 48px; height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
-}
-
-.dot-progress {
-  width: 0;
-  height: 100%;
-  background: #fff;
-  border-radius: 2px;
-}
-
-.dot-progress.animating {
-  animation: progressFill 5s linear forwards;
-}
-
-@keyframes progressFill {
-  0% { width: 0; }
-  100% { width: 100%; }
-}
-
-/* Right Side: Form */
-.auth-form-side {
-  flex: 0.55; /* 调整右侧占比为 55% */
-  width: auto; /* 移除固定 vw */
-  min-width: 500px;
-  max-width: none; /* 移除最大宽度限制，让其更舒展 */
-  background: #fff;
-  display: flex; flex-direction: column;
-  position: relative;
-  overflow-y: auto;
-  border-left: 1px solid rgba(0,0,0,0.05);
-}
-
-.form-scroll-container {
-  padding: 80px 40px; /* Reduced vertical padding */
-  width: 100%;
-  max-width: 480px; /* Slightly wider for better spacing */
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 100%; /* Ensure full height for centering logic */
-  box-sizing: border-box; /* IMPORTANT: Include padding in width/height calculation */
-}
-
-/* New Auth Inner Box Wrapper for Centering */
-.auth-inner-box {
-  width: 100%;
-  margin-top: auto;
-  margin-bottom: auto;
-  padding-bottom: 20px; /* 内部再增加一点底部空间缓冲 */
-}
-
-.visual-home-btn {
-  position: absolute; top: 40px; right: 40px; /* Position inside visual side */
-  background: rgba(255,255,255,0.15); /* Glass effect */
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.2);
-  padding: 10px 20px;
-  border-radius: 24px;
-  font-size: 14px; font-weight: 600; color: #fff;
-  cursor: pointer; transition: all 0.2s; z-index: 10;
-  display: flex; align-items: center; gap: 8px;
-}
-.visual-home-btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.3); }
-.btn-icon { font-size: 16px; }
-
-.return-home-btn {
-  /* Removed old positioning style, now using .visual-home-btn */
-}
-
-.close-auth-btn {
-  /* 已移除 */
-  display: none;
-}
-
-.form-header-new { margin-bottom: 24px; text-align: left; } /* 修改为左对齐 */
-
-.welcome-title {
-  font-size: 26px; /* Slightly smaller for cleaner look */
-  font-weight: 700; /* 800 is a bit heavy sometimes */
-  color: #111827;
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
-}
-.welcome-sub { color: #6b7280; font-size: 14px; }
-
-.form-fields-new { display: flex; flex-direction: column; gap: 16px; } /* Reduced gap from 20px to 16px for compactness */
-
-.input-group { display: flex; flex-direction: column; gap: 6px; }
-.input-group label { font-size: 13px; font-weight: 600; color: #374151; }
-
-.input-wrapper {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB; /* Tailwind gray-200 equivalent */
-  border-radius: 10px; /* Adjusted radius */
-  padding: 0 14px; /* Horizontal padding */
-  display: flex; align-items: center;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  height: 44px; /* Reduced from 48px to 44px for tighter UI */
-}
-.input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
-/* Error state styles */
-.input-wrapper.has-error {
-  border-color: #ef4444; /* Tailwind red-500 */
-}
-.input-wrapper.has-error:focus-within {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
-}
-
-.input-wrapper input {
-  border: none; outline: none; width: 100%; font-size: 14px; color: #1f2937; background: transparent; /* Font 14px */
-}
-.input-wrapper input::placeholder { color: #9ca3af; }
-.input-suffix-icon { color: #9ca3af; cursor: pointer; font-size: 18px; display: flex; align-items: center; }
-
-/* Error message below input */
-.error-message {
-  color: #ef4444;
-  font-size: 12px; /* Smaller error text */
-  font-weight: 500;
-  margin-top: 4px; /* Tighten up */
-  padding-left: 2px;
-  display: block;
-}
-
-/* Updated Animation classes for error slide-fade */
-.slide-fade-enter-active {
-  transition: all 0.3s ease-out;
-}
-.slide-fade-leave-active {
-  transition: all 0.2s ease-in;
-}
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-
-.form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: -4px; }
-.remember-checkbox {
-  display: none; /* Hide via CSS as per new request logic, keeping structure or removing entirely if requested */
-}
-/* Just removing the block in HTML as per request */
-
-.forgot-link { color: #6b7280; font-size: 13px; text-decoration: none; font-weight: 500; }
-.forgot-link:hover { color: #2563eb; }
-
-.auth-btn-primary {
-  width: 100%; height: 44px; /* Match input height 44px */
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 22px; /* Pill shape */
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
-  margin-top: 8px;
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06); /* Tailwind-like shadow */
-  display: flex; justify-content: center; align-items: center;
-}
-.auth-btn-primary:hover {
-  background: #1d4ed8;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.15);
-}
-.auth-btn-primary:active {
-  transform: translateY(0);
-  box-shadow: none;
-}
-.auth-btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-.spin-icon {
-  font-size: 24px;
-  color: #fff;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-
-.auth-divider {
-  position: relative; text-align: center; margin: 20px 0; /* Reduced margin */
-}
-.auth-divider::before {
-  content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb;
-}
-.auth-divider span {
-  position: relative; background: #fff; padding: 0 16px; color: #9ca3af; font-size: 13px; font-weight: 500;
-}
-
-.social-row { display: flex; gap: 16px; }
-
-/* 优化后的次级操作按钮 ( 手机号登录 ) */
-.auth-btn-secondary {
-  width: 100%;
-  height: 44px; /* 44px match */
-  background: #000000;
-  border: 1px solid #000000;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.auth-btn-secondary:hover {
-  background: #333333;
-  border-color: #333333;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-}
-
-.auth-btn-secondary .s-icon {
-  font-size: 18px;
-  transition: color 0.3s;
-  color: #ffffff;
-}
-
-/* 已移除旧的 .social-btn-new, .s-icon.google, .s-icon.apple */
-
-.auth-footer-text {
-  text-align: center;
-  font-size: 13px;
-  color: #6b7280;
-  margin-top: 24px;
-  font-weight: 500;
-  padding-bottom: 0; /* Let container padding handle spacing */
-}
-.register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
-.register-link:hover { text-decoration: underline; }
-
-.sms-btn {
-  border: none;
-  background: none;
-  color: #2563eb;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 4px 8px;
-  white-space: nowrap;
-  transition: color 0.2s;
-}
-.sms-btn:hover { color: #1d4ed8; }
-.sms-btn:disabled { color: #9ca3af; cursor: not-allowed; }
-
-/* Apple-style OTP Inputs */
-.otp-box-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.otp-input {
-  width: 100%;
-  height: 48px; /* Slightly smaller OTP */
-  border-radius: 10px; /* Rounded */
-  border: 1px solid #E5E7EB;
-  text-align: center;
-  font-size: 20px;
-  font-weight: 600;
-  background: #fff;
-  color: #111827;
-  outline: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.otp-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-  transform: translateY(-2px);
-}
-
-.otp-input.has-error {
-  border-color: #ef4444;
-}
-
-/* Password Strength Meter - Optimized Design */
-.password-strength-container {
-  margin-top: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.strength-bars {
-  display: flex;
-  gap: 4px;
-  height: 4px;
-  width: 100%;
-}
-
-.strength-segment {
-  flex: 1;
-  background-color: #e5e7eb;
-  border-radius: 2px;
-  transition: all 0.3s ease;
-}
-
-.strength-segment.active.weak { background-color: #ef4444; }
-.strength-segment.active.medium { background-color: #f59e0b; }
-.strength-segment.active.strong { background-color: #10b981; }
-
-.strength-label {
-  font-size: 12px;
-  font-weight: 600;
-  text-align: right;
-  transition: color 0.3s ease;
-  min-height: 18px; /* reserve space */
-}
-
-.text-weak { color: #ef4444; }
-.text-medium { color: #f59e0b; }
-.text-strong { color: #10b981; }
-
-/* ================= 6. Integrations Page (Store Page) - RE-ADDED ================= */
+/* ================= 6. Integrations Page (Store Page) ================= */
 .store-view {
   position: relative;
   width: 100%;
@@ -2257,22 +1839,22 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   flex-direction: column;
   align-items: center;
   padding-top: 120px;
-  padding-bottom: 100px; /* 增加底部 padding */
+  padding-bottom: 100px;
+  box-sizing: border-box;
 }
 
-/* Store 的背景光效 */
 .store-bg-glow {
   position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
-  width: 800px; height: 600px;
+  width: 100%; max-width: 800px; height: 600px;
   background: radial-gradient(circle, rgba(255, 99, 99, 0.1) 0%, rgba(59, 130, 246, 0.05) 40%, transparent 70%);
   pointer-events: none; filter: blur(80px); z-index: -1;
 }
 
-.store-content-wrapper { position: relative; z-index: 10; width: 100%; max-width: 1000px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.store-content-wrapper { position: relative; z-index: 10; width: 100%; max-width: 1000px; padding: 0 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center; }
 
 /* Icon Cloud */
-.store-icon-cloud { display: flex; flex-direction: column; align-items: center; gap: 24px; margin-bottom: 60px; perspective: 1000px; }
-.cloud-row { display: flex; align-items: center; justify-content: center; gap: 24px; }
+.store-icon-cloud { display: flex; flex-direction: column; align-items: center; gap: 24px; margin-bottom: 60px; perspective: 1000px; width: 100%; }
+.cloud-row { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
 .row-top { margin-bottom: -10px; }
 
 .store-app-icon {
@@ -2284,22 +1866,13 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   font-size: 32px; color: #fff;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* 关键修复：确保方形图片被圆角容器裁剪 */
   overflow: hidden;
 }
 
-/* Icon Specifics */
 .icon-focus { width: 96px; height: 96px; z-index: 10; font-size: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.4); background: #111; transform: scale(1.05); }
 
 /* 修复 Notion 图标样式 */
-.notion-n {
-  width: 60%; /* 调整大小，不再填满 */
-  height: 60%;
-  object-fit: contain; /* 保持比例 */
-  display: block;
-  border-radius: 4px; /* 稍微给一点圆角 */
-}
-
+.notion-n { width: 60%; height: 60%; object-fit: contain; display: block; border-radius: 4px; }
 .icon-blur-1 { opacity: 0.6; transform: scale(0.9); filter: blur(0.5px); }
 .icon-blur-2 { opacity: 0.3; transform: scale(0.8); filter: blur(1.5px); }
 
@@ -2309,9 +1882,9 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
 .icon-google { background: #fff; color: #000; }
 .icon-slack { background: #4a154b; color: #fff; }
 
-.store-hero-text { margin-bottom: 50px; }
+.store-hero-text { margin-bottom: 50px; width: 100%; }
 .store-title {
-  font-size: 64px;
+  font-size: clamp(40px, 6vw, 64px);
   font-weight: 800;
   color: #fff;
   margin-bottom: 16px;
@@ -2320,15 +1893,10 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.store-subtitle { font-size: 18px; color: #888; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+.store-subtitle { font-size: clamp(15px, 2vw, 18px); color: #888; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 0 10px; }
 
-/* ================= 7. New: Top Picks Section - RE-ADDED ================= */
-.top-picks-section {
-  width: 100%;
-  margin-top: 80px;
-  text-align: left;
-}
-
+/* Top Picks Section - Grid Responsive */
+.top-picks-section { width: 100%; margin-top: 80px; text-align: left; }
 .picks-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2347,127 +1915,42 @@ const scrollRight = () => { if (extGridRef.value) extGridRef.value.scrollBy({ le
   text-align: center;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
-  text-decoration: none; /* 确保作为 a 标签时无下划线 */
+  text-decoration: none;
 }
 
-/* 新增半透明卡片样式 */
-.glass-card {
-  background: rgba(20, 20, 20, 0.5); /* 半透明黑色 */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
+.glass-card { background: rgba(20, 20, 20, 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.pick-card:hover { border-color: rgba(255,255,255,0.25); transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); background: #141414; }
+.glass-card:hover { background: rgba(30, 30, 30, 0.7); }
 
-.pick-card:hover {
-  border-color: rgba(255,255,255,0.25);
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-  background: #141414;
-}
-
-/* 针对 glass-card 的 hover 效果 */
-.glass-card:hover {
-  background: rgba(30, 30, 30, 0.7);
-}
-
-.pick-icon-wrapper {
-  width: 72px; height: 72px;
-  border-radius: 18px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 24px;
-  position: relative;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-}
-
+.pick-icon-wrapper { width: 72px; height: 72px; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 .bg-white { background: white; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
 .bg-black { background: #171f20}
-.bg-red { background: #ea2000
-}
+.bg-red { background: #ea2000}
 .bg-ibook { background: #f98b00; color: #000; }
 .bg-green-douban { background: #00b51d; color: #fff; }
 .bg-apple-music { background: #ff2f56; color: #fff; }
 .bg-orange-finance { background: #f97316; color: #fff; }
 
 .pick-icon { font-size: 36px; }
+img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; }
+.pick-name { font-size: 18px; font-weight: 700; color: #fff; margin: 0 0 10px; }
+.pick-desc { font-size: 14px; color: #888; line-height: 1.5; margin-bottom: 24px; flex-grow: 1; }
 
-/* 专门修复 pick-card 中图片类型图标的大小 */
-img.pick-icon {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  border-radius: 8px; /* 稍微添加圆角以防图片过于尖锐 */
-}
+/* ================= 8. Download Page ================= */
+.download-view { position: relative; width: 100%; min-height: 100vh; z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 100px; padding-bottom: 100px; box-sizing: border-box; }
+.download-bg-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.03) 0%, transparent 50%); pointer-events: none; z-index: -1; }
+.download-container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 24px; box-sizing: border-box; }
+.download-header { margin-bottom: 60px; margin-top: 60px; width: 100%; }
+.download-title { font-size: clamp(36px, 6vw, 64px); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 20px; background: linear-gradient(135deg, #fff 0%, #ccc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.download-subtitle { font-size: clamp(15px, 2vw, 20px); color: #888; line-height: 1.5; font-weight: 400; max-width: 600px; margin: 0 auto; }
 
-.pick-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-  margin: 0 0 10px;
-}
-
-.pick-desc {
-  font-size: 14px;
-  color: #888;
-  line-height: 1.5;
-  margin-bottom: 24px;
-  flex-grow: 1; /* Pushes content apart if needed */
-}
-
-/* ================= 8. New: Download Page - RE-ADDED ================= */
-.download-view {
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 100px;
-  padding-bottom: 100px;
-}
-
-.download-bg-glow {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.03) 0%, transparent 50%);
-  pointer-events: none; z-index: -1;
-}
-
-.download-container {
-  width: 100%; max-width: 1000px;
-  display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 0 24px;
-}
-
-.download-header { margin-bottom: 60px; margin-top: 120px; /* Increased top margin */ }
-.download-title {
-  font-size: 64px; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 20px;
-  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.download-subtitle { font-size: 20px; color: #888; line-height: 1.5; font-weight: 400; max-width: 600px; margin: 0 auto; }
-
-/* Primary Mac Download Card */
 .primary-dl-card {
-  width: 100%;
-  /* max-width: 900px; REMOVED to align with grid */
-  height: 380px;
-  background: #0d0d0d;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 24px;
-  display: flex;
-  align-items: stretch;
-  overflow: hidden;
-  margin-bottom: 60px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 100%; height: 380px; background: #0d0d0d; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
+  display: flex; align-items: stretch; overflow: hidden; margin-bottom: 60px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transition: transform 0.3s;
 }
 .primary-dl-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
 
-.primary-content {
-  flex: 1; padding: 48px;
-  display: flex; flex-direction: column; align-items: flex-start; text-align: left;
-  justify-content: space-between; z-index: 2; position: relative;
-}
-
+.primary-content { flex: 1; padding: 48px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; justify-content: space-between; z-index: 2; position: relative; }
 .os-icon-large { font-size: 48px; color: #fff; margin-bottom: 20px; }
 .dl-info { margin-bottom: 30px; }
 .dl-os-name { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px; }
@@ -2477,44 +1960,16 @@ img.pick-icon {
 .req-text { font-size: 13px; color: #666; }
 
 .dl-actions { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
-.dl-btn-primary {
-  background: #fff; color: #000;
-  border: none; padding: 14px 28px;
-  border-radius: 12px; font-size: 15px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; gap: 8px;
-  box-shadow: 0 4px 12px rgba(255,255,255,0.15);
-}
+.dl-btn-primary { background: #fff; color: #000; border: none; padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(255,255,255,0.15); }
 .dl-btn-primary:hover { transform: scale(1.02); background: #f0f0f0; box-shadow: 0 6px 16px rgba(255,255,255,0.2); }
-/* Removed dl-sub-link */
 
-.primary-visual {
-  flex: 1.2;
-  background: radial-gradient(circle at bottom right, rgba(255, 69, 58, 0.05), transparent 70%);
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
+.primary-visual { flex: 1.2; background: radial-gradient(circle at bottom right, rgba(255, 69, 58, 0.05), transparent 70%); position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 
-/* App Window Mock inside visual */
-.app-window-mock {
-  width: 85%; height: auto; aspect-ratio: 16/10;
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(20px);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-  display: flex; flex-direction: column;
-  transform: translateY(20px) rotateX(5deg) rotateY(-5deg);
-  transition: transform 0.5s ease;
-  padding: 12px;
-}
+.app-window-mock { width: 85%; height: auto; aspect-ratio: 16/10; background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(20px); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; transform: translateY(20px) rotateX(5deg) rotateY(-5deg); transition: transform 0.5s ease; padding: 12px; box-sizing: border-box; }
 .primary-dl-card:hover .app-window-mock { transform: translateY(10px) rotateX(0deg) rotateY(0deg); }
-
 .win-bar { height: 44px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #888; font-size: 14px; gap: 12px; margin-bottom: 4px; }
 .win-search-icon { font-size: 16px; color: #666; }
 .win-search-text { flex: 1; font-size: 13px; opacity: 0.7; }
-
 .win-list { flex: 1; padding: 4px 0; display: flex; flex-direction: column; gap: 2px; }
 .win-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 6px; color: #ccc; font-size: 13px; transition: background 0.2s; }
 .win-item.active { background: #FF6363; color: #fff; font-weight: 500; box-shadow: 0 2px 8px rgba(255, 99, 99, 0.3); }
@@ -2522,179 +1977,63 @@ img.pick-icon {
 .item-icon { font-size: 16px; opacity: 0.8; }
 .item-key { opacity: 0.6; font-size: 11px; font-family: monospace; }
 
-.win-footer { height: 32px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: #555; margin-top: 4px; }
-.footer-actions { display: flex; align-items: center; gap: 6px; }
-.footer-actions .k { background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; color: #777; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; font-size: 10px; }
-.footer-actions .t { font-weight: 500; }
+.platforms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; width: 100%; }
 
-/* Secondary Platforms Grid */
-.platforms-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
-  width: 100%;
-}
-
-.plat-item-card {
-  background: rgba(20,20,20,0.6);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  padding: 24px;
-  display: flex; flex-direction: column; align-items: center;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative; overflow: hidden;
-}
-
+.plat-item-card { background: rgba(20,20,20,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; transition: all 0.3s; position: relative; overflow: hidden; box-sizing: border-box; }
 .plat-item-card:hover { transform: translateY(-4px); background: rgba(30,30,30,0.8); border-color: rgba(255,255,255,0.2); }
-
-/* Brand Color Glows on Hover */
 .win-card:hover { box-shadow: 0 10px 30px -5px rgba(0, 164, 239, 0.15); border-color: rgba(0, 164, 239, 0.3); }
 .win-card:hover .win-icon { color: #00a4ef; transform: scale(1.1); }
-
 .ios-card:hover { box-shadow: 0 10px 30px -5px rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
 .ios-card:hover .ios-icon { color: #fff; transform: scale(1.1); }
-
 .android-card:hover { box-shadow: 0 10px 30px -5px rgba(61, 220, 132, 0.15); border-color: rgba(61, 220, 132, 0.3); }
 .android-card:hover .android-icon { color: #3ddc84; transform: scale(1.1); }
-
 .linux-card:hover { border-color: rgba(252, 198, 36, 0.3); }
 .linux-card:hover .linux-icon { color: #fcc624; transform: scale(1.1); }
 
 .plat-icon-box { font-size: 32px; margin-bottom: 16px; color: #888; transition: all 0.3s; }
-
 .plat-details h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #fff; }
 .plat-details p { font-size: 13px; color: #666; margin-bottom: 20px; transition: color 0.3s; }
 .plat-item-card:hover p { color: #999; }
-
-.plat-dl-btn {
-  background: rgba(255,255,255,0.08);
-  color: #fff; border: 1px solid transparent;
-  padding: 8px 0; border-radius: 8px;
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: all 0.2s; width: 100%;
-}
+.plat-dl-btn { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid transparent; padding: 8px 0; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; width: 100%; box-sizing: border-box; }
 .plat-dl-btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.1); }
 .plat-dl-btn.disabled { opacity: 0.3; cursor: not-allowed; }
 .plat-dl-btn.disabled:hover { background: rgba(255,255,255,0.08); border-color: transparent; }
-
 .coming-soon { opacity: 0.7; }
 
-/* ================= 9. New: Changelog Page CSS - RE-ADDED ================= */
-.changelog-view {
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 120px;
-  padding-bottom: 100px;
-}
-
-.changelog-bg-glow {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.03) 0%, transparent 50%);
-  pointer-events: none; z-index: -1;
-}
-
-.changelog-container {
-  width: 100%; max-width: 800px;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 0 24px;
-}
-
+/* ================= 9. Changelog Page ================= */
+.changelog-view { position: relative; width: 100%; min-height: 100vh; z-index: 10; display: flex; flex-direction: column; align-items: center; padding-top: 120px; padding-bottom: 100px; box-sizing: border-box; }
+.changelog-bg-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.03) 0%, transparent 50%); pointer-events: none; z-index: -1; }
+.changelog-container { width: 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; padding: 0 24px; box-sizing: border-box; }
 .cl-header { margin-bottom: 60px; text-align: center; }
-.cl-title {
-  font-size: 56px; font-weight: 800; color: #fff; margin-bottom: 16px; letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.cl-subtitle { font-size: 18px; color: #888; }
+.cl-title { font-size: clamp(40px, 6vw, 56px); font-weight: 800; color: #fff; margin-bottom: 16px; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 0%, #ccc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.cl-subtitle { font-size: clamp(15px, 2vw, 18px); color: #888; }
 
-.timeline-wrapper {
-  position: relative;
-  width: 100%;
-  padding-left: 120px; /* Space for date/version on left */
-}
-
-/* Vertical Line */
-.timeline-line {
-  position: absolute; left: 120px; top: 20px; bottom: 0;
-  width: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
-}
-
-.release-item {
-  position: relative;
-  margin-bottom: 60px;
-  animation: slideUp 0.6s ease forwards;
-  opacity: 0;
-}
+.timeline-wrapper { position: relative; width: 100%; padding-left: 120px; box-sizing: border-box; }
+.timeline-line { position: absolute; left: 120px; top: 20px; bottom: 0; width: 2px; background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent); }
+.release-item { position: relative; margin-bottom: 60px; animation: slideUp 0.6s ease forwards; opacity: 0; }
 .release-item:nth-child(2) { animation-delay: 0.1s; }
 .release-item:nth-child(3) { animation-delay: 0.2s; }
 .release-item:nth-child(4) { animation-delay: 0.3s; }
 
-/* Left Side Meta */
-.release-meta {
-  position: absolute; left: -140px; top: 0; width: 120px;
-  text-align: right; padding-right: 24px;
-  display: flex; flex-direction: column; align-items: flex-end;
-}
-.r-version {
-  display: block; font-family: monospace; font-size: 16px; font-weight: 700;
-  background: linear-gradient(90deg, #fff, #bbb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  margin-bottom: 4px;
-}
+.release-meta { position: absolute; left: -140px; top: 0; width: 120px; text-align: right; padding-right: 24px; display: flex; flex-direction: column; align-items: flex-end; box-sizing: border-box; }
+.r-version { display: block; font-family: monospace; font-size: 16px; font-weight: 700; background: linear-gradient(90deg, #fff, #bbb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
 .r-date { font-size: 12px; color: #666; font-family: -apple-system, BlinkMacSystemFont, "Inter", monospace; }
+.latest-badge { margin-top: 8px; font-size: 10px; font-weight: 700; color: #000; background: #fff; padding: 2px 6px; border-radius: 4px; display: inline-block; letter-spacing: 0.5px; }
 
-.latest-badge {
-  margin-top: 8px;
-  font-size: 10px; font-weight: 700; color: #000; background: #fff;
-  padding: 2px 6px; border-radius: 4px; display: inline-block;
-  letter-spacing: 0.5px;
-}
-
-/* Timeline Dot */
-.release-dot {
-  position: absolute; left: -6px; top: 6px;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: #000; border: 2px solid #444;
-  z-index: 2; transition: all 0.3s;
-  display: flex; align-items: center; justify-content: center;
-}
+.release-dot { position: absolute; left: -6px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: #000; border: 2px solid #444; z-index: 2; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
 .dot-inner { width: 6px; height: 6px; background: transparent; border-radius: 50%; transition: all 0.3s; }
-
 .release-dot.dot-active { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
 .release-dot.dot-active .dot-inner { background: #fff; }
-
 .release-item:hover .release-dot { border-color: #fff; transform: scale(1.1); }
 
-/* Card Content - Premium Glass */
-.glass-card-premium {
-  background: rgba(20,20,20,0.4);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative; overflow: hidden;
-}
-.glass-card-premium::before {
-  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  opacity: 0; transition: opacity 0.4s;
-}
-.glass-card-premium:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255,255,255,0.15);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-  background: rgba(25,25,25,0.5);
-}
+.glass-card-premium { background: rgba(20,20,20,0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); position: relative; overflow: hidden; box-sizing: border-box; }
+.glass-card-premium::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); opacity: 0; transition: opacity 0.4s; }
+.glass-card-premium:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); background: rgba(25,25,25,0.5); }
 .glass-card-premium:hover::before { opacity: 1; }
 
 .rc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
 .rc-title { font-size: 24px; font-weight: 700; color: #fff; margin: 0; letter-spacing: -0.01em; }
 .rc-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-
 .tag { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; }
 .tag-new { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
 .tag-fix { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
@@ -2702,9 +2041,7 @@ img.pick-icon {
 
 .rc-desc { font-size: 15px; color: #a1a1aa; line-height: 1.7; margin-bottom: 24px; }
 .rc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
-.rc-list li {
-  position: relative; font-size: 14px; color: #d4d4d8; display: flex; align-items: flex-start; gap: 12px; line-height: 1.5;
-}
+.rc-list li { position: relative; font-size: 14px; color: #d4d4d8; display: flex; align-items: flex-start; gap: 12px; line-height: 1.5; }
 .li-icon { font-size: 16px; line-height: 1.5; display: inline-block; width: 20px; text-align: center; }
 
 .cl-footer { margin-top: 60px; font-size: 14px; color: #666; transition: opacity 0.3s; }
@@ -2712,27 +2049,127 @@ img.pick-icon {
 .cl-link { color: #888; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; padding-bottom: 2px; }
 .cl-link:hover { color: #fff; border-bottom-color: #fff; }
 
-/* Responsive Auth */
-@media (max-width: 900px) {
-  .auth-wrapper-new { padding: 0; }
-  .auth-card-new { flex-direction: column; }
-  .auth-visual-side { display: none; } /* Hide visual on mobile if preferred, or adjust height */
-  .auth-form-side { width: 100%; min-width: auto; }
-  .form-scroll-container { padding: 40px; }
-  .visual-home-btn { display: none; } /* Or move it to form side for mobile */
-}
+/* ================= 10. Auth Wrapper (Auth/Forgot/Register) ================= */
+.auth-wrapper-new { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 999; background: #E6E6E6; display: flex; align-items: center; justify-content: center; padding: 0; }
+.auth-card-new { width: 100%; max-width: none; height: 100vh; min-height: 600px; background: #ffffff; border-radius: 0; box-shadow: none; display: flex; overflow: hidden; position: relative; }
 
-/* Animations - RE-ADDED & FIXES */
-.fade-slow-enter-active,
-.fade-slow-leave-active {
-  transition: opacity 0.5s ease;
-}
+/* Left Side: Visual */
+.auth-visual-side { flex: 0.45; position: relative; background-color: #000; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box; }
+.carousel-bg-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+.carousel-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; }
+.fade-slide-enter-active, .fade-slide-leave-active { transition: opacity 1s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; }
+.visual-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%); z-index: 1; pointer-events: none; }
+.auth-logo-badge { position: relative; z-index: 2; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); padding: 8px 16px; border-radius: 50px; display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: #fff; font-weight: 600; font-size: 14px; }
+.badge-icon { font-size: 16px; }
+.visual-content { position: relative; z-index: 2; color: #fff; margin-bottom: 40px; display: flex; flex-direction: column; gap: 20px; }
+.slide-text-group { margin-bottom: 10px; }
+.visual-heading { font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.1; letter-spacing: -0.02em; }
+.visual-desc { font-size: 16px; opacity: 0.9; line-height: 1.6; max-width: 80%; }
+.fade-text-enter-active, .fade-text-leave-active { transition: opacity 0.4s ease, transform 0.4s ease; }
+.fade-text-enter-from { opacity: 0; transform: translateY(10px); }
+.fade-text-leave-to { opacity: 0; transform: translateY(-10px); }
+.visual-dots { display: flex; gap: 10px; margin-top: 10px; }
+.dot-wrapper { width: 48px; height: 4px; background: rgba(255, 255, 255, 0.3); border-radius: 2px; overflow: hidden; cursor: pointer; position: relative; }
+.dot-progress { width: 0; height: 100%; background: #fff; border-radius: 2px; }
+.dot-progress.animating { animation: progressFill 5s linear forwards; }
+@keyframes progressFill { 0% { width: 0; } 100% { width: 100%; } }
 
-.fade-slow-enter-from,
-.fade-slow-leave-to {
-  opacity: 0;
-}
+/* Right Side: Form */
+.auth-form-side { flex: 0.55; width: auto; min-width: 500px; max-width: none; background: #fff; display: flex; flex-direction: column; position: relative; overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.05); }
+.form-scroll-container { padding: 40px 40px; width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; min-height: 100%; box-sizing: border-box; }
+.auth-inner-box { width: 100%; margin-top: auto; margin-bottom: auto; padding-bottom: 0; }
 
+.visual-home-btn { position: absolute; top: 40px; right: 40px; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 24px; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; transition: all 0.2s; z-index: 10; display: flex; align-items: center; gap: 8px; }
+.visual-home-btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.3); }
+.btn-icon { font-size: 16px; }
+
+/* 移动端顶部 Navbar ( 仅在移动端显示 ) */
+.mobile-auth-header { display: none; }
+
+.form-header-new { margin-bottom: 20px; text-align: left; }
+.welcome-title { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 4px; letter-spacing: -0.02em; }
+.welcome-sub { color: #6b7280; font-size: 13px; }
+
+.form-fields-new { display: flex; flex-direction: column; gap: 16px; } /* 增加各输入组之间的间距 */
+.input-group { display: flex; flex-direction: column; gap: 8px; width: 100%; } /* 增加标签和输入框之间的间距 */
+.input-group label { font-size: 12px; font-weight: 600; color: #374151; }
+
+.input-wrapper { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0 12px; display: flex; align-items: center; transition: border-color 0.2s, box-shadow 0.2s; height: 40px; box-sizing: border-box; }
+.input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+.input-wrapper.has-error { border-color: #ef4444; }
+.input-wrapper.has-error:focus-within { border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); }
+.input-wrapper input { border: none; outline: none; width: 100%; font-size: 13px; color: #1f2937; background: transparent; }
+.input-wrapper input::placeholder { color: #9ca3af; }
+.input-suffix-icon { color: #9ca3af; cursor: pointer; font-size: 16px; display: flex; align-items: center; }
+.error-message { color: #ef4444; font-size: 11px; font-weight: 500; margin-top: 2px; padding-left: 2px; display: block; }
+
+.slide-fade-enter-active { transition: all 0.3s ease-out; }
+.slide-fade-leave-active { transition: all 0.2s ease-in; }
+.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-8px); }
+
+.form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: -4px; }
+.forgot-link { color: #6b7280; font-size: 13px; text-decoration: none; font-weight: 500; }
+.forgot-link:hover { color: #2563eb; }
+
+.auth-btn-primary { width: 100%; height: 40px; background: #2563eb; color: #fff; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-top: 4px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06); display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
+.auth-btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.15); }
+.auth-btn-primary:active { transform: translateY(0); box-shadow: none; }
+.auth-btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.spin-icon { font-size: 24px; color: #fff; animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.auth-divider { position: relative; text-align: center; margin: 16px 0; }
+.auth-divider::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb; }
+.auth-divider span { position: relative; background: #fff; padding: 0 16px; color: #9ca3af; font-size: 12px; font-weight: 500; }
+
+.social-row { display: flex; gap: 16px; }
+.auth-btn-secondary { width: 100%; height: 40px; background: #000000; border: 1px solid #000000; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 600; color: #ffffff; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); box-sizing: border-box; }
+.auth-btn-secondary:hover { background: #333333; border-color: #333333; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
+.auth-btn-secondary .s-icon { font-size: 16px; transition: color 0.3s; color: #ffffff; }
+
+.auth-footer-text { text-align: center; font-size: 12px; color: #6b7280; margin-top: 16px; font-weight: 500; padding-bottom: 0; }
+.register-link { color: #2563eb; font-weight: 600; text-decoration: none; margin-left: 4px; }
+.register-link:hover { text-decoration: underline; }
+
+.sms-btn { border: none; background: none; color: #2563eb; font-weight: 600; font-size: 12px; cursor: pointer; padding: 4px 8px; white-space: nowrap; transition: color 0.2s; }
+.sms-btn:hover { color: #1d4ed8; }
+.sms-btn:disabled { color: #9ca3af; cursor: not-allowed; }
+
+/* ---------------- 验证码输入框 (OTP) ---------------- */
+.otp-box-container { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+.otp-input { flex: 1; min-width: 0; max-width: 48px; aspect-ratio: 1 / 1; height: auto; border-radius: 12px; border: 1px solid #E5E7EB; text-align: center; font-size: 20px; font-weight: 600; background: #fff; color: #111827; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-sizing: border-box; padding: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+.otp-input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 2px 6px rgba(0,0,0,0.05); transform: translateY(-2px); }
+.otp-input.has-error { border-color: #ef4444; box-shadow: 0 1px 2px rgba(239,68,68,0.05); }
+
+.password-strength-container { margin-top: 4px; display: flex; flex-direction: column; gap: 4px; }
+.strength-bars { display: flex; gap: 4px; height: 4px; width: 100%; }
+.strength-segment { flex: 1; background-color: #e5e7eb; border-radius: 2px; transition: all 0.3s ease; }
+.strength-segment.active.weak { background-color: #ef4444; }
+.strength-segment.active.medium { background-color: #f59e0b; }
+.strength-segment.active.strong { background-color: #10b981; }
+.strength-label { font-size: 11px; font-weight: 600; text-align: right; transition: color 0.3s ease; min-height: 16px; }
+.text-weak { color: #ef4444; }
+.text-medium { color: #f59e0b; }
+.text-strong { color: #10b981; }
+
+.avatar-upload-container { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 8px; }
+.avatar-wrapper { position: relative; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.avatar-wrapper:hover { transform: scale(1.05); }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-placeholder { width: 100%; height: 100%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px; font-weight: 700; }
+.avatar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+.avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+.camera-icon { color: #fff; font-size: 20px; }
+
+.form-row-group { display: flex; gap: 12px; width: 100%; }
+.flex-1 { flex: 1; min-width: 0; }
+.verified-badge { font-size: 12px; color: #10b981; font-weight: 600; padding: 0 8px; white-space: nowrap; }
+
+/* Animations */
+.fade-slow-enter-active, .fade-slow-leave-active { transition: opacity 0.5s ease; }
+.fade-slow-enter-from, .fade-slow-leave-to { opacity: 0; }
 .reveal-1 { animation: slideUp 0.8s 0.1s forwards; opacity: 0; }
 .reveal-2 { animation: slideUp 0.8s 0.2s forwards; opacity: 0; }
 .reveal-3 { animation: slideUp 0.8s 0.3s forwards; opacity: 0; }
@@ -2745,32 +2182,129 @@ img.pick-icon {
 .zoom-fade-enter-from { opacity: 0; transform: scale(0.95); }
 .zoom-fade-leave-to { opacity: 0; transform: scale(1.05); }
 
-/* Avatar Upload */
-.avatar-upload-container { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; } /* 修改为居中对齐 */
-.avatar-wrapper {
-  position: relative; width: 72px; height: 72px; border-radius: 50%;
-  overflow: hidden; cursor: pointer; transition: transform 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.avatar-wrapper:hover { transform: scale(1.05); }
-.avatar-img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-placeholder {
-  width: 100%; height: 100%; background: #e5e7eb;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 32px; font-weight: 700;
-}
-.avatar-overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 0.2s;
-}
-.avatar-wrapper:hover .avatar-overlay { opacity: 1; }
-.camera-icon { color: #fff; font-size: 24px; }
-.avatar-hint { font-size: 12px; color: #9ca3af; font-weight: 500; }
 
-/* Parallel Form Row */
-.form-row-group { display: flex; gap: 12px; }
-.flex-1 { flex: 1; }
+/* ========================================================= */
+/* 全新移动端原生化适配 (Native App Mobile Layout)       */
+/* ========================================================= */
+@media (max-width: 768px) {
+  /* 基础结构全屏覆盖，摒弃 PC 居中盒子的概念 */
+  .auth-wrapper-new { padding: 0; background: #ffffff; align-items: flex-start; }
+  .auth-card-new { flex-direction: column; height: 100vh; min-height: 100vh; border-radius: 0; }
 
-.verified-badge { font-size: 12px; color: #10b981; font-weight: 600; padding: 0 8px; white-space: nowrap; }
+  /* 完全隐藏画报侧边 */
+  .auth-visual-side { display: none; }
+
+  /* 表单区域铺满，移除所有多余边框 */
+  .auth-form-side { flex: 1; width: 100%; min-width: auto; border-left: none; }
+
+  /* 原生化 Header，带巨大的返回箭头 */
+  .mobile-auth-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background: #ffffff;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .mobile-back-icon {
+    background: transparent; border: none; font-size: 22px; color: #111827;
+    cursor: pointer; padding: 8px; margin-left: -8px;
+  }
+  .visual-home-btn { display: none; } /* 隐藏PC端返回按钮 */
+
+  /* 释放表单内部空间，移除居中限制，改为靠上排列 */
+  .form-scroll-container { padding: 10px 24px 40px; justify-content: flex-start; max-width: 100%; }
+  .auth-inner-box { margin-top: 0; }
+
+  /* 标题变大，更像 App 的欢迎页 */
+  .welcome-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .welcome-sub { font-size: 14px; margin-bottom: 24px; color: #6b7280; }
+
+  /* ------------------- 表单控件 App 化 ------------------- */
+
+  /* 增加控件间的呼吸感 */
+  .form-fields-new { gap: 20px; }
+  .input-group { gap: 8px; }
+
+  /* 文字标签更清晰 */
+  .input-group label { font-size: 13px; color: #4b5563; }
+
+  /* 输入框：加高，采用背景填充无边框的原生设计 */
+  .input-wrapper {
+    height: 50px; /* 原生推荐最小触摸高度 */
+    border-radius: 12px;
+    background: #f3f4f6; /* iOS 风格的浅灰背景 */
+    border: 1px solid transparent;
+    padding: 0 16px;
+    box-shadow: none;
+  }
+  .input-wrapper:focus-within {
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+  }
+
+  /* 【关键】字号提升至 16px 阻止 iOS Safari 自动缩放 */
+  .input-wrapper input { font-size: 16px; }
+  .input-suffix-icon { font-size: 18px; }
+
+  /* 所有原本在一行的元素强制打散换行，给手机足够的输入空间 */
+  .form-row-group { flex-direction: column; gap: 20px; }
+
+  /* 头像上传放大 */
+  .avatar-upload-container { gap: 12px; margin-bottom: 12px; }
+  .avatar-wrapper { width: 72px; height: 72px; }
+  .avatar-placeholder { font-size: 32px; }
+
+  /* 按钮加高加圆角，方便点击 */
+  .auth-btn-primary, .auth-btn-secondary {
+    height: 50px;
+    border-radius: 25px;
+    font-size: 15px;
+    margin-top: 12px;
+  }
+
+  /* 验证码框适配 (如果横屏太挤可以稍微收缩，但不改正方形属性) */
+  .otp-box-container { gap: 8px; justify-content: space-between; }
+  .otp-input { max-width: none; height: auto; font-size: 24px; border-radius: 12px; background: #f3f4f6; border-color: transparent;}
+  .otp-input:focus { background: #fff; }
+
+  /* ------------------- 集成页、下载页、更新日志等全站优化 ------------------- */
+
+  /* 集成页 (Store) */
+  .store-title { font-size: 36px; }
+  .picks-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } /* 强制两列 */
+  .pick-card { padding: 20px 12px 16px; border-radius: 14px; min-height: 160px; } /* 适配双列缩小体积，设置最小高度保证对齐 */
+  .pick-icon-wrapper { width: 52px; height: 52px; margin-bottom: 12px; border-radius: 14px; }
+  img.pick-icon { width: 32px; height: 32px; border-radius: 6px; }
+  .pick-name { font-size: 15px; margin-bottom: 6px; }
+  .pick-desc { font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: auto; }
+  .cloud-row { gap: 12px; }
+  .store-app-icon { width: 56px; height: 56px; border-radius: 14px; font-size: 24px; }
+  .icon-focus { width: 72px; height: 72px; font-size: 32px; }
+
+  /* 下载页 (Download) */
+  .primary-dl-card { flex-direction: column; height: auto; }
+  .primary-content { padding: 32px 24px; align-items: center; text-align: center; }
+  .dl-actions { align-items: center; width: 100%; }
+  .dl-btn-primary { width: 100%; justify-content: center; height: 50px; border-radius: 16px; }
+  .primary-visual { padding: 40px 20px; }
+  .app-window-mock { width: 100%; max-width: 100%; transform: none; }
+  .platforms-grid { grid-template-columns: 1fr 1fr; gap: 16px; } /* 小平台卡片两列 */
+
+  /* 更新日志 (Changelog) - 改为左侧靠边的瀑布流 */
+  .timeline-wrapper { padding-left: 24px; margin-top: 20px; }
+  .timeline-line { left: 8px; }
+  .release-dot { left: -22px; width: 12px; height: 12px; }
+  .release-meta {
+    position: relative; left: 0; width: 100%; text-align: left;
+    flex-direction: row; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+  .glass-card-premium { padding: 24px; border-radius: 16px; }
+  .rc-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .platforms-grid { grid-template-columns: 1fr; } /* 极窄屏幕平台卡片单列 */
+}
+
 </style>
