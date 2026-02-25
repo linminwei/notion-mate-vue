@@ -1,5 +1,6 @@
 ﻿<template>
-  <div class="app-root">
+  <!-- 增加 auth-active 动态类，用于在打开认证模态框时进行全局样式的隐藏控制 -->
+  <div class="app-root" :class="{ 'auth-active': ['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode) }">
 
     <!-- ================= 全局背景引擎 (Persistent Background) ================= -->
     <div class="ray-bg-engine">
@@ -453,7 +454,7 @@
     </transition>
 
     <!-- ================= 视图 5: Auth Wrapper (Auth/Forgot/Register) ================= -->
-    <!-- 独立层级，全屏覆盖 -->
+    <!-- 独立层级，全屏覆盖，增加 mode=out-in 以响应平滑淡出重定向 -->
     <transition name="fade-slow">
       <!-- 只要是认证相关的页面，都共用这个 Wrapper -->
       <div v-if="['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode)" class="auth-wrapper-new">
@@ -510,7 +511,8 @@
 
             <!-- 移动端专属顶部导航栏 (Native App Header Style) -->
             <div class="mobile-auth-header">
-              <button class="mobile-back-icon" @click="viewMode = 'landing'">
+              <!-- 仅在非登录页时显示后退箭头，且永远只回退到 auth (登录) 表单，模拟原生应用流 -->
+              <button class="mobile-back-icon" v-if="viewMode !== 'auth'" @click="viewMode = 'auth'">
                 <arrow-left-outlined />
               </button>
             </div>
@@ -574,10 +576,13 @@
                         <a href="#" class="forgot-link" @click.prevent="viewMode = 'forgot-password'; forgotStep = 1; clearForgotForm()"> 忘记密码？</a>
                       </div>
 
-                      <!-- Login Button -->
-                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleLogin" :disabled="isLoading">
-                        <template v-if="!isLoading"> 登 录 </template>
-                        <loading-outlined v-else class="spin-icon" />
+                      <!-- Login Button (包含丝滑成功动效逻辑) -->
+                      <button class="auth-btn-primary" :class="{'is-loading': isLoading, 'is-success': isLoginSuccess}" @click="handleLogin" :disabled="isLoading || isLoginSuccess">
+                        <template v-if="isLoginSuccess">
+                          <check-outlined class="success-pop-icon" />
+                        </template>
+                        <template v-else-if="!isLoading"> 登 录 </template>
+                        <loading-outlined v-else class="spin-icon" spin />
                       </button>
 
                       <!-- Divider -->
@@ -651,9 +656,12 @@
                         </transition>
                       </div>
 
-                      <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handlePhoneLogin" :disabled="isLoading">
-                        <template v-if="!isLoading"> 登 录 </template>
-                        <loading-outlined v-else class="spin-icon" />
+                      <button class="auth-btn-primary" :class="{'is-loading': isLoading, 'is-success': isLoginSuccess}" @click="handlePhoneLogin" :disabled="isLoading || isLoginSuccess">
+                        <template v-if="isLoginSuccess">
+                          <check-outlined class="success-pop-icon" />
+                        </template>
+                        <template v-else-if="!isLoading"> 登 录 </template>
+                        <loading-outlined v-else class="spin-icon" spin />
                       </button>
 
                       <div class="auth-footer-text">
@@ -718,7 +726,7 @@
 
                         <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleVerifyNext" :disabled="isLoading">
                           <template v-if="!isLoading"> 下一步 </template>
-                          <loading-outlined v-else class="spin-icon" />
+                          <loading-outlined v-else class="spin-icon" spin />
                         </button>
                       </template>
 
@@ -780,7 +788,7 @@
 
                         <button class="auth-btn-primary" :class="{'is-loading': isLoading}" @click="handleResetConfirm" :disabled="isLoading">
                           <template v-if="!isLoading"> 确认修改 </template>
-                          <loading-outlined v-else class="spin-icon" />
+                          <loading-outlined v-else class="spin-icon" spin />
                         </button>
                       </template>
 
@@ -940,11 +948,11 @@
 
                       <button class="auth-btn-primary" @click="handleRegister" :disabled="isLoading">
                         <template v-if="!isLoading"> 立即注册 </template>
-                        <loading-outlined v-else class="spin-icon" />
+                        <loading-outlined v-else class="spin-icon" spin />
                       </button>
 
                       <div class="auth-footer-text">
-                        已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'"> 立即登录 </a>
+                        已有账户？ <a href="#" class="register-link" @click.prevent="viewMode = 'auth'; clearRegisterForm()"> 立即登录 </a>
                       </div>
                     </div>
                   </div>
@@ -994,6 +1002,19 @@ const isLoading = ref(false)
 const showMaskLeft = ref(false)
 const showMaskRight = ref(false)
 
+// 专门新增的控制登录成功动效的响应式变量
+const isLoginSuccess = ref(false)
+
+/* ----------------- 移动端默认视图逻辑 ----------------- */
+// 专门针对移动端的视图拦截，强制手机用户初始直接显示登录窗
+const checkMobileDefaultView = () => {
+  if (window.innerWidth <= 768) {
+    if (!['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode.value)) {
+      viewMode.value = 'auth'
+    }
+  }
+}
+
 /* ----------------- Auto Scroll Hint Logic ( 轻量轮询，无惧动画干扰 ) ----------------- */
 const authScrollRef = ref<HTMLElement | null>(null)
 const showScrollHint = ref(false)
@@ -1025,6 +1046,7 @@ const clearLoginForm = () => {
   errors.username = ''
   errors.password = ''
   showPassword.value = false
+  isLoginSuccess.value = false
 }
 
 const clearPhoneLoginForm = () => {
@@ -1034,6 +1056,7 @@ const clearPhoneLoginForm = () => {
   Object.keys(phoneLoginErrors).forEach(key => phoneLoginErrors[key as keyof typeof phoneLoginErrors] = '')
   smsCountdown.value = 0
   if (smsTimer) clearInterval(smsTimer)
+  isLoginSuccess.value = false
 }
 
 const clearForgotForm = () => {
@@ -1095,16 +1118,35 @@ const handleLogin = async () => {
   validateField('password')
   if (errors.username || errors.password) return
   isLoading.value = true
+
   setTimeout(async () => {
     try {
       await userStore.login({username:formState.username,password:formState.password})
-      AppleAlert.success("登录成功", "欢迎回来 :" + userStore.userInfo?.nickname)
-      viewMode.value = 'landing'
-      const redirect = route.query.redirect as string
-      if (redirect && redirect !== '/') { await router.push(redirect) }
-    }catch (error: any){
+      isLoading.value = false
+
+      // 触发丝滑的登录成功绿勾动效
+      isLoginSuccess.value = true
+      AppleAlert.success("登录成功", "欢迎回来 : " + userStore.userInfo?.nickname)
+
+      // 延迟等待成功态的绿色打勾动画播放完毕，再平滑关闭整个模态框
+      setTimeout(() => {
+        viewMode.value = 'landing'
+
+        // 再延迟等待模态框淡出动画(约400ms)结束后，进行系统跳转或刷新
+        setTimeout(() => {
+          const redirect = route.query.redirect as string
+          if (redirect && redirect !== '/') {
+            router.push(redirect)
+          } else {
+            window.location.reload()
+          }
+        }, 400)
+      }, 800)
+
+    } catch (error: any){
+      isLoading.value = false
       AppleAlert.error("登录失败", error.message)
-    }finally { isLoading.value = false }
+    }
   }, 800)
 }
 
@@ -1215,16 +1257,33 @@ const handlePhoneLogin = async () => {
   syncCode(true)
   if (!phoneLoginForm.code) { return phoneLoginErrors.code = '请输入验证码' }
   if (phoneLoginForm.code.length !== 6) { return phoneLoginErrors.code = '验证码格式错误' }
+
   isLoading.value = true
   setTimeout(async () => {
     try {
       await userStore.loginByPhone(phoneLoginForm.phone,phoneLoginForm.code)
-      const redirect = route.query.redirect as string
-      await router.push(redirect || '/')
-      AppleAlert.success("登录成功","欢迎回来 :" + userStore.userInfo?.nickname)
-      viewMode.value = 'landing'
-    }catch (error: any) { AppleAlert.error("登录失败",error.message) }
-    finally { isLoading.value = false }
+      isLoading.value = false
+
+      // 同步触发丝滑的绿勾动效
+      isLoginSuccess.value = true
+      AppleAlert.success("登录成功","欢迎回来 : " + userStore.userInfo?.nickname)
+
+      setTimeout(() => {
+        viewMode.value = 'landing'
+        setTimeout(() => {
+          const redirect = route.query.redirect as string
+          if (redirect && redirect !== '/') {
+            router.push(redirect)
+          } else {
+            window.location.reload()
+          }
+        }, 400)
+      }, 800)
+
+    }catch (error: any) {
+      isLoading.value = false
+      AppleAlert.error("登录失败",error.message)
+    }
   },800)
 }
 
@@ -1428,6 +1487,8 @@ const handleResize = () => {
   if (['auth', 'forgot-password', 'register', 'phone-login'].includes(viewMode.value)) {
     handleAuthScroll()
   }
+  // 如果窗口改变后进入了移动端宽度，自动强制调起登录（满足移动端纯App原生化体验）
+  checkMobileDefaultView()
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -1435,12 +1496,19 @@ const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     const authModes = ['auth', 'forgot-password', 'register', 'phone-login']
     if (authModes.includes(viewMode.value)) {
-      viewMode.value = 'landing' // 此处触发 watch 自动清空表单
+      if (window.innerWidth > 768) {
+        viewMode.value = 'landing' // PC 端直接关闭
+      } else {
+        if (viewMode.value !== 'auth') viewMode.value = 'auth' // 移动端只退回登录页
+      }
     }
   }
 }
 
 onMounted(() => {
+  // 组件挂载时检查是否为移动端，是则直接展示登录窗
+  checkMobileDefaultView()
+
   window.addEventListener('resize', handleResize)
   window.addEventListener('keydown', handleKeydown)
   setTimeout(handleScroll, 100)
@@ -1751,8 +1819,21 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .cl-link:hover { color: #fff; border-bottom-color: #fff; }
 
 /* ================= 8. Animations ================= */
-.fade-slow-enter-active, .fade-slow-leave-active { transition: opacity 0.5s ease; }
+/* 原生应用级的柔和缩放与淡入淡出动效 */
+.fade-slow-enter-active, .fade-slow-leave-active { transition: opacity 0.4s ease; }
 .fade-slow-enter-from, .fade-slow-leave-to { opacity: 0; }
+
+.fade-slow-enter-active .auth-card-new { animation: modalScaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.fade-slow-leave-active .auth-card-new { animation: modalScaleOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes modalScaleIn {
+  from { transform: scale(0.95) translateY(10px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes modalScaleOut {
+  from { transform: scale(1) translateY(0); opacity: 1; }
+  to { transform: scale(0.97) translateY(10px); opacity: 0; }
+}
 
 .reveal-1 { animation: slideUp 0.8s 0.1s both; }
 .reveal-2 { animation: slideUp 0.8s 0.2s both; }
@@ -1774,7 +1855,6 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 /* ================= 9. Auth Wrapper ( 高级深色毛玻璃左右分栏 ) ================= */
 .auth-wrapper-new {
   position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: 999;
-  /* 弱化外层遮罩，使得底部的动画与线条能够隐约透出来 */
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1783,7 +1863,6 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 
 .auth-card-new {
   width: 100%; max-width: 1000px; height: 600px; min-height: 600px;
-  /* 弹窗自身采用高透光的深空灰玻璃质感，让底部着陆页完美融合进来 */
   background: rgba(20, 20, 22, 0.5);
   backdrop-filter: blur(40px) saturate(150%);
   -webkit-backdrop-filter: blur(40px) saturate(150%);
@@ -1793,7 +1872,6 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
   position: relative;
 }
 
-/* 全局独立层级的悬浮关闭按钮，放置于 card 的最顶层，不被滚动区域切断 */
 .close-auth-btn {
   position: absolute;
   top: 20px;
@@ -1851,30 +1929,24 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 /* ================= 10. Right Side: Form & Scroll Logic ================= */
 .auth-form-side {
   flex: 0.55; position: relative;
-  background: transparent; /* 完全透明，只透出底层深色卡片的玻璃质感 */
+  background: transparent;
   display: flex; flex-direction: column;
   border-left: 1px solid rgba(255,255,255,0.05);
   overflow: hidden;
 }
 
-/* 内部的独立滚动区域 */
 .auth-scroll-area {
   flex: 1;
   width: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-
-  /* 彻底隐藏原生滚动条 */
   scrollbar-width: none;
   -ms-overflow-style: none;
-
-  /* 精美渐隐遮罩 */
   mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%);
 }
 
-/* 终极解法：使用伪元素在 flex-column 中吸收空间实现 Safe Center，不产生假 height */
 .auth-scroll-area::before,
 .auth-scroll-area::after {
   content: '';
@@ -1891,8 +1963,8 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 40px 48px 80px; /* 加大底部 Padding，防止内容被遮罩挡住 */
-  flex-shrink: 0; /* 关键：防止内容被挤压 */
+  padding: 40px 48px 80px;
+  flex-shrink: 0;
   box-sizing: border-box;
 }
 
@@ -1961,20 +2033,52 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 
 .error-message { color: #FF453A; font-size: 12px; font-weight: 500; margin-top: 2px; padding-left: 4px; display: block; }
 
-.slide-fade-enter-active { transition: all 0.3s ease-out; }
-.slide-fade-leave-active { transition: all 0.2s ease-in; }
-.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-4px); }
-
 .form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: -8px; }
 .forgot-link { color: #0A84FF; font-size: 13px; text-decoration: none; font-weight: 500; }
 .forgot-link:hover { text-decoration: underline; }
 
-.auth-btn-primary { width: 100%; height: 48px; background: #0A84FF; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-top: 12px; display: flex; justify-content: center; align-items: center; box-sizing: border-box; }
+/* 登录/主要操作按钮与成功态动效 */
+.auth-btn-primary {
+  width: 100%; height: 48px;
+  background: #0A84FF; border: none; border-radius: 12px;
+  color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-top: 12px; display: flex; justify-content: center; align-items: center;
+  box-sizing: border-box;
+  position: relative; overflow: hidden;
+}
 .auth-btn-primary:hover { background: #0071E3; transform: scale(0.99); }
 .auth-btn-primary:active { transform: scale(0.97); }
 .auth-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-.spin-icon { font-size: 20px; color: #fff; animation: spin 1s linear infinite; }
+/* 登录成功状态的按钮变身样式 */
+.auth-btn-primary.is-success {
+  background-color: #32D74B !important; /* Apple Green */
+  color: #fff;
+  opacity: 1 !important;
+  transform: scale(1.02);
+  box-shadow: 0 10px 20px rgba(50, 215, 75, 0.2);
+}
+.success-pop-icon {
+  font-size: 22px;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popIn {
+  0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* 核心修复：添加 inline-block 让 spin transform 起作用 */
+.spin-icon {
+  font-size: 20px;
+  color: #fff;
+  display: inline-block;
+  animation: customSpin 1s linear infinite;
+}
+@keyframes customSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 .auth-divider { display: flex; align-items: center; text-align: center; margin: 24px 0; }
 .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.1); }
@@ -2026,48 +2130,63 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
 .flex-1 { min-width: 0; }
 .verified-badge { font-size: 12px; color: #32D74B; font-weight: 600; padding: 0 8px; white-space: nowrap; display: flex; align-items: center; }
 
-/* ================= 11. 全新移动端原生化适配 (Native App Mobile Layout) ================= */
+/* ================= 11. 移动端原生化适配 ================= */
 @media (max-width: 768px) {
-  /* 移动端降低大遮罩，保证通透 */
-  .auth-wrapper-new { padding: 0; background: rgba(11, 12, 14, 0.2); align-items: flex-end; }
-  .auth-card-new { flex-direction: column; height: auto; max-height: 90vh; min-height: auto; border-radius: 24px 24px 0 0; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(20px) saturate(150%); }
-  .auth-visual-side { display: none; }
+  .auth-active .landing-view,
+  .auth-active .store-view,
+  .auth-active .download-view,
+  .auth-active .changelog-view,
+  .auth-active .nav-container {
+    display: none !important;
+  }
 
-  /* 移动端由于屏幕小且有自身边界，移除 mask-image 以免遮挡文字 */
-  .auth-form-side {
-    flex: 1; width: 100%; min-width: auto; border-left: none; background: transparent;
+  .auth-wrapper-new { padding: 0; background: transparent; align-items: flex-start; }
+
+  .auth-card-new {
+    flex-direction: column;
+    height: 100vh;
+    max-height: 100vh;
+    min-height: 100vh;
+    border-radius: 0;
+    background: rgba(18, 18, 20, 0.85);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: none;
   }
-  .auth-scroll-area {
-    -webkit-mask-image: none; mask-image: none;
-  }
+
+  .auth-visual-side { display: none; }
+  .auth-form-side { flex: 1; width: 100%; min-width: auto; border-left: none; background: transparent; }
+  .auth-scroll-area { -webkit-mask-image: none; mask-image: none; }
   .auth-scroll-area::before, .auth-scroll-area::after { content: none; }
 
-  /* 增加移动端顶部拖拽把手指示器 */
-  .auth-card-new::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 36px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.2); z-index: 50; }
-
-  /* 移动端自带返回头部，隐藏悬浮的 PC 独立关闭按钮 */
   .close-auth-btn { display: none; }
-  .mobile-auth-header { display: flex; align-items: center; padding: 20px 20px 0; background: transparent; z-index: 10; position: relative; }
-  .mobile-back-icon { background: rgba(255,255,255,0.08); border: none; font-size: 16px; color: #fff; width: 32px; height: 32px; border-radius: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-  .mobile-back-icon:active { background: rgba(255,255,255,0.15); }
 
-  .form-scroll-container { padding: 10px 24px 80px; justify-content: flex-start; max-width: 100%; margin: 0; }
-  .scroll-bottom-hint { bottom: 12px; } /* 移动端滚动提示往上移一点 */
+  .mobile-auth-header { display: flex; align-items: center; padding: 20px 24px 0; background: transparent; z-index: 10; position: relative; min-height: 64px; box-sizing: border-box; }
+  .mobile-back-icon { background: transparent; border: none; font-size: 24px; color: rgba(255,255,255,0.9); padding: 8px 16px 8px 0; margin-left: -8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+  .mobile-back-icon:active { opacity: 0.6; }
 
-  .welcome-title { font-size: 24px; margin-bottom: 6px; }
-  .welcome-sub { font-size: 13px; margin-bottom: 24px; color: rgba(255,255,255,0.6); }
+  .form-scroll-container { padding: 0 24px 80px; justify-content: flex-start; max-width: 100%; margin: auto 0; }
+  .scroll-bottom-hint { bottom: 16px; }
 
-  .form-fields-new { gap: 16px; }
-  .input-wrapper { height: 50px; background: rgba(255,255,255,0.06); }
-  .input-wrapper input { font-size: 16px; } /* 防止 iOS Safari 自动缩放 */
+  .welcome-title { font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+  .welcome-sub { font-size: 15px; margin-bottom: 32px; color: rgba(255,255,255,0.5); }
 
-  /* 移动端为了触控面积，将原来并排的全部折行为上下排列 */
-  .form-row-group { display: flex; flex-direction: column; gap: 16px; }
+  .form-fields-new { gap: 20px; }
+  .input-group { gap: 10px; }
+  .input-group label { font-size: 14px; color: rgba(255,255,255,0.8); }
 
-  .auth-btn-primary, .auth-btn-secondary { height: 50px; font-size: 16px; border-radius: 14px; }
-  .otp-input { height: 50px; font-size: 22px; }
+  .input-wrapper { height: 56px; border-radius: 16px; background: rgba(255,255,255,0.05); padding: 0 20px; border-color: rgba(255,255,255,0.08); }
+  .input-wrapper input { font-size: 16px; }
+  .input-prefix-icon { font-size: 20px; margin-right: 14px; }
 
-  /* 集成页等适配保持原状 */
+  .form-row-group { display: flex; flex-direction: column; gap: 20px; }
+
+  .auth-btn-primary, .auth-btn-secondary { height: 56px; font-size: 17px; border-radius: 16px; }
+  .otp-input { height: 56px; font-size: 24px; border-radius: 14px; }
+
+  .auth-footer-text, .forgot-link { font-size: 14px; }
+
+  /* 其他保持原样 */
   .store-title { font-size: 36px; }
   .picks-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .pick-card { padding: 20px 12px 16px; border-radius: 14px; min-height: 160px; }
@@ -2078,8 +2197,6 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
   .cloud-row { gap: 12px; }
   .store-app-icon { width: 56px; height: 56px; border-radius: 14px; font-size: 24px; }
   .icon-focus { width: 72px; height: 72px; font-size: 32px; }
-
-  /* 下载页 (Download) */
   .primary-dl-card { flex-direction: column; height: auto; }
   .primary-content { padding: 32px 24px; align-items: center; text-align: center; }
   .dl-actions { align-items: center; width: 100%; }
@@ -2087,8 +2204,6 @@ img.pick-icon { width: 48px; height: 48px; object-fit: contain; border-radius: 8
   .primary-visual { padding: 40px 20px; }
   .app-window-mock { width: 100%; max-width: 100%; transform: none; }
   .platforms-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
-
-  /* 更新日志 (Changelog) */
   .timeline-wrapper { padding-left: 24px; margin-top: 20px; }
   .timeline-line { left: 8px; }
   .release-dot { left: -22px; width: 12px; height: 12px; }
