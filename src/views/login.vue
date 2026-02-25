@@ -127,14 +127,14 @@
                 <div class="card-top">
                   <div class="card-head-left">
                     <div class="card-icon-box icon-green"><customer-service-filled /></div>
-                    <span class="card-name">Spotify</span>
+                    <span class="card-name">Music</span>
                   </div>
                   <div class="card-arrow-btn"><arrow-right-outlined /></div>
                 </div>
                 <p class="card-desc"> 掌控您的音乐律动。搜索、播放、管理，尽在指尖。</p>
                 <div class="card-visual visual-spotify">
                   <div class="spotify-album-wrapper">
-                    <img src="https://upload.wikimedia.org/wikipedia/en/3/3b/Dark_Side_of_the_Moon.png" alt="Album" class="s-img" onerror="this.style.backgroundColor='#333'">
+                    <img src="/public/最伟大的作品.jpg" alt="Album" class="s-img" onerror="this.style.backgroundColor='#333'">
                     <div class="s-glow-back"></div>
                   </div>
                   <div class="spotify-controls">
