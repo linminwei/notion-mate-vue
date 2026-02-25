@@ -3,10 +3,10 @@
 
     <!-- 侧边栏 (纯手写 Native Sidebar，极致对齐) -->
     <aside class="apple-sidebar" :class="{ 'is-collapsed': collapsed }">
-      <!-- 【全新重构】Logo 区域 -->
+      <!-- 【优化】品牌 Logo 区域：移除矩形容器 -->
       <div class="sidebar-logo">
-        <div class="logo-icon">
-          <img src="/notion-mate-dark.png" class="logo-svg" alt="Notion Mate Logo">
+        <div class="logo-wrapper">
+          <img src="/notion-mate-dark.png" class="logo-img" alt="Notion Mate Logo">
         </div>
         <div class="logo-title" v-show="!collapsed">
           Notion Mate
@@ -489,13 +489,13 @@ watch(() => route.path, (path) => {
   width: 72px;
 }
 
-/* ================= 全新图片 Logo UI 专属样式 ================= */
+/* ================= 【优化后】品牌 Logo UI 专属样式 ================= */
 .sidebar-logo {
   height: 64px;
   display: flex;
   align-items: center;
   padding: 0 16px;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -507,35 +507,34 @@ watch(() => route.path, (path) => {
   justify-content: center;
 }
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
+.logo-wrapper {
+  width: 36px; /* 稍微放大 */
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* 彻底移除了背景、边框和阴影 */
   background: transparent;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: none;
+  overflow: visible;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.apple-sidebar.is-collapsed .logo-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.apple-sidebar.is-collapsed .logo-wrapper {
+  width: 40px;
+  height: 40px;
 }
 
-.logo-svg {
+.logo-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* 改为 contain 确保 Logo 比例正确 */
   display: block;
   transition: filter 0.3s ease;
 }
 
-.apple-layout-root.theme-light .logo-svg {
+.apple-layout-root.theme-light .logo-img {
   filter: invert(1) brightness(0.2);
 }
 
@@ -545,7 +544,7 @@ watch(() => route.path, (path) => {
   color: var(--text-main);
   letter-spacing: 0px;
   white-space: nowrap;
-  margin-top: 1px; /* 标题轻微视觉调整 */
+  margin-top: 1px;
 }
 
 
@@ -622,9 +621,8 @@ watch(() => route.path, (path) => {
 }
 
 /* ----------------------------------------------------
-   【核心修复区域】：图标与文字的完美基线对齐
+   图标与文字对齐
 ------------------------------------------------------- */
-/* 标题左侧组：使用原生 Flex 居中 */
 .title-left {
   display: flex;
   align-items: center;
@@ -636,7 +634,6 @@ watch(() => route.path, (path) => {
   gap: 0;
 }
 
-/* 1. 图标包裹层：严格限制大小并内部居中 */
 .menu-icon-wrap {
   width: 24px;
   height: 24px;
@@ -647,22 +644,19 @@ watch(() => route.path, (path) => {
   flex-shrink: 0;
   color: currentColor;
 }
-/* 【视觉补偿】抹平 SVG 内联造成的基线留白，并微微上提 */
 .menu-icon-wrap :deep(svg) {
   display: block;
   transform: translateY(-1px);
 }
 
-/* 2. 文字层：利用行高约束与位移，反向修正中文重心偏上的问题 */
 .menu-text {
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   line-height: 1;
-  transform: translateY(1px); /* 【视觉补偿】微微下压中文文本 */
+  transform: translateY(1px);
 }
 
-/* 3. 展开收起箭头 */
 .arrow-wrap {
   width: 24px;
   height: 24px;
@@ -674,7 +668,7 @@ watch(() => route.path, (path) => {
 }
 .arrow-wrap :deep(svg) {
   display: block;
-  transform: translateY(1px); /* 让箭头配合中文字体微微下压 */
+  transform: translateY(1px);
 }
 .chevron-icon {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -683,7 +677,6 @@ watch(() => route.path, (path) => {
   transform: rotate(180deg);
 }
 
-/* 【复原处理】折叠状态时，只有图标没有文字，取消视觉补偿，回归绝对物理中心 */
 .apple-sidebar.is-collapsed .menu-icon-wrap {
   width: 44px;
   height: 44px;
@@ -692,7 +685,6 @@ watch(() => route.path, (path) => {
 .apple-sidebar.is-collapsed .menu-icon-wrap :deep(svg) {
   transform: translateY(0);
 }
-/* ---------------------------------------------------- */
 
 /* --------- 展开子菜单 (Grid 高度动画) --------- */
 .apple-submenu-wrapper {
@@ -862,15 +854,14 @@ watch(() => route.path, (path) => {
 
 .breadcrumb-area { display: flex; align-items: center; height: 36px; }
 
-/* ================= 面包屑样式 - 大胶囊统一对齐视觉补偿版 ================= */
-/* 整体胶囊背景恢复，使用 999px 打造完美的 Apple 纯圆角胶囊 */
+/* ================= 面包屑样式 ================= */
 .apple-breadcrumb-container {
   display: flex;
   align-items: center;
   margin-left: 8px;
   background: var(--pill-bg);
   border: 1px solid var(--pill-border);
-  border-radius: 999px; /* 极致的胶囊形状 */
+  border-radius: 999px;
   padding: 0 8px;
   height: 32px;
   box-sizing: border-box;
@@ -885,13 +876,12 @@ watch(() => route.path, (path) => {
   height: 100%;
 }
 
-/* 统一所有的面包屑节点：不区分父级或末级，完全统一 UI 结构保证同等大小 */
 .crumb-trigger {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  border-radius: 16px; /* 内部悬停区域跟随外部圆润 */
+  border-radius: 16px;
   height: 24px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -899,7 +889,6 @@ watch(() => route.path, (path) => {
   box-sizing: border-box;
 }
 
-/* 如果是当前页面，让文字变为白色高亮 */
 .crumb-trigger.is-last {
   color: var(--text-main);
 }
@@ -908,7 +897,6 @@ watch(() => route.path, (path) => {
   color: var(--text-main);
 }
 
-/* 强制统一全部层级图标大小：14px 正方形 */
 .crumb-icon-raw, .crumb-dropdown-icon {
   display: flex;
   align-items: center;
@@ -919,25 +907,22 @@ watch(() => route.path, (path) => {
   color: inherit;
 }
 
-/* 【核心修复】强制覆盖 SVG 宽高并应用视觉补偿，抹平高度差 */
 .crumb-icon-raw :deep(svg),
 .crumb-dropdown-icon :deep(svg) {
   display: block;
   width: 14px !important;
   height: 14px !important;
-  transform: translateY(-1px); /* 图标向上补偿 1px */
+  transform: translateY(-1px);
 }
 
-/* 强制统一所有层级文字大小和字重：完全对齐 14px，去除了加粗并结合视觉补偿 */
 .crumb-text, .dropdown-item-text {
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   line-height: 1;
-  transform: translateY(1px); /* 字体向下补偿 1px，完美对齐中心 */
+  transform: translateY(1px);
 }
 
-/* 点击弹出的子菜单面板：高级卡片质感 */
 .crumb-dropdown-panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -951,11 +936,9 @@ watch(() => route.path, (path) => {
   z-index: 1000;
 }
 
-/* Vue 过渡动画 */
 .dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-5px); }
 
-/* 下拉菜单同级项 */
 .crumb-dropdown-item {
   display: flex;
   align-items: center;
@@ -979,19 +962,18 @@ watch(() => route.path, (path) => {
   color: #fff;
 }
 
-/* 斜线分隔符：优雅不突兀 */
 .crumb-separator {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px; /* 微调以契合14px的主文本 */
+  font-size: 13px;
   font-weight: 400;
   color: var(--text-muted);
   opacity: 0.4;
   margin: 0;
   width: 12px;
   user-select: none;
-  transform: translateY(1px); /* 同样进行视觉补偿 */
+  transform: translateY(1px);
 }
 
 /* ---------------------------------------------------- */
@@ -1001,7 +983,6 @@ watch(() => route.path, (path) => {
   align-items: center;
 }
 
-/* 自定义下拉胶囊 */
 .custom-dropdown-container {
   position: relative;
 }
@@ -1032,7 +1013,6 @@ watch(() => route.path, (path) => {
 .dropdown-icon { font-size: 11px; color: var(--text-muted); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .dropdown-icon.rotated { transform: rotate(180deg); }
 
-/* 下拉面板 */
 .user-dropdown-panel {
   position: absolute;
   top: calc(100% + 12px);
@@ -1079,7 +1059,6 @@ watch(() => route.path, (path) => {
 .danger-item:hover { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
 .danger-item .di-icon { color: #FF453A; }
 
-/* ================= 内容区滚动 ================= */
 .apple-content-scroll {
   flex: 1;
   overflow-y: auto;
@@ -1094,7 +1073,6 @@ watch(() => route.path, (path) => {
 .apple-content-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 .apple-content-scroll::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
-/* 漂浮岛卡片 */
 .apple-content-inner {
   background: var(--content-bg);
   border: 1px solid var(--border-color);
@@ -1106,7 +1084,6 @@ watch(() => route.path, (path) => {
   transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* 页面切换动画 */
 .page-fade-enter-active, .page-fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .page-fade-enter-from { opacity: 0; transform: translateY(10px); }
 .page-fade-leave-to { opacity: 0; transform: translateY(-10px); }
