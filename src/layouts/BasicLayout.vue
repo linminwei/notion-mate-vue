@@ -119,8 +119,8 @@
         <div class="header-left">
           <!-- 侧边栏开关 -->
           <button class="action-btn trigger-btn" @click="collapsed = !collapsed">
-            <font-awesome-icon :icon="['fas', 'bars']" v-if="collapsed" />
-            <font-awesome-icon :icon="['fas', 'indent']" v-else />
+            <font-awesome-icon icon="fa-solid fa-indent" v-if="collapsed"/>
+            <font-awesome-icon icon="fa-solid fa-outdent" v-else/>
           </button>
 
           <!-- 【终极版】大胶囊整体容器、无下拉箭头、所有层级结构绝对统一的面包屑 -->
