@@ -77,8 +77,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { SearchOutlined, RedoOutlined, PlusOutlined } from '@ant-design/icons-vue'
-import { getRolePage, addRole, updateRole, deleteRole } from '@/api/role'
-import { getMenuList } from '@/api/menu'
+import { getRolePage, addRole, updateRole, deleteRole } from '@/api/role.ts'
+import { getMenuList } from '@/api/menu.ts'
 import type { SysRole, SysMenu } from '@/types'
 import type { FormInstance, Rule } from 'ant-design-vue/es/form'
 

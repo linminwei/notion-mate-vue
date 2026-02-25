@@ -3,10 +3,10 @@
 
     <!-- 侧边栏 (纯手写 Native Sidebar，极致对齐) -->
     <aside class="apple-sidebar" :class="{ 'is-collapsed': collapsed }">
-      <!-- Logo 区域 -->
+      <!-- 【全新重构】Logo 区域 -->
       <div class="sidebar-logo">
         <div class="logo-icon">
-          <span class="icon-text">N</span>
+          <img src="/notion-mate-dark.png" class="logo-svg" alt="Notion Mate Logo">
         </div>
         <div class="logo-title" v-show="!collapsed">
           Notion Mate
@@ -31,7 +31,6 @@
                   @click="toggleSubMenu(menu.id)"
               >
                 <div class="title-left">
-                  <!-- 使用 Wrapper 彻底解决图标与文字的基线对齐问题 -->
                   <div class="menu-icon-wrap">
                     <font-awesome-icon :icon="getFaIcon(menu.icon)" />
                   </div>
@@ -47,7 +46,7 @@
                 </div>
               </div>
 
-              <!-- PC展开状态：子菜单列表 (Grid 1fr 实现丝滑高度动画) -->
+              <!-- PC展开状态：子菜单列表 -->
               <div class="apple-submenu-wrapper" :class="{ 'is-open': isSubMenuOpen(menu.id) && !collapsed }">
                 <ul class="apple-submenu-list">
                   <li
@@ -124,8 +123,49 @@
             <font-awesome-icon :icon="['fas', 'indent']" v-else />
           </button>
 
-          <div class="breadcrumb-area" v-show="!collapsed">
-            <span class="greeting-text">欢迎回来，{{ userInfo?.nickname || '管理员' }}</span>
+          <!-- 【终极版】大胶囊整体容器、无下拉箭头、所有层级结构绝对统一的面包屑 -->
+          <div class="breadcrumb-area">
+            <div class="apple-breadcrumb-container">
+              <template v-for="(crumb, index) in breadcrumbs" :key="index">
+
+                <!-- 统一所有层级：不论是否是最后一级，只要有同级元素，均可点击展开 -->
+                <div class="crumb-node" :class="{ 'interactive-node': crumb.siblings && crumb.siblings.length > 1 }">
+                  <div
+                      class="crumb-trigger"
+                      :class="{ 'is-open': openBreadcrumb === index, 'is-last': crumb.isLast }"
+                      @click.stop="toggleBreadcrumb(index, crumb)"
+                  >
+                    <div class="crumb-icon-raw">
+                      <font-awesome-icon v-if="crumb.icon" :icon="getFaIcon(crumb.icon)" />
+                    </div>
+                    <span class="crumb-text">{{ crumb.name }}</span>
+                    <!-- 彻底移除了右侧的下拉指示箭头 -->
+                  </div>
+
+                  <!-- 悬浮弹出的子菜单面板：显示"同级菜单" -->
+                  <transition name="dropdown-fade">
+                    <div v-show="openBreadcrumb === index && crumb.siblings && crumb.siblings.length > 1" class="crumb-dropdown-panel" @click.stop>
+                      <div
+                          v-for="sibling in crumb.siblings"
+                          :key="sibling.path || sibling.menuName"
+                          class="crumb-dropdown-item"
+                          :class="{ 'is-active': sibling.menuName === crumb.name }"
+                          @click="navigateTo(sibling.path || (sibling.children && sibling.children.length > 0 ? sibling.children[0].path : '')); openBreadcrumb = null"
+                      >
+                        <div class="crumb-dropdown-icon">
+                          <font-awesome-icon :icon="getFaIcon(sibling.icon)" />
+                        </div>
+                        <span class="dropdown-item-text">{{ sibling.menuName }}</span>
+                      </div>
+                    </div>
+                  </transition>
+                </div>
+
+                <!-- 分隔符 (优雅的斜杠分割线) -->
+                <span class="crumb-separator" v-if="index < breadcrumbs.length - 1">/</span>
+
+              </template>
+            </div>
           </div>
         </div>
 
@@ -215,6 +255,9 @@ const openKeys = ref<string[]>([])
 const isUserMenuOpen = ref(false)
 const headerRightRef = ref<HTMLElement | null>(null)
 
+// 面包屑点击下拉状态
+const openBreadcrumb = ref<number | null>(null)
+
 // 主题状态与切换逻辑
 const isDark = ref(true)
 
@@ -224,22 +267,35 @@ onMounted(() => {
   if (storedTheme === 'light') {
     isDark.value = false
   }
-  document.addEventListener('click', closeUserMenu)
+  document.addEventListener('click', closeDropdowns)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeUserMenu)
+  document.removeEventListener('click', closeDropdowns)
 })
 
-const closeUserMenu = (e: MouseEvent) => {
+// 点击外部时统一关闭所有的下拉菜单
+const closeDropdowns = (e: MouseEvent) => {
   if (headerRightRef.value && !headerRightRef.value.contains(e.target as Node)) {
     isUserMenuOpen.value = false
   }
+  openBreadcrumb.value = null
 }
 
 const toggleTheme = () => {
   isDark.value = !isDark.value
   localStorage.setItem('apple-theme', isDark.value ? 'dark' : 'light')
+}
+
+// 控制面包屑下拉弹窗 (只有当拥有同级菜单时才触发弹出)
+const toggleBreadcrumb = (index: number, crumb: any) => {
+  if (crumb.siblings && crumb.siblings.length > 1) {
+    if (openBreadcrumb.value === index) {
+      openBreadcrumb.value = null
+    } else {
+      openBreadcrumb.value = index
+    }
+  }
 }
 
 // 侧边栏菜单逻辑
@@ -264,6 +320,7 @@ const isParentSelected = (menu: any) => {
 }
 
 const navigateTo = (path: string) => {
+  if (!path) return // 防御性点击
   isUserMenuOpen.value = false
   router.push(path.startsWith('/') ? path : `/${path}`)
 }
@@ -276,6 +333,59 @@ const handleLogout = async () => {
 // 数据源
 const userInfo = computed(() => userStore.userInfo)
 const menus = computed(() => userStore.menus)
+
+// 动态计算面包屑数据：绑定“同级菜单 (siblings)” 而非子菜单
+const breadcrumbs = computed(() => {
+  const currentPath = route.path
+  const crumbs: any[] = []
+  const topLevelMenus = menus.value || [] // 顶层菜单的同级兄弟节点
+
+  for (const menu of topLevelMenus) {
+    // 1. 匹配：如果是独立一级菜单
+    if (menu.path === currentPath) {
+      crumbs.push({
+        name: menu.menuName,
+        icon: menu.icon,
+        isLast: true,
+        siblings: topLevelMenus // 它同级的菜单就是所有的顶层菜单
+      })
+      break
+    }
+    // 2. 匹配：如果在子菜单中
+    if (menu.children && menu.children.length > 0) {
+      const child = menu.children.find((c: any) => c.path === currentPath)
+      if (child) {
+        // 父级面包屑 (点击下拉应显示它的同级：即其他主菜单)
+        crumbs.push({
+          name: menu.menuName,
+          icon: menu.icon,
+          isLast: false,
+          siblings: topLevelMenus
+        })
+        // 当前活跃的子级面包屑 (点击下拉应显示它的同级：即当前父级下的其他子菜单)
+        crumbs.push({
+          name: child.menuName,
+          icon: child.icon,
+          isLast: true,
+          siblings: menu.children
+        })
+        break
+      }
+    }
+  }
+
+  // 兜底逻辑：如果没有选中任何有效菜单 (如页面404或其他特殊路由)，始终保留一个根路径
+  if (crumbs.length === 0) {
+    crumbs.push({
+      name: '首页',
+      icon: 'home',
+      isLast: true,
+      siblings: topLevelMenus
+    })
+  }
+
+  return crumbs
+})
 
 /** * 【终极智能图标解析器】（零维护成本版） */
 const getFaIcon = (iconStr: string) => {
@@ -322,7 +432,7 @@ watch(() => route.path, (path) => {
   --border-color: rgba(255, 255, 255, 0.06);
   --hover-bg: rgba(255, 255, 255, 0.08);
   --active-bg: rgba(255, 255, 255, 0.12);
-  --popup-bg: rgba(30, 30, 32, 0.85);
+  --popup-bg: #1f1f1f;
   --shadow-color: rgba(0, 0, 0, 0.5);
   --pill-bg: rgba(255, 255, 255, 0.04);
   --pill-border: rgba(255, 255, 255, 0.08);
@@ -352,7 +462,7 @@ watch(() => route.path, (path) => {
   --border-color: rgba(0, 0, 0, 0.08);
   --hover-bg: rgba(0, 0, 0, 0.04);
   --active-bg: rgba(0, 0, 0, 0.08);
-  --popup-bg: rgba(255, 255, 255, 0.95);
+  --popup-bg: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.08);
   --pill-bg: rgba(255, 255, 255, 1);
   --pill-border: rgba(0, 0, 0, 0.1);
@@ -379,17 +489,17 @@ watch(() => route.path, (path) => {
   width: 72px;
 }
 
-/* Sidebar Logo */
+/* ================= 全新图片 Logo UI 专属样式 ================= */
 .sidebar-logo {
-  height: 72px;
+  height: 64px;
   display: flex;
   align-items: center;
-  padding: 0 14px;
-  gap: 12px;
+  padding: 0 16px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
   flex-shrink: 0;
-  border-bottom: 1px solid transparent;
+  border-bottom: 1px solid var(--border-color);
   transition: padding 0.3s ease;
 }
 .apple-sidebar.is-collapsed .sidebar-logo {
@@ -398,31 +508,46 @@ watch(() => route.path, (path) => {
 }
 
 .logo-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--apple-blue);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(10, 132, 255, 0.4), inset 0 1px 1px rgba(255,255,255,0.2);
+  background: transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.icon-text {
-  font-size: 22px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
+.apple-sidebar.is-collapsed .logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.logo-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: filter 0.3s ease;
+}
+
+.apple-layout-root.theme-light .logo-svg {
+  filter: invert(1) brightness(0.2);
 }
 
 .logo-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--logo-text);
-  letter-spacing: -0.01em;
+  color: var(--text-main);
+  letter-spacing: 0px;
   white-space: nowrap;
+  margin-top: 1px; /* 标题轻微视觉调整 */
 }
+
 
 /* ================= 手写原生层级菜单系统 ================= */
 .sidebar-menu-scroll {
@@ -496,62 +621,60 @@ watch(() => route.path, (path) => {
   box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
 }
 
-/* 标题左侧组 */
+/* ----------------------------------------------------
+   【核心修复区域】：图标与文字的完美基线对齐
+------------------------------------------------------- */
+/* 标题左侧组：使用原生 Flex 居中 */
 .title-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  height: 100%;
 }
 .apple-sidebar.is-collapsed .title-left {
-  width: 100%;
-  height: 100%;
   justify-content: center;
   gap: 0;
 }
 
-/* ----------------------------------------------------
-   【核心修复区域】：图标与文字的完美基线对齐
-------------------------------------------------------- */
-/* 1. 图标包裹层：强制尺寸，保证内部绝对居中 */
+/* 1. 图标包裹层：严格限制大小并内部居中 */
 .menu-icon-wrap {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 15px;
   flex-shrink: 0;
   color: currentColor;
 }
+/* 【视觉补偿】抹平 SVG 内联造成的基线留白，并微微上提 */
 .menu-icon-wrap :deep(svg) {
-  display: block; /* 消除 SVG 底部幽灵空白 */
+  display: block;
+  transform: translateY(-1px);
 }
 
-/* 2. 文字层：加入视觉补偿 (Visual Compensation) */
+/* 2. 文字层：利用行高约束与位移，反向修正中文重心偏上的问题 */
 .menu-text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  line-height: 1; /* 统一行高以缩小包围盒 */
-  transform: translateY(-1px); /* 【核心】针对中文字体的向下偏移进行 1px 的视觉微调 */
-}
-/* Tooltip 悬浮气泡里的文字通常自带 padding，取消补偿 */
-.menu-text.reset-translate {
-  transform: translateY(0);
+  line-height: 1;
+  transform: translateY(1px); /* 【视觉补偿】微微下压中文文本 */
 }
 
-/* 3. 展开收起箭头：同样应用对齐修正 */
+/* 3. 展开收起箭头 */
 .arrow-wrap {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   opacity: 0.5;
-  transform: translateY(-0.5px); /* 箭头微调 */
+}
+.arrow-wrap :deep(svg) {
+  display: block;
+  transform: translateY(1px); /* 让箭头配合中文字体微微下压 */
 }
 .chevron-icon {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -559,13 +682,17 @@ watch(() => route.path, (path) => {
 .chevron-icon.is-open {
   transform: rotate(180deg);
 }
-/* ---------------------------------------------------- */
 
+/* 【复原处理】折叠状态时，只有图标没有文字，取消视觉补偿，回归绝对物理中心 */
 .apple-sidebar.is-collapsed .menu-icon-wrap {
-  width: 100%;
-  height: 100%;
-  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
 }
+.apple-sidebar.is-collapsed .menu-icon-wrap :deep(svg) {
+  transform: translateY(0);
+}
+/* ---------------------------------------------------- */
 
 /* --------- 展开子菜单 (Grid 高度动画) --------- */
 .apple-submenu-wrapper {
@@ -592,7 +719,7 @@ watch(() => route.path, (path) => {
   border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -607,9 +734,9 @@ watch(() => route.path, (path) => {
   font-weight: 600;
 }
 .menu-icon-wrap.sub {
-  width: 16px;
-  height: 16px;
-  font-size: 14px;
+  width: 20px;
+  height: 20px;
+  font-size: 13px;
   opacity: 0.8;
 }
 
@@ -645,10 +772,6 @@ watch(() => route.path, (path) => {
   min-width: auto;
   padding: 8px 16px;
 }
-.apple-collapsed-popup.tooltip-only .menu-text {
-  color: var(--text-main);
-  margin: 0;
-}
 
 .popup-title {
   font-size: 11px;
@@ -670,7 +793,7 @@ watch(() => route.path, (path) => {
 .popup-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--text-muted);
@@ -686,6 +809,7 @@ watch(() => route.path, (path) => {
   color: #fff;
   font-weight: 600;
 }
+
 
 /* ================= 主内容区域 (Main) ================= */
 .apple-main-container {
@@ -729,20 +853,148 @@ watch(() => route.path, (path) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  border-radius: 10px;
   transition: all 0.2s ease;
 }
 .action-btn:hover { background: var(--hover-bg); }
 .action-btn:active { transform: scale(0.95); }
-.trigger-btn { border-radius: 10px; }
 .theme-btn { border-radius: 50%; margin-right: 16px; }
 
-.breadcrumb-area { display: flex; align-items: center; }
-.greeting-text {
+.breadcrumb-area { display: flex; align-items: center; height: 36px; }
+
+/* ================= 面包屑样式 - 大胶囊统一对齐视觉补偿版 ================= */
+/* 整体胶囊背景恢复，使用 999px 打造完美的 Apple 纯圆角胶囊 */
+.apple-breadcrumb-container {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  border-radius: 999px; /* 极致的胶囊形状 */
+  padding: 0 8px;
+  height: 32px;
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.crumb-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* 统一所有的面包屑节点：不区分父级或末级，完全统一 UI 结构保证同等大小 */
+.crumb-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-radius: 16px; /* 内部悬停区域跟随外部圆润 */
+  height: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-muted);
+  box-sizing: border-box;
+}
+
+/* 如果是当前页面，让文字变为白色高亮 */
+.crumb-trigger.is-last {
+  color: var(--text-main);
+}
+.crumb-trigger:hover, .crumb-trigger.is-open {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
+
+/* 强制统一全部层级图标大小：14px 正方形 */
+.crumb-icon-raw, .crumb-dropdown-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+  color: inherit;
+}
+
+/* 【核心修复】强制覆盖 SVG 宽高并应用视觉补偿，抹平高度差 */
+.crumb-icon-raw :deep(svg),
+.crumb-dropdown-icon :deep(svg) {
+  display: block;
+  width: 14px !important;
+  height: 14px !important;
+  transform: translateY(-1px); /* 图标向上补偿 1px */
+}
+
+/* 强制统一所有层级文字大小和字重：完全对齐 14px，去除了加粗并结合视觉补偿 */
+.crumb-text, .dropdown-item-text {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-main);
-  letter-spacing: 0.5px;
+  white-space: nowrap;
+  line-height: 1;
+  transform: translateY(1px); /* 字体向下补偿 1px，完美对齐中心 */
 }
+
+/* 点击弹出的子菜单面板：高级卡片质感 */
+.crumb-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--popup-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 150px;
+  box-shadow: 0 10px 40px var(--shadow-color);
+  z-index: 1000;
+}
+
+/* Vue 过渡动画 */
+.dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-5px); }
+
+/* 下拉菜单同级项 */
+.crumb-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+}
+.crumb-dropdown-item:last-child {
+  margin-bottom: 0;
+}
+.crumb-dropdown-item:hover {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
+.crumb-dropdown-item.is-active {
+  background: var(--apple-blue);
+  color: #fff;
+}
+
+/* 斜线分隔符：优雅不突兀 */
+.crumb-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px; /* 微调以契合14px的主文本 */
+  font-weight: 400;
+  color: var(--text-muted);
+  opacity: 0.4;
+  margin: 0;
+  width: 12px;
+  user-select: none;
+  transform: translateY(1px); /* 同样进行视觉补偿 */
+}
+
+/* ---------------------------------------------------- */
 
 .header-right {
   display: flex;
@@ -817,15 +1069,15 @@ watch(() => route.path, (path) => {
   align-items: center;
   transition: all 0.2s ease;
 }
-.dropdown-item:hover { background: var(--hover-bg); color: var(--text-main); }
+.dropdown-item:hover {
+  background: var(--hover-bg);
+  color: var(--text-main);
+}
 .di-icon { opacity: 0.8; margin-right: 2px; }
 
 .danger-item { color: #FF453A; }
 .danger-item:hover { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
 .danger-item .di-icon { color: #FF453A; }
-
-.dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
-.dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-10px); }
 
 /* ================= 内容区滚动 ================= */
 .apple-content-scroll {

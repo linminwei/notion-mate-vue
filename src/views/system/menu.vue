@@ -63,12 +63,6 @@
         <a-form-item label=" 排序 " name="sort">
           <a-input-number v-model:value="formState.sort" :min="0" style="width: 100%" />
         </a-form-item>
-        <a-form-item v-if="formState.menuType !== 3" label=" 是否显示 " name="visible">
-          <a-radio-group v-model:value="formState.visible">
-            <a-radio :value="1"> 显示 </a-radio>
-            <a-radio :value="0"> 隐藏 </a-radio>
-          </a-radio-group>
-        </a-form-item>
         <a-form-item label=" 状态 " name="status">
           <a-radio-group v-model:value="formState.status">
             <a-radio :value="1"> 启用 </a-radio>
@@ -84,7 +78,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, HomeOutlined, UserOutlined, TeamOutlined, MenuOutlined, SettingOutlined, BookOutlined } from '@ant-design/icons-vue'
-import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/menu'
+import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/menu.ts'
 import type { SysMenu } from '@/types'
 import type { FormInstance, Rule } from 'ant-design-vue/es/form'
 import type { Component } from 'vue'
@@ -113,24 +107,22 @@ const menuTreeOptions = computed(() => [{ id: '0', menuName: ' 顶级菜单 ', c
 const modalVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref<FormInstance>()
-const formState = reactive<Partial<SysMenu>>({ id: undefined, parentId: '0', menuName: '', menuType: 1, path: '', component: '', permission: '', icon: '', sort: 0, visible: 1, status: 1 })
+const formState = reactive<Partial<SysMenu>>({ id: undefined, parentId: '0', menuName: '', menuType: 1, path: '', component: '', permission: '', icon: '', sort: 0, status: 1 })
 const modalTitle = computed(() => formState.id ? ' 编辑菜单 ' : ' 新增菜单 ')
 const rules: Record<string, Rule[]> = { menuName: [{ required: true, message: ' 请输入菜单名称 ', trigger: 'blur' }], menuType: [{ required: true, message: ' 请选择菜单类型 ', trigger: 'change' }] }
-
-const buildMenuTree = (menus: SysMenu[], parentId = '0'): SysMenu[] => menus.filter(m => m.parentId === parentId).map(m => ({ ...m, children: buildMenuTree(menus, m.id) }))
 
 const fetchData = async () => {
   loading.value = true
   try {
     const res = await getMenuList()
-    tableData.value = buildMenuTree(res.data)
+    tableData.value = res.data
   } finally {
     loading.value = false
   }
 }
 
 const handleAdd = (parentId = '0') => {
-  Object.assign(formState, { id: undefined, parentId, menuName: '', menuType: 1, path: '', component: '', permission: '', icon: '', sort: 0, visible: 1, status: 1 })
+  Object.assign(formState, { id: undefined, parentId, menuName: '', menuType: 1, path: '', component: '', permission: '', icon: '', sort: 0, status: 1 })
   modalVisible.value = true
 }
 

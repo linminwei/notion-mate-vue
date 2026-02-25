@@ -988,8 +988,8 @@ import {
 } from '@ant-design/icons-vue'
 import { AppleAlert } from "@/components/common/AppleAlert.ts"
 import { useRouter, useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { sendCaptcha, verifyCaptcha, resetPassword, register } from '@/api/auth'
+import { useUserStore } from '@/stores/user.ts'
+import { sendCaptcha, verifyCaptcha, resetPassword, register } from '@/api/auth.ts'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()

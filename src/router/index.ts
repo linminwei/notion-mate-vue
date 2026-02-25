@@ -6,7 +6,7 @@ const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/login/index.vue'),
+    component: () => import('@/views/login.vue'),
     meta: { title: ' 登录 ', hidden: true }
   },
   {
@@ -18,25 +18,25 @@ const constantRoutes: RouteRecordRaw[] = [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: () => import('@/views/dashboard/index.vue'),
+        component: () => import('@/views/dashboard.vue'),
         meta: { title: ' 首页 ', icon: 'HomeOutlined' }
       },
       {
         path: 'system/user',
         name: 'SystemUser',
-        component: () => import('@/views/system/user/index.vue'),
+        component: () => import('@/views/system/user.vue'),
         meta: { title: ' 用户管理 ', icon: 'UserOutlined', permission: 'system:user:list' }
       },
       {
         path: 'system/role',
         name: 'SystemRole',
-        component: () => import('@/views/system/role/index.vue'),
+        component: () => import('@/views/system/role.vue'),
         meta: { title: ' 角色管理 ', icon: 'TeamOutlined', permission: 'system:role:list' }
       },
       {
         path: 'system/menu',
         name: 'SystemMenu',
-        component: () => import('@/views/system/menu/index.vue'),
+        component: () => import('@/views/system/menu.vue'),
         meta: { title: ' 菜单管理 ', icon: 'MenuOutlined', permission: 'system:menu:list' }
       }
     ]

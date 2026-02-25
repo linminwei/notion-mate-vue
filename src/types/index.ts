@@ -97,8 +97,6 @@ export interface SysMenu {
   permission: string
   icon: string
   sort: number
-  visible: number
   status: number
-  keepAlive: number
   children?: SysMenu[]
 }
