@@ -483,7 +483,7 @@
 
             <!-- Logo Badge -->
             <div class="auth-logo-badge">
-              <database-outlined class="badge-icon" />
+              <img src="/notion-mate-dark.png" class="logo-svg">
               <span>Notion Mate</span>
             </div>
 
@@ -869,7 +869,7 @@
                           >
                           <span v-if="isPhoneVerified" class="verified-badge"> 已验证 </span>
                           <button v-else class="sms-btn" :disabled="registerSmsCountdown > 0" @click="handleRegisterSms">
-                            {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 验证码 ' }}
+                            {{ registerSmsCountdown > 0 ? `${registerSmsCountdown}s` : ' 获取验证码 ' }}
                           </button>
                         </div>
                         <transition name="slide-fade">
