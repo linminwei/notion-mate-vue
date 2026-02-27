@@ -170,45 +170,49 @@
             <font-awesome-icon :icon="['fas', 'moon']" v-else />
           </div>
 
-          <!-- 用户下拉菜单区 (优化版) -->
+          <!-- 用户下拉菜单区 -->
           <div class="custom-dropdown-container">
             <div class="user-pill-btn" :class="{ 'is-active': isUserMenuOpen }" @click.stop="isUserMenuOpen = !isUserMenuOpen">
-              <div class="user-avatar-small">
-                {{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}
+              <div class="user-avatar-small" :style="previewAvatar ? { backgroundImage: `url(${previewAvatar})`, backgroundSize: 'cover' } : {}">
+                <span v-if="!previewAvatar">{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}</span>
               </div>
               <span class="user-name">{{ userInfo?.nickname || userInfo?.username }}</span>
               <font-awesome-icon :icon="['fas', 'chevron-down']" class="dropdown-icon" :class="{ 'rotated': isUserMenuOpen }" />
             </div>
 
-            <!-- Apple 风格的弹跳过渡动画 -->
             <transition name="apple-dropdown">
               <div v-if="isUserMenuOpen" class="user-dropdown-panel" @click.stop>
 
-                <!-- 优化后的高级感 Profile 头 -->
                 <div class="dropdown-profile-header">
-                  <div class="user-avatar-large">
-                    {{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}
+                  <div class="user-avatar-large" :style="previewAvatar ? { backgroundImage: `url(${previewAvatar})`, backgroundSize: 'cover' } : {}">
+                    <span v-if="!previewAvatar">{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}</span>
                   </div>
                   <div class="profile-info">
                     <div class="profile-name">{{ userInfo?.nickname || userInfo?.username }}</div>
-                    <div class="profile-email">{{ userInfo?.email || 'admin@notionmate.com' }}</div>
+                    <div class="profile-email">{{ userInfo?.email || '未绑定邮箱' }}</div>
                   </div>
                 </div>
 
                 <div class="dropdown-divider"></div>
 
                 <div class="dropdown-action-group">
-                  <div class="dropdown-item">
-                    <div class="item-icon-wrapper">
-                      <font-awesome-icon :icon="['fas', 'user']" />
+                  <div class="dropdown-item" @click="openSettingsModal('profile')">
+                    <div class="item-main">
+                      <div class="item-icon-wrapper">
+                        <font-awesome-icon :icon="['fas', 'user']" />
+                      </div>
+                      <span class="item-text">个人设置</span>
                     </div>
-                    <span class="item-text">个人设置</span>
                   </div>
-                  <div class="dropdown-item">
-                    <div class="item-icon-wrapper">
-                      <font-awesome-icon :icon="['fas', 'cog']" />
+
+                  <div class="dropdown-item" @click="openSettingsModal('preferences')">
+                    <div class="item-main">
+                      <div class="item-icon-wrapper">
+                        <font-awesome-icon :icon="['fas', 'cog']" />
+                      </div>
+                      <span class="item-text">系统偏好</span>
                     </div>
-                    <span class="item-text">系统偏好</span>
+                    <span class="item-shortcut">⌘,</span>
                   </div>
                 </div>
 
@@ -216,10 +220,12 @@
 
                 <div class="dropdown-action-group">
                   <div class="dropdown-item danger-item" @click="handleLogout">
-                    <div class="item-icon-wrapper">
-                      <font-awesome-icon :icon="['fas', 'sign-out-alt']" />
+                    <div class="item-main">
+                      <div class="item-icon-wrapper">
+                        <font-awesome-icon :icon="['fas', 'sign-out-alt']" />
+                      </div>
+                      <span class="item-text">退出登录</span>
                     </div>
-                    <span class="item-text">退出登录</span>
                   </div>
                 </div>
 
@@ -240,11 +246,286 @@
         </div>
       </div>
     </main>
+
+    <!-- 设置与偏好弹窗 (全局挂载于 Layout 根级) -->
+    <transition name="modal-fade">
+      <div v-if="isSettingsModalOpen" class="apple-modal-overlay" @click="closeSettingsModal">
+        <div class="apple-modal-container" @click.stop>
+
+          <!-- 左侧导航侧边栏 -->
+          <div class="modal-sidebar">
+            <h3 class="modal-title">账号与设置</h3>
+            <nav class="modal-nav">
+              <div
+                  class="modal-nav-item"
+                  :class="{ 'is-active': activeSettingsTab === 'profile' }"
+                  @click="activeSettingsTab = 'profile'"
+              >
+                <div class="nav-icon"><font-awesome-icon :icon="['fas', 'user']" /></div>
+                <span>个人设置</span>
+              </div>
+              <div
+                  class="modal-nav-item"
+                  :class="{ 'is-active': activeSettingsTab === 'preferences' }"
+                  @click="activeSettingsTab = 'preferences'"
+              >
+                <div class="nav-icon"><font-awesome-icon :icon="['fas', 'cog']" /></div>
+                <span>系统偏好</span>
+              </div>
+            </nav>
+          </div>
+
+          <!-- 右侧内容渲染区 -->
+          <div class="modal-content-area">
+            <button class="modal-close-btn" @click="closeSettingsModal">
+              <font-awesome-icon :icon="['fas', 'times']" />
+            </button>
+
+            <!-- 面板 1：个人资料 (全新原生设置风格重构) -->
+            <transition name="panel-fade" mode="out-in">
+              <div v-if="activeSettingsTab === 'profile'" class="settings-panel profile-view">
+
+                <div class="profile-hero-section">
+                  <!-- 顶部头像 -->
+                  <div class="avatar-editable-wrapper" @click="triggerAvatarUpload">
+                    <div class="avatar-huge" :style="previewAvatar ? { backgroundImage: `url(${previewAvatar})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
+                      <span v-if="!previewAvatar">{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || '我' }}</span>
+                    </div>
+                    <div class="avatar-overlay">
+                      <font-awesome-icon :icon="['fas', 'camera']" class="camera-icon" />
+                    </div>
+                    <!-- 隐藏的 input -->
+                    <input type="file" ref="avatarInput" accept="image/png, image/jpeg, image/webp" class="hidden-input" @change="handleAvatarChange" />
+                  </div>
+
+                  <div class="hero-text-content">
+                    <h2 class="hero-name">{{ userInfo?.nickname || userInfo?.username || 'User' }}</h2>
+                    <p class="hero-email">{{ userInfo?.email || '未绑定邮箱' }}</p>
+                  </div>
+                </div>
+
+                <div class="settings-groups-container">
+                  <!-- 分组 1: 基础信息 -->
+                  <div class="settings-group">
+                    <h3 class="group-title">基本信息</h3>
+                    <div class="settings-card">
+                      <!-- 用户名 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-grey">
+                            <font-awesome-icon :icon="['fas', 'id-badge']" />
+                          </div>
+                          <span>用户名</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value readonly-text">{{ userInfo?.username || 'admin' }}</span>
+                        </div>
+                      </div>
+                      <div class="row-divider"></div>
+
+                      <!-- 显示昵称 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-blue">
+                            <font-awesome-icon :icon="['fas', 'user-tag']" />
+                          </div>
+                          <span>显示昵称</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value readonly-text">{{ userInfo?.nickname || '未设置' }}</span>
+                        </div>
+                      </div>
+                      <div class="row-divider"></div>
+
+                      <!-- 角色信息 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-orange">
+                            <font-awesome-icon :icon="['fas', 'user-shield']" />
+                          </div>
+                          <span>角色信息</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value readonly-text">{{ userInfo?.roles?.map(r => r.roleName).join(', ') || '暂无角色' }}</span>
+                        </div>
+                      </div>
+                      <div class="row-divider"></div>
+
+                      <!-- 注册时间 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-green">
+                            <font-awesome-icon :icon="['fas', 'clock']" />
+                          </div>
+                          <span>注册时间</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value readonly-text">{{ formatTime(userInfo?.createTime) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 分组 2: 账户安全 (整合密码、邮箱、手机) -->
+                  <div class="settings-group">
+                    <h3 class="group-title">账户安全</h3>
+                    <div class="settings-card">
+                      <!-- 密码重置 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-red">
+                            <font-awesome-icon :icon="['fas', 'lock']" />
+                          </div>
+                          <span>密码重置</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value readonly-text">已设置</span>
+                        </div>
+                        <button class="action-text-btn ml-3" @click="handlePasswordReset">重置</button>
+                      </div>
+                      <div class="row-divider"></div>
+
+                      <!-- 安全邮箱 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-blue">
+                            <font-awesome-icon :icon="['fas', 'envelope']" />
+                          </div>
+                          <span>安全邮箱</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value" :class="{'placeholder-text': !userInfo?.email}">{{ userInfo?.email || '未绑定' }}</span>
+                        </div>
+                        <button class="action-text-btn ml-3" @click="openRebindModal('email')">{{ userInfo?.email ? '换绑' : '绑定' }}</button>
+                      </div>
+                      <div class="row-divider"></div>
+
+                      <!-- 手机号码 -->
+                      <div class="settings-row">
+                        <div class="row-label">
+                          <div class="setting-icon-box bg-green">
+                            <font-awesome-icon :icon="['fas', 'mobile-alt']" />
+                          </div>
+                          <span>手机号码</span>
+                        </div>
+                        <div class="row-content">
+                          <span class="row-value" :class="{'placeholder-text': !userInfo?.phone}">{{ userInfo?.phone || '未绑定' }}</span>
+                        </div>
+                        <button class="action-text-btn ml-3" @click="openRebindModal('phone')">{{ userInfo?.phone ? '换绑' : '绑定' }}</button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- 面板 2：系统偏好 -->
+              <div v-else-if="activeSettingsTab === 'preferences'" class="settings-panel">
+                <h2 class="panel-header">系统偏好</h2>
+
+                <div class="settings-groups-container mt-2">
+                  <div class="settings-group">
+                    <h3 class="group-title">外观与显示</h3>
+                    <div class="settings-card">
+                      <!-- 外观主题 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-indigo">
+                              <font-awesome-icon :icon="['fas', 'palette']" />
+                            </div>
+                            <span>外观主题</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">切换深色或浅色外观模式</span>
+                        </div>
+                        <div class="row-content-right">
+                          <div class="apple-switch" :class="{ 'is-on': isDark }" @click="toggleTheme">
+                            <div class="switch-knob">
+                              <font-awesome-icon :icon="['fas', 'moon']" v-if="isDark" class="knob-icon" />
+                              <font-awesome-icon :icon="['fas', 'sun']" v-else class="knob-icon light" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row-divider"></div>
+
+                      <!-- 折叠菜单栏 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-grey">
+                              <font-awesome-icon :icon="['fas', 'bars-staggered']" />
+                            </div>
+                            <span>折叠菜单栏</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">自动收起侧边栏以获得更多工作空间</span>
+                        </div>
+                        <div class="row-content-right">
+                          <div class="apple-switch" :class="{ 'is-on': collapsed }" @click="collapsed = !collapsed">
+                            <div class="switch-knob"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </transition>
+          </div>
+
+          <!-- 换绑/绑定操作弹窗 (嵌套在当前 Modal 顶层) -->
+          <transition name="modal-fade">
+            <div v-if="isRebindModalOpen" class="apple-modal-overlay nested-overlay" @click="closeRebindModal">
+              <div class="apple-dialog" @click.stop>
+                <h3 class="dialog-title">{{ rebindTarget === 'email' ? '换绑安全邮箱' : '换绑手机号码' }}</h3>
+                <p class="dialog-subtitle">为了您的账号安全，本次操作需要验证短信验证码。</p>
+
+                <div class="dialog-form">
+                  <div class="apple-input-group">
+                    <div class="input-icon-wrapper">
+                      <font-awesome-icon :icon="rebindTarget === 'email' ? ['fas', 'envelope'] : ['fas', 'mobile-alt']" />
+                    </div>
+                    <input
+                        :type="rebindTarget === 'email' ? 'email' : 'tel'"
+                        v-model="rebindForm.targetValue"
+                        class="apple-dialog-input has-icon"
+                        :placeholder="rebindTarget === 'email' ? '请输入新邮箱地址' : '请输入新手机号码'"
+                    />
+                  </div>
+                  <div class="apple-input-group flex-group">
+                    <div class="input-icon-wrapper verify-icon">
+                      <font-awesome-icon :icon="['fas', 'shield-alt']" />
+                    </div>
+                    <input
+                        type="text"
+                        v-model="rebindForm.verifyCode"
+                        class="apple-dialog-input has-icon flex-1"
+                        placeholder="短信验证码"
+                    />
+                    <button class="dialog-btn outline send-code-btn" :disabled="countdown > 0" @click="sendVerifyCode">
+                      {{ countdown > 0 ? `${countdown}s 后重试` : '获取验证码' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="dialog-actions">
+                  <button class="dialog-btn outline" @click="closeRebindModal">取消</button>
+                  <button class="dialog-btn primary" @click="submitRebind">确认</button>
+                </div>
+              </div>
+            </div>
+          </transition>
+
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -263,18 +544,150 @@ const headerRightRef = ref<HTMLElement | null>(null)
 const openBreadcrumb = ref<number | null>(null)
 const isDark = ref(true)
 
+// 设置弹窗状态
+const isSettingsModalOpen = ref(false)
+const activeSettingsTab = ref<'profile' | 'preferences'>('profile')
+
+// ==== 个人资料展示及头像上传 ====
+const avatarInput = ref<HTMLInputElement | null>(null)
+const previewAvatar = ref<string | null>(null)
+const userInfo = computed(() => userStore.userInfo)
+
+watch(userInfo, (val) => {
+  if (val) {
+    previewAvatar.value = val.avatar || null
+  }
+}, { immediate: true, deep: true })
+
+// 格式化注册时间
+const formatTime = (timeStr?: string) => {
+  if (!timeStr) return '未知'
+  const date = new Date(timeStr)
+  if (isNaN(date.getTime())) return timeStr
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
+
+// 唤起文件选择器
+const triggerAvatarUpload = () => {
+  if (avatarInput.value) {
+    avatarInput.value.click()
+  }
+}
+
+// 处理头像变更
+const handleAvatarChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0]
+    // 预览逻辑
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      previewAvatar.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+  if (avatarInput.value) avatarInput.value.value = ''
+}
+
+// ==== 密码重置处理 ====
+const handlePasswordReset = () => {
+  // TODO: 这里可以唤起密码重置的弹窗或跳转到专用路由
+  console.log('点击了密码重置')
+  // 临时使用系统 alert 提示展示
+  alert('将在这里打开密码重置流程')
+}
+
+
+// ==== 换绑相关逻辑 ====
+const isRebindModalOpen = ref(false)
+const rebindTarget = ref<'email' | 'phone'>('phone')
+const countdown = ref(0)
+let timer: number | null = null
+
+const rebindForm = reactive({
+  targetValue: '',
+  verifyCode: ''
+})
+
+const openRebindModal = (target: 'email' | 'phone') => {
+  rebindTarget.value = target
+  rebindForm.targetValue = ''
+  rebindForm.verifyCode = ''
+  countdown.value = 0
+  if (timer) clearInterval(timer)
+  isRebindModalOpen.value = true
+}
+
+const closeRebindModal = () => {
+  isRebindModalOpen.value = false
+  if (timer) clearInterval(timer)
+}
+
+const sendVerifyCode = () => {
+  if (countdown.value > 0) return
+  if (!rebindForm.targetValue) {
+    console.warn('请输入目标信息')
+    return
+  }
+
+  // 模拟发送验证码，开启倒计时
+  countdown.value = 60
+  timer = window.setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0 && timer) {
+      clearInterval(timer)
+    }
+  }, 1000)
+}
+
+const submitRebind = async () => {
+  if (!rebindForm.targetValue || !rebindForm.verifyCode) {
+    console.warn('请填写完整信息及验证码')
+    return
+  }
+
+  // TODO: 接入实际换绑 API
+  console.log(`执行换绑 ${rebindTarget.value}:`, rebindForm)
+
+  // 模拟成功后更新状态
+  if (userInfo.value) {
+    userInfo.value[rebindTarget.value] = rebindForm.targetValue
+  }
+  closeRebindModal()
+}
+
+
 watch(collapsed, (newVal) => {
   if (!newVal) activeCollapsedPopup.value = null
 })
+
+// 添加全局快捷键监听
+const handleGlobalKeydown = (e: KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+    e.preventDefault()
+    openSettingsModal('preferences')
+  }
+  if (e.key === 'Escape') {
+    // 按顺序关闭：先关嵌套子弹窗，再关主设置弹窗
+    if (isRebindModalOpen.value) {
+      closeRebindModal()
+    } else if (isSettingsModalOpen.value) {
+      closeSettingsModal()
+    }
+  }
+}
 
 onMounted(() => {
   const storedTheme = localStorage.getItem('apple-theme')
   if (storedTheme === 'light') isDark.value = false
   document.addEventListener('click', closeDropdowns)
+  window.addEventListener('keydown', handleGlobalKeydown)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', closeDropdowns)
+  window.removeEventListener('keydown', handleGlobalKeydown)
+  if (timer) clearInterval(timer)
 })
 
 const closeDropdowns = (e: MouseEvent) => {
@@ -331,12 +744,21 @@ const navigateToMenu = (menu: any) => {
   if (targetPath) router.push(targetPath.startsWith('/') ? targetPath : `/${targetPath}`)
 }
 
+const openSettingsModal = (tab: 'profile' | 'preferences') => {
+  isUserMenuOpen.value = false
+  activeSettingsTab.value = tab
+  isSettingsModalOpen.value = true
+}
+
+const closeSettingsModal = () => {
+  isSettingsModalOpen.value = false
+}
+
 const handleLogout = async () => {
   isUserMenuOpen.value = false
   await userStore.logout()
 }
 
-const userInfo = computed(() => userStore.userInfo)
 const menus = computed(() => userStore.menus)
 
 const breadcrumbs = computed(() => {
@@ -381,7 +803,7 @@ const getFaIcon = (iconStr: string) => {
   return [prefix, name]
 }
 
-watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: true })
+watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true })
 </script>
 
 <style scoped>
@@ -400,7 +822,9 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   --border-color: rgba(255, 255, 255, 0.08);
   --hover-bg: rgba(255, 255, 255, 0.08);
   --active-bg: rgba(255, 255, 255, 0.12);
-  --popup-bg: rgba(30, 30, 30, 0.85); /* 增强了毛玻璃底色 */
+  --popup-bg: rgba(30, 30, 30, 0.85);
+  --modal-bg: #1c1c1e;
+  --modal-card-bg: #28282b;
   --shadow-color: rgba(0, 0, 0, 0.6);
   --pill-bg: rgba(255, 255, 255, 0.04);
   --pill-border: rgba(255, 255, 255, 0.08);
@@ -429,7 +853,9 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   --border-color: rgba(0, 0, 0, 0.08);
   --hover-bg: rgba(0, 0, 0, 0.05);
   --active-bg: rgba(0, 0, 0, 0.08);
-  --popup-bg: rgba(255, 255, 255, 0.85); /* 亮色毛玻璃底色 */
+  --popup-bg: rgba(255, 255, 255, 0.85);
+  --modal-bg: #ffffff;
+  --modal-card-bg: #ffffff; /* 亮色模式下卡片颜色 */
   --shadow-color: rgba(0, 0, 0, 0.12);
   --pill-bg: rgba(255, 255, 255, 1);
   --pill-border: rgba(0, 0, 0, 0.1);
@@ -439,150 +865,45 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   --scrollbar-hover: rgba(0, 0, 0, 0.35);
 }
 
+.text-muted { color: var(--text-muted); }
+.placeholder-text { opacity: 0.5; }
+.flex-1 { flex: 1; }
+.flex-group { display: flex; gap: 8px; align-items: center; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.ml-3 { margin-left: 12px; }
+
+/* 针对带有底块Icon的布局，让下方描述文字与上方Title左对齐 */
+.ml-icon-offset { margin-left: 38px; }
+
 /* ================= 侧边栏 ================= */
-.apple-sidebar {
-  width: 250px;
-  height: 100%;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border-color);
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease, border-color 0.4s ease;
-  z-index: 100;
-  flex-shrink: 0;
-}
-
-.apple-sidebar.is-collapsed {
-  width: 72px;
-}
-
-.sidebar-logo {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 12px;
-  width: 100%;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--border-color);
-  transition: padding 0.3s ease;
-}
-.apple-sidebar.is-collapsed .sidebar-logo {
-  padding: 0;
-  justify-content: center;
-}
-
-.logo-wrapper {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.apple-sidebar.is-collapsed .logo-wrapper {
-  width: 40px;
-  height: 40px;
-}
-
+.apple-sidebar { width: 250px; height: 100%; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease, border-color 0.4s ease; z-index: 100; flex-shrink: 0; }
+.apple-sidebar.is-collapsed { width: 72px; }
+.sidebar-logo { height: 64px; display: flex; align-items: center; padding: 0 16px; gap: 12px; width: 100%; flex-shrink: 0; border-bottom: 1px solid var(--border-color); transition: padding 0.3s ease; }
+.apple-sidebar.is-collapsed .sidebar-logo { padding: 0; justify-content: center; }
+.logo-wrapper { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.apple-sidebar.is-collapsed .logo-wrapper { width: 40px; height: 40px; }
 .logo-img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .apple-layout-root.theme-light .logo-img { filter: invert(1) brightness(0.2); }
 .logo-title { font-size: 16px; font-weight: 700; color: var(--text-main); white-space: nowrap; margin-top: 1px; }
 
-/* ================= 侧边栏菜单结构 ================= */
-.sidebar-menu-scroll {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 16px 0;
-  scrollbar-width: none;
-}
+/* ================= 侧边栏菜单 ================= */
+.sidebar-menu-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 0; scrollbar-width: none; }
 .sidebar-menu-scroll::-webkit-scrollbar { display: none; }
+.apple-sidebar.is-collapsed .sidebar-menu-scroll { overflow: visible; }
+.apple-menu { width: 100%; list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.apple-menu-item-group { width: 100%; position: relative; padding: 0; margin: 0; display: block; }
 
-.apple-sidebar.is-collapsed .sidebar-menu-scroll {
-  overflow: visible;
-}
-
-.apple-menu {
-  width: 100%;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.apple-menu-item-group {
-  width: 100%;
-  position: relative;
-  padding: 0;
-  margin: 0;
-  display: block;
-}
-
-.apple-menu-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 40px;
-  padding: 0 12px;
-  margin: 0 14px;
-  border-radius: 10px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
-}
-
+.apple-menu-title { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; margin: 0 14px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; }
 .apple-menu-title:hover { background: var(--hover-bg); color: var(--text-main); }
 .apple-menu-title.is-active { color: var(--text-main); }
+.apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25); }
 
-.apple-menu-title.single-item.is-selected {
-  background: var(--apple-blue);
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25);
-}
-
-.apple-sidebar.is-collapsed .apple-menu-title {
-  width: 44px;
-  height: 44px;
-  margin: 8px auto;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-}
-
-.apple-sidebar.is-collapsed .title-left {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-}
-
-.apple-sidebar.is-collapsed .menu-icon-wrap {
-  width: auto;
-  height: auto;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
+.apple-sidebar.is-collapsed .apple-menu-title { width: 44px; height: 44px; margin: 8px auto; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+.apple-sidebar.is-collapsed .title-left { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; }
+.apple-sidebar.is-collapsed .menu-icon-wrap { width: auto; height: auto; font-size: 18px; display: flex; align-items: center; justify-content: center; }
 .apple-sidebar.is-collapsed .apple-menu-title.parent-is-selected,
-.apple-sidebar.is-collapsed .apple-menu-title.single-item.is-selected {
-  background: var(--apple-blue);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3);
-}
+.apple-sidebar.is-collapsed .apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; box-shadow: 0 4px 14px rgba(10, 132, 255, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
 
 .title-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .menu-icon-wrap { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; color: currentColor; }
@@ -595,410 +916,285 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .apple-submenu-wrapper.is-open { grid-template-rows: 1fr; }
 .apple-submenu-list { overflow: hidden; list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
 
-.apple-sub-item {
-  height: 38px;
-  margin: 0 14px;
-  padding: 0 12px 0 44px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
+.apple-sub-item { height: 38px; margin: 0 14px; padding: 0 12px 0 44px; border-radius: 8px; display: flex; align-items: center; gap: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }
 .apple-sub-item:first-child { margin-top: 6px; }
 .apple-sub-item:last-child { margin-bottom: 6px; }
-
 .apple-sub-item:hover { background: var(--hover-bg); color: var(--text-main); }
 .apple-sub-item.is-selected { background: var(--apple-blue); color: #fff; font-weight: 600; }
-
-.menu-icon-wrap.sub {
-  width: 16px !important; height: 16px !important; font-size: 14px !important; opacity: 0.6;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  padding: 0 !important; margin: 0 !important;
-}
+.menu-icon-wrap.sub { width: 16px !important; height: 16px !important; font-size: 14px !important; opacity: 0.6; display: flex !important; align-items: center !important; justify-content: center !important; padding: 0 !important; margin: 0 !important; }
 .menu-icon-wrap.sub :deep(svg) { display: block !important; margin: 0 !important; padding: 0 !important; }
 
-.apple-collapsed-popup {
-  position: absolute;
-  top: 4px;
-  left: calc(90% + 12px);
-  background: rgba(30, 30, 30, 0.65);
-  backdrop-filter: blur(50px) saturate(220%);
-  -webkit-backdrop-filter: blur(50px) saturate(220%);
-  border-radius: 14px;
-  padding: 6px;
-  min-width: 130px;
-  box-shadow:
-      0 0 0 0.5px rgba(255, 255, 255, 0.15),
-      0 24px 48px -12px rgba(0, 0, 0, 0.4),
-      0 4px 16px rgba(0, 0, 0, 0.1),
-      inset 0 1px 1px rgba(255, 255, 255, 0.15);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-8px) scale(0.96);
-  transform-origin: left center;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-  z-index: 1000;
-}
+.apple-collapsed-popup { position: absolute; top: 4px; left: calc(90% + 12px); background: rgba(30, 30, 30, 0.65); backdrop-filter: blur(50px) saturate(220%); -webkit-backdrop-filter: blur(50px) saturate(220%); border-radius: 14px; padding: 6px; min-width: 130px; box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.15), 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.15); opacity: 0; visibility: hidden; transform: translateX(-8px) scale(0.96); transform-origin: left center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; z-index: 1000; }
+.apple-layout-root.theme-light .apple-collapsed-popup { background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.8); }
+.apple-collapsed-popup.is-visible { opacity: 1; visibility: visible; transform: translateX(0) scale(1); pointer-events: auto; }
 
-.apple-layout-root.theme-light .apple-collapsed-popup {
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow:
-      0 0 0 0.5px rgba(0, 0, 0, 0.08),
-      0 24px 48px -12px rgba(0, 0, 0, 0.15),
-      0 4px 16px rgba(0, 0, 0, 0.05),
-      inset 0 1px 1px rgba(255, 255, 255, 0.8);
-}
-
-.apple-collapsed-popup.is-visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(0) scale(1);
-  pointer-events: auto;
-}
-
-.popup-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.popup-item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start; /* 改为靠左对齐 */
-  gap: 12px; /* 增加一点间距，让图标和文字更协调舒展 */
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 8px;
-  color: var(--text-main);
-  cursor: pointer;
-}
-
-.popup-item .menu-text {
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1;
-  white-space: nowrap;
-}
-
+.popup-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.popup-item { display: flex; align-items: center; justify-content: flex-start; gap: 12px; height: 34px; padding: 0 16px; border-radius: 8px; color: var(--text-main); cursor: pointer; }
+.popup-item .menu-text { font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap; }
 .popup-item.is-selected { background: rgba(10, 132, 255, 0.15); color: var(--apple-blue); }
 .apple-layout-root.theme-light .popup-item.is-selected { background: rgba(10, 132, 255, 0.08); }
 .popup-item.is-selected .menu-icon-wrap.sub { opacity: 1; color: var(--apple-blue); }
-
 .popup-item:hover, .popup-item.is-selected:hover { background: var(--apple-blue); color: #fff; }
 .popup-item:hover .menu-icon-wrap.sub, .popup-item.is-selected:hover .menu-icon-wrap.sub { opacity: 1; color: #fff; }
 
 /* ================= 主内容区域 ================= */
-.apple-main-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  position: relative;
-}
+.apple-main-container { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
 
-.apple-header {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  background: var(--header-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border-color);
-  z-index: 10;
-  transition: background 0.4s ease, border-color 0.4s ease;
-}
+.apple-header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); z-index: 10; transition: background 0.4s ease, border-color 0.4s ease; }
+.header-left { display: flex; align-items: center; gap: 16px; }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.action-btn {
-  background: var(--pill-bg);
-  border: 1px solid var(--pill-border);
-  color: var(--text-main);
-  font-size: 15px;
-  width: 36px;
-  height: 36px;
-  padding: 0 !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 10px;
-  transition: all 0.2s ease;
-}
+.action-btn { background: var(--pill-bg); border: 1px solid var(--pill-border); color: var(--text-main); font-size: 15px; width: 36px; height: 36px; padding: 0 !important; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 10px; transition: all 0.2s ease; }
 .action-btn:hover { background: var(--hover-bg); }
 .action-btn:active { transform: scale(0.95); }
 .theme-btn { border-radius: 50%; margin-right: 16px; }
 
 .breadcrumb-area { display: flex; align-items: center; height: 36px; }
-
-.apple-breadcrumb-container {
-  display: flex;
-  align-items: center;
-  background: var(--pill-bg);
-  border: 1px solid var(--pill-border);
-  height: 36px;
-  border-radius: 10px;
-  padding: 0 10px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.crumb-node {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.crumb-trigger {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 8px;
-  border-radius: 6px;
-  height: 28px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--text-muted);
-}
-
+.apple-breadcrumb-container { display: flex; align-items: center; background: var(--pill-bg); border: 1px solid var(--pill-border); height: 36px; border-radius: 10px; padding: 0 10px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.crumb-node { position: relative; display: flex; align-items: center; height: 100%; }
+.crumb-trigger { display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 6px; height: 28px; cursor: pointer; transition: all 0.2s ease; color: var(--text-muted); }
 .crumb-trigger.is-last { color: var(--text-main); }
 .crumb-trigger:hover, .crumb-trigger.is-open { background: var(--hover-bg); color: var(--text-main); }
-
-.crumb-icon-raw, .crumb-dropdown-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 14px; height: 14px; font-size: 14px; color: inherit;
-}
-
+.crumb-icon-raw, .crumb-dropdown-icon { display: flex; align-items: center; justify-content: center; width: 14px; height: 14px; font-size: 14px; color: inherit; }
 .crumb-text, .dropdown-item-text { font-size: 14px; font-weight: 500; white-space: nowrap; line-height: normal; }
-
-.crumb-dropdown-panel {
-  position: absolute;
-  top: calc(100% + 10px); left: 0;
-  background: var(--popup-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 6px; min-width: 140px;
-  box-shadow: 0 10px 40px var(--shadow-color); z-index: 1000;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-}
-
+.crumb-dropdown-panel { position: absolute; top: calc(100% + 10px); left: 0; background: var(--popup-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 6px; min-width: 140px; box-shadow: 0 10px 40px var(--shadow-color); z-index: 1000; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-5px); }
-
-.crumb-dropdown-item {
-  display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; margin-bottom: 2px;
-}
+.crumb-dropdown-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; margin-bottom: 2px; }
 .crumb-dropdown-item:last-child { margin-bottom: 0; }
 .crumb-dropdown-item:hover { background: var(--hover-bg); color: var(--text-main); }
 .crumb-dropdown-item.is-active { background: var(--apple-blue); color: #fff; }
+.crumb-separator { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 400; color: var(--text-muted); opacity: 0.4; margin: 0 6px; width: 12px; user-select: none; }
 
-.crumb-separator {
-  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 400; color: var(--text-muted); opacity: 0.4; margin: 0 6px; width: 12px; user-select: none;
-}
-
-/* ================= 用户下拉菜单区 (全新重构) ================= */
+/* ================= 用户下拉菜单区 ================= */
 .header-right { display: flex; align-items: center; }
 .custom-dropdown-container { position: relative; }
 
-/* 触发器按钮 */
-.user-pill-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--pill-bg);
-  border: 1px solid var(--pill-border);
-  padding: 4px 12px 4px 4px;
-  border-radius: 30px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
+.user-pill-btn { display: flex; align-items: center; gap: 10px; background: var(--pill-bg); border: 1px solid var(--pill-border); padding: 4px 12px 4px 4px; border-radius: 30px; cursor: pointer; transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .user-pill-btn:hover { background: var(--hover-bg); border-color: var(--border-color); }
 .user-pill-btn.is-active { background: var(--active-bg); border-color: var(--border-color); }
 
-.user-avatar-small {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--apple-blue), #3b99fc); /* 渐变高级感 */
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(10, 132, 255, 0.3);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
+.user-avatar-small { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), #3b99fc); color: #ffffff; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(10, 132, 255, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-main); }
 .dropdown-icon { font-size: 11px; color: var(--text-muted); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .dropdown-icon.rotated { transform: rotate(180deg); }
 
-/* 下拉面板 */
-.user-dropdown-panel {
-  position: absolute;
-  top: calc(100% + 14px);
-  right: 0;
-  background: var(--popup-bg);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid var(--border-color);
-  border-radius: 16px; /* 更大的圆角匹配苹果风格 */
-  min-width: 240px; /* 加宽以容纳更好的布局 */
-  padding: 6px;
-  /* 更细腻的分层阴影 */
-  box-shadow:
-      0 0 0 1px rgba(0,0,0,0.02),
-      0 10px 40px -10px var(--shadow-color),
-      0 4px 12px rgba(0,0,0,0.08);
-  z-index: 1000;
-  transform-origin: top right;
-}
+.user-dropdown-panel { position: absolute; top: calc(100% + 14px); right: 0; background: var(--popup-bg); backdrop-filter: blur(32px) saturate(200%); -webkit-backdrop-filter: blur(32px) saturate(200%); border: 1px solid var(--border-color); border-radius: 16px; min-width: 240px; padding: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.02), 0 10px 40px -10px var(--shadow-color), 0 4px 12px rgba(0,0,0,0.08); z-index: 1000; transform-origin: top right; }
+.dropdown-profile-header { display: flex; align-items: center; gap: 14px; padding: 12px; margin-bottom: 2px; }
+.user-avatar-large { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), #3b99fc); color: #ffffff; font-weight: 600; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.profile-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.profile-name { font-size: 15px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+.profile-email { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-/* 个人资料信息头 */
-.dropdown-profile-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px;
-  margin-bottom: 2px;
-}
-
-.user-avatar-large {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--apple-blue), #3b99fc);
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-.profile-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.profile-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-}
-
-.profile-email {
-  font-size: 12px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-
-/* 分割线与菜单组 */
-.dropdown-divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 6px 6px;
-}
-
-.dropdown-action-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dropdown-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: transparent;
-  border: none;
-  border-radius: 8px; /* 内部圆角稍微小一点，形成嵌套视觉差 */
-  padding: 10px 12px;
-  color: var(--text-main);
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.dropdown-item:hover {
-  background: var(--hover-bg);
-}
-
-.item-icon-wrapper {
-  width: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  color: var(--text-muted);
-  transition: color 0.2s ease;
-}
-
-.item-text {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.dropdown-item:hover .item-icon-wrapper {
-  color: var(--text-main);
-}
-
-/* 危险操作项 */
+.dropdown-divider { height: 1px; background: var(--border-color); margin: 6px 6px; }
+.dropdown-action-group { display: flex; flex-direction: column; gap: 2px; }
+.dropdown-item { width: 100%; display: flex; align-items: center; justify-content: space-between; background: transparent; border: none; border-radius: 8px; padding: 10px 12px; color: var(--text-main); cursor: pointer; transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease; }
+.dropdown-item:hover { background: var(--hover-bg); }
+.dropdown-item:active { transform: scale(0.98); }
+.item-main { display: flex; align-items: center; gap: 12px; }
+.item-icon-wrapper { width: 18px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--text-muted); transition: color 0.2s ease; }
+.item-text { font-size: 14px; font-weight: 500; }
+.item-shortcut { font-size: 12px; color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background: var(--hover-bg); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; }
+.dropdown-item:hover .item-icon-wrapper { color: var(--text-main); }
 .danger-item { color: #FF453A; }
 .danger-item .item-icon-wrapper { color: #FF453A; }
 .danger-item:hover { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
 .danger-item:hover .item-icon-wrapper { color: #FF453A; }
 
-/* 丝滑的弹跳过渡动画 */
-.apple-dropdown-enter-active, .apple-dropdown-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.apple-dropdown-enter-from, .apple-dropdown-leave-to {
-  opacity: 0;
-  transform: scale(0.96) translateY(-8px);
-}
+.apple-dropdown-enter-active, .apple-dropdown-leave-active { transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.apple-dropdown-enter-from, .apple-dropdown-leave-to { opacity: 0; transform: scale(0.96) translateY(-8px); }
 
 /* ================= 滚动区域 ================= */
-.apple-content-scroll {
-  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 24px; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent;
-}
+.apple-content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 24px; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 .apple-content-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .apple-content-scroll::-webkit-scrollbar-track { background: transparent; }
 .apple-content-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 .apple-content-scroll::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
-.apple-content-inner {
-  background: var(--content-bg); border: 1px solid var(--border-color); border-radius: 16px; min-height: 100%; padding: 24px; box-shadow: 0 4px 20px var(--shadow-color); transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
-}
-
+.apple-content-inner { background: var(--content-bg); border: 1px solid var(--border-color); border-radius: 16px; min-height: 100%; padding: 24px; box-shadow: 0 4px 20px var(--shadow-color); transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; }
 .page-fade-enter-active, .page-fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .page-fade-enter-from { opacity: 0; transform: translateY(10px); }
 .page-fade-leave-to { opacity: 0; transform: translateY(-10px); }
+
+/* ================= 全局设置主弹窗 ================= */
+.apple-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+.apple-modal-container {
+  width: 820px; height: 580px; background: var(--modal-bg); border: 1px solid var(--border-color); border-radius: 16px; display: flex; overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05); transform: scale(1); transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.apple-layout-root.theme-light .apple-modal-container { box-shadow: 0 24px 48px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05); }
+
+.modal-sidebar { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 24px 16px; display: flex; flex-direction: column; flex-shrink: 0; }
+.modal-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 16px; padding: 0 12px; text-transform: uppercase; }
+
+.modal-nav { display: flex; flex-direction: column; gap: 4px; }
+.modal-nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; color: var(--text-main); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+.modal-nav-item:hover { background: var(--hover-bg); }
+.modal-nav-item.is-active { background: var(--active-bg); color: var(--apple-blue); font-weight: 600; }
+.modal-nav-item.is-active .nav-icon { color: var(--apple-blue); }
+.nav-icon { width: 20px; display: flex; justify-content: center; font-size: 14px; color: var(--text-muted); transition: color 0.2s; }
+
+.modal-content-area { flex: 1; position: relative; display: flex; flex-direction: column; background: var(--content-bg); overflow: hidden; }
+
+.modal-close-btn {
+  position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--pill-bg); color: var(--text-muted); z-index: 10;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;
+}
+.modal-close-btn:hover { background: var(--hover-bg); color: var(--text-main); }
+
+.settings-panel { flex: 1; display: flex; flex-direction: column; animation: fade-in 0.3s ease; overflow-y: auto; padding: 40px; scrollbar-width: none; }
+.settings-panel::-webkit-scrollbar { display: none; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 面板通用标题 */
+.panel-header { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 32px; flex-shrink: 0; display: none; }
+
+/* ======== 个人资料 & 偏好 分组列表布局 ======== */
+.profile-view { padding-top: 48px; }
+
+/* 顶部 Hero */
+.profile-hero-section { display: flex; align-items: center; gap: 24px; padding: 0 16px 32px 16px; }
+
+.avatar-editable-wrapper {
+  position: relative; width: 72px; height: 72px; border-radius: 50%; cursor: pointer;
+  overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex-shrink: 0;
+}
+.avatar-huge {
+  width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), #3b99fc);
+  color: #fff; font-size: 28px; font-weight: 600; display: flex; align-items: center; justify-content: center;
+}
+.avatar-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;
+}
+.avatar-editable-wrapper:hover .avatar-overlay { opacity: 1; }
+.camera-icon { color: #fff; font-size: 20px; }
+.hidden-input { display: none; }
+
+.hero-text-content { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+.hero-name { font-size: 24px; font-weight: 600; color: var(--text-main); margin: 0 0 4px 0; letter-spacing: -0.5px; }
+.hero-email { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+/* 设置项分组 */
+.settings-groups-container { display: flex; flex-direction: column; gap: 28px; max-width: 560px; padding: 0 16px; }
+
+.settings-group { display: flex; flex-direction: column; gap: 10px; }
+.group-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; padding-left: 12px; margin: 0; letter-spacing: 0.5px; }
+
+/* 独立卡片 */
+.settings-card {
+  background: var(--modal-card-bg); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--border-color);
+}
+.interactive-card { transition: background 0.2s ease; cursor: pointer; }
+.interactive-card:hover { background: var(--hover-bg); }
+
+/* 数据行 */
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; min-height: 48px; transition: background 0.2s ease;
+}
+.clickable-row { cursor: pointer; }
+
+/* 左侧带彩色方块的 Label 结构 */
+.row-label {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 14px; font-weight: 500; color: var(--text-main);
+  min-width: 100px;
+}
+
+/* 完美重置的 Icon 方块 */
+.setting-icon-box {
+  width: 26px; height: 26px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 13px; flex-shrink: 0;
+}
+/* 方块颜色 */
+.bg-blue { background-color: #007aff; }
+.bg-green { background-color: #34c759; }
+.bg-orange { background-color: #ff9500; }
+.bg-red { background-color: #ff3b30; }
+.bg-grey { background-color: #8e8e93; }
+.bg-indigo { background-color: #5856d6; }
+
+.row-content { flex: 1; display: flex; justify-content: flex-end; align-items: center; text-align: right; }
+.row-value { font-size: 14px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.readonly-text { color: var(--text-muted); }
+
+/* 左文右控件结构 */
+.row-content-left { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.row-desc { font-size: 12px; color: var(--text-muted); }
+.row-content-right { flex-shrink: 0; }
+
+/* 换绑按钮操作文本 */
+.action-text-btn { background: transparent; border: none; font-size: 14px; color: var(--apple-blue); cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
+.action-text-btn:hover { background: rgba(10, 132, 255, 0.1); }
+
+/* 分割线：精确对齐文本 */
+.row-divider { height: 1px; background: var(--border-color); margin-left: 54px; }
+
+/* 渐变过渡 */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-4px); }
+
+/* ======== 系统偏好页 Switch ======== */
+.apple-switch { width: 50px; height: 30px; border-radius: 15px; background: rgba(120, 120, 128, 0.32); position: relative; cursor: pointer; transition: background 0.3s ease; display: flex; align-items: center; }
+.apple-switch.is-on { background: #34C759; }
+.apple-layout-root.theme-light .apple-switch { background: #E9E9EB; }
+.apple-layout-root.theme-light .apple-switch.is-on { background: #34C759; }
+.switch-knob { width: 26px; height: 26px; background: #fff; border-radius: 50%; position: absolute; left: 2px; box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); display: flex; align-items: center; justify-content: center; }
+.apple-switch.is-on .switch-knob { transform: translateX(20px); }
+.knob-icon { font-size: 12px; color: #1c1c1e; }
+.knob-icon.light { color: #f5a623; }
+
+/* 弹窗整体过渡动画 */
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease; }
+.modal-fade-enter-active .apple-modal-container, .modal-fade-enter-active .apple-dialog { animation: modal-scale-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.modal-fade-leave-active .apple-modal-container, .modal-fade-leave-active .apple-dialog { animation: modal-scale-out 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+
+@keyframes modal-scale-in { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes modal-scale-out { from { transform: scale(1); opacity: 1; } to { transform: scale(0.96); opacity: 0; } }
+
+/* ================= 嵌套的换绑子弹窗 ================= */
+.nested-overlay { z-index: 2500; background: rgba(0,0,0,0.5); }
+
+.apple-dialog {
+  width: 340px; background: var(--modal-card-bg); border-radius: 16px;
+  padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid var(--border-color);
+}
+.apple-layout-root.theme-light .apple-dialog { box-shadow: 0 20px 40px rgba(0,0,0,0.15); background: #ffffff; }
+
+.dialog-title { font-size: 18px; font-weight: 600; text-align: center; color: var(--text-main); margin: 0; }
+.dialog-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4; }
+
+.dialog-form { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.apple-input-group { position: relative; display: flex; width: 100%; align-items: center; }
+
+.input-icon-wrapper {
+  position: absolute; left: 12px; color: var(--text-muted); font-size: 14px;
+  display: flex; align-items: center; justify-content: center; pointer-events: none;
+}
+
+.apple-dialog-input {
+  width: 100%; background: var(--bg-base); border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 10px 12px; color: var(--text-main); font-size: 14px;
+  outline: none; transition: border-color 0.2s;
+}
+.apple-dialog-input.has-icon { padding-left: 36px; }
+.apple-dialog-input:focus { border-color: var(--apple-blue); }
+
+.dialog-btn {
+  padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; border: none; flex: 1; text-align: center;
+}
+.dialog-btn.primary { background: var(--apple-blue); color: #fff; }
+.dialog-btn.primary:hover { filter: brightness(1.1); }
+.dialog-btn.outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+.dialog-btn.outline:hover { background: var(--hover-bg); }
+.dialog-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+.dialog-actions { display: flex; gap: 12px; margin-top: 8px; }
+.send-code-btn { flex: 0 0 100px; padding: 0 8px; font-size: 13px; white-space: nowrap; }
+
 </style>
