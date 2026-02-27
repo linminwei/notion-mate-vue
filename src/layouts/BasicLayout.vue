@@ -64,7 +64,7 @@
                 </ul>
               </div>
 
-              <!-- 折叠状态下的 Click Popup：仅此处的子项保留绝对居中对齐 -->
+              <!-- 折叠状态下的 Click Popup：悬浮菜单靠左对齐 -->
               <div v-if="collapsed" class="apple-collapsed-popup" :class="{ 'is-visible': activeCollapsedPopup === (menu.id || menu.path) }" @click.stop>
                 <ul class="popup-list">
                   <li
@@ -170,43 +170,59 @@
             <font-awesome-icon :icon="['fas', 'moon']" v-else />
           </div>
 
+          <!-- 用户下拉菜单区 (优化版) -->
           <div class="custom-dropdown-container">
-            <div class="user-pill-btn" @click.stop="isUserMenuOpen = !isUserMenuOpen">
-              <div class="user-avatar">
+            <div class="user-pill-btn" :class="{ 'is-active': isUserMenuOpen }" @click.stop="isUserMenuOpen = !isUserMenuOpen">
+              <div class="user-avatar-small">
                 {{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}
               </div>
               <span class="user-name">{{ userInfo?.nickname || userInfo?.username }}</span>
               <font-awesome-icon :icon="['fas', 'chevron-down']" class="dropdown-icon" :class="{ 'rotated': isUserMenuOpen }" />
             </div>
 
-            <transition name="dropdown-fade">
+            <!-- Apple 风格的弹跳过渡动画 -->
+            <transition name="apple-dropdown">
               <div v-if="isUserMenuOpen" class="user-dropdown-panel" @click.stop>
-                <div class="dropdown-header">
-                  <div class="dh-name">{{ userInfo?.nickname || userInfo?.username }}</div>
-                  <div class="dh-email">{{ userInfo?.email || 'admin@notionmate.com' }}</div>
+
+                <!-- 优化后的高级感 Profile 头 -->
+                <div class="dropdown-profile-header">
+                  <div class="user-avatar-large">
+                    {{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}
+                  </div>
+                  <div class="profile-info">
+                    <div class="profile-name">{{ userInfo?.nickname || userInfo?.username }}</div>
+                    <div class="profile-email">{{ userInfo?.email || 'admin@notionmate.com' }}</div>
+                  </div>
                 </div>
+
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-list">
+
+                <div class="dropdown-action-group">
                   <div class="dropdown-item">
-                    <div class="menu-icon-wrap sub di-icon">
+                    <div class="item-icon-wrapper">
                       <font-awesome-icon :icon="['fas', 'user']" />
                     </div>
-                    个人设置
+                    <span class="item-text">个人设置</span>
                   </div>
                   <div class="dropdown-item">
-                    <div class="menu-icon-wrap sub di-icon">
+                    <div class="item-icon-wrapper">
                       <font-awesome-icon :icon="['fas', 'cog']" />
                     </div>
-                    系统偏好
-                  </div>
-                  <div class="dropdown-divider"></div>
-                  <div class="dropdown-item danger-item" @click="handleLogout">
-                    <div class="menu-icon-wrap sub di-icon">
-                      <font-awesome-icon :icon="['fas', 'sign-out-alt']" />
-                    </div>
-                    退出登录
+                    <span class="item-text">系统偏好</span>
                   </div>
                 </div>
+
+                <div class="dropdown-divider"></div>
+
+                <div class="dropdown-action-group">
+                  <div class="dropdown-item danger-item" @click="handleLogout">
+                    <div class="item-icon-wrapper">
+                      <font-awesome-icon :icon="['fas', 'sign-out-alt']" />
+                    </div>
+                    <span class="item-text">退出登录</span>
+                  </div>
+                </div>
+
               </div>
             </transition>
           </div>
@@ -381,11 +397,11 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   --sidebar-bg: #151516;
   --header-bg: rgba(11, 12, 14, 0.6);
   --content-bg: #131316;
-  --border-color: rgba(255, 255, 255, 0.06);
+  --border-color: rgba(255, 255, 255, 0.08);
   --hover-bg: rgba(255, 255, 255, 0.08);
   --active-bg: rgba(255, 255, 255, 0.12);
-  --popup-bg: #1f1f1f;
-  --shadow-color: rgba(0, 0, 0, 0.5);
+  --popup-bg: rgba(30, 30, 30, 0.85); /* 增强了毛玻璃底色 */
+  --shadow-color: rgba(0, 0, 0, 0.6);
   --pill-bg: rgba(255, 255, 255, 0.04);
   --pill-border: rgba(255, 255, 255, 0.08);
   --logo-text: #ffffff;
@@ -411,10 +427,10 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   --header-bg: rgba(255, 255, 255, 0.75);
   --content-bg: #ffffff;
   --border-color: rgba(0, 0, 0, 0.08);
-  --hover-bg: rgba(0, 0, 0, 0.04);
+  --hover-bg: rgba(0, 0, 0, 0.05);
   --active-bg: rgba(0, 0, 0, 0.08);
-  --popup-bg: #ffffff;
-  --shadow-color: rgba(0, 0, 0, 0.08);
+  --popup-bg: rgba(255, 255, 255, 0.85); /* 亮色毛玻璃底色 */
+  --shadow-color: rgba(0, 0, 0, 0.12);
   --pill-bg: rgba(255, 255, 255, 1);
   --pill-border: rgba(0, 0, 0, 0.1);
   --logo-text: #1d1d1f;
@@ -507,7 +523,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   display: block;
 }
 
-/* 菜单主标题行 - 展开状态 */
 .apple-menu-title {
   display: flex;
   align-items: center;
@@ -525,7 +540,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .apple-menu-title:hover { background: var(--hover-bg); color: var(--text-main); }
 .apple-menu-title.is-active { color: var(--text-main); }
 
-/* 【核心修复】展开状态下，独立单页面菜单（如仪表盘）的选中高亮样式 */
 .apple-menu-title.single-item.is-selected {
   background: var(--apple-blue);
   color: #fff;
@@ -533,7 +547,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25);
 }
 
-/* 完美居中的折叠图标 */
 .apple-sidebar.is-collapsed .apple-menu-title {
   width: 44px;
   height: 44px;
@@ -578,7 +591,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .chevron-icon { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .chevron-icon.is-open { transform: rotate(180deg); }
 
-/* --------- 展开子菜单 (恢复靠左缩进对齐) --------- */
 .apple-submenu-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .apple-submenu-wrapper.is-open { grid-template-rows: 1fr; }
 .apple-submenu-list { overflow: hidden; list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -586,7 +598,7 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .apple-sub-item {
   height: 38px;
   margin: 0 14px;
-  padding: 0 12px 0 44px; /* 恢复优雅的子菜单缩进层级 */
+  padding: 0 12px 0 44px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -596,7 +608,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   transition: all 0.2s ease;
 }
 
-/* 【视觉优化】：为首尾子项增加 margin，拉开与父级标题及下方其他菜单的呼吸感距离 */
 .apple-sub-item:first-child { margin-top: 6px; }
 .apple-sub-item:last-child { margin-bottom: 6px; }
 
@@ -610,13 +621,10 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 }
 .menu-icon-wrap.sub :deep(svg) { display: block !important; margin: 0 !important; padding: 0 !important; }
 
-/* ================= 折叠状态极简无缝悬浮菜单 ================= */
 .apple-collapsed-popup {
   position: absolute;
-  top: 4px; /* 精准下移，与左侧的触发按钮视觉上齐平 */
-  /* 【终极核心修复】：彻底推出侧边栏本体 (100%边缘 + 12px安全呼吸距)，告别重叠 */
+  top: 4px;
   left: calc(90% + 12px);
-
   background: rgba(30, 30, 30, 0.65);
   backdrop-filter: blur(50px) saturate(220%);
   -webkit-backdrop-filter: blur(50px) saturate(220%);
@@ -665,8 +673,8 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .popup-item {
   display: flex;
   align-items: center;
-  justify-content: center; /* 仅让悬浮弹窗内部绝对居中 */
-  gap: 10px;
+  justify-content: flex-start; /* 改为靠左对齐 */
+  gap: 12px; /* 增加一点间距，让图标和文字更协调舒展 */
   height: 34px;
   padding: 0 16px;
   border-radius: 8px;
@@ -688,7 +696,7 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .popup-item:hover, .popup-item.is-selected:hover { background: var(--apple-blue); color: #fff; }
 .popup-item:hover .menu-icon-wrap.sub, .popup-item.is-selected:hover .menu-icon-wrap.sub { opacity: 1; color: #fff; }
 
-/* ================= 主内容区域 (Main) ================= */
+/* ================= 主内容区域 ================= */
 .apple-main-container {
   flex: 1;
   display: flex;
@@ -697,7 +705,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   position: relative;
 }
 
-/* ================= 顶部导航 (恢复左侧对齐版 Header) ================= */
 .apple-header {
   height: 64px;
   display: flex;
@@ -705,8 +712,8 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   justify-content: space-between;
   padding: 0 24px;
   background: var(--header-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
   z-index: 10;
   transition: background 0.4s ease, border-color 0.4s ease;
@@ -718,7 +725,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   gap: 16px;
 }
 
-/* 按钮无杂边距 */
 .action-btn {
   background: var(--pill-bg);
   border: 1px solid var(--pill-border);
@@ -740,7 +746,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 
 .breadcrumb-area { display: flex; align-items: center; height: 36px; }
 
-/* 面包屑外壳 */
 .apple-breadcrumb-container {
   display: flex;
   align-items: center;
@@ -763,7 +768,6 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
 .crumb-trigger {
   display: flex;
   align-items: center;
-  /* 恢复靠左紧凑对齐，去除刻意的居中 */
   gap: 6px;
   padding: 0 8px;
   border-radius: 6px;
@@ -788,13 +792,15 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   top: calc(100% + 10px); left: 0;
   background: var(--popup-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 6px; min-width: 140px;
   box-shadow: 0 10px 40px var(--shadow-color); z-index: 1000;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .dropdown-fade-enter-active, .dropdown-fade-leave-active { transition: opacity 0.2s ease, transform 0.2s ease; }
 .dropdown-fade-enter-from, .dropdown-fade-leave-to { opacity: 0; transform: scale(0.95) translateY(-5px); }
 
 .crumb-dropdown-item {
-  display: flex; align-items: center; /* 恢复靠左紧凑对齐 */ gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; margin-bottom: 2px;
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; margin-bottom: 2px;
 }
 .crumb-dropdown-item:last-child { margin-bottom: 0; }
 .crumb-dropdown-item:hover { background: var(--hover-bg); color: var(--text-main); }
@@ -804,44 +810,182 @@ watch(() => route.path, (path) => { selectedKeys.value = [path] }, { immediate: 
   display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 400; color: var(--text-muted); opacity: 0.4; margin: 0 6px; width: 12px; user-select: none;
 }
 
-/* ---------------------------------------------------- */
-
+/* ================= 用户下拉菜单区 (全新重构) ================= */
 .header-right { display: flex; align-items: center; }
 .custom-dropdown-container { position: relative; }
 
+/* 触发器按钮 */
 .user-pill-btn {
-  display: flex; align-items: center; gap: 10px; background: var(--pill-bg); border: 1px solid var(--pill-border); padding: 4px 12px 4px 4px; border-radius: 30px; cursor: pointer; transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  padding: 4px 12px 4px 4px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .user-pill-btn:hover { background: var(--hover-bg); border-color: var(--border-color); }
+.user-pill-btn.is-active { background: var(--active-bg); border-color: var(--border-color); }
 
-.user-avatar {
-  width: 28px; height: 28px; border-radius: 50%; background: var(--apple-blue); color: #fff; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center;
+.user-avatar-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--apple-blue), #3b99fc); /* 渐变高级感 */
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(10, 132, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
+
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-main); }
 .dropdown-icon { font-size: 11px; color: var(--text-muted); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .dropdown-icon.rotated { transform: rotate(180deg); }
 
+/* 下拉面板 */
 .user-dropdown-panel {
-  position: absolute; top: calc(100% + 12px); right: 0;
-  background: var(--popup-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-color); border-radius: 14px; min-width: 200px; padding: 8px;
-  box-shadow: 0 16px 40px var(--shadow-color); z-index: 1000; transform-origin: top right;
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  background: var(--popup-bg);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid var(--border-color);
+  border-radius: 16px; /* 更大的圆角匹配苹果风格 */
+  min-width: 240px; /* 加宽以容纳更好的布局 */
+  padding: 6px;
+  /* 更细腻的分层阴影 */
+  box-shadow:
+      0 0 0 1px rgba(0,0,0,0.02),
+      0 10px 40px -10px var(--shadow-color),
+      0 4px 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  transform-origin: top right;
 }
 
-.dropdown-header { padding: 8px 12px 12px; }
-.dh-name { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 2px; }
-.dh-email { font-size: 12px; color: var(--text-muted); }
-.dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
-.dropdown-list { display: flex; flex-direction: column; gap: 2px; }
+/* 个人资料信息头 */
+.dropdown-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  margin-bottom: 2px;
+}
+
+.user-avatar-large {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--apple-blue), #3b99fc);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.profile-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.profile-email {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* 分割线与菜单组 */
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 6px 6px;
+}
+
+.dropdown-action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .dropdown-item {
-  width: 100%; text-align: left; background: transparent; border: none; border-radius: 8px; padding: 10px 12px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px; /* 内部圆角稍微小一点，形成嵌套视觉差 */
+  padding: 10px 12px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.dropdown-item:hover { background: var(--hover-bg); color: var(--text-main); }
-.di-icon { opacity: 0.8; margin-right: 2px; }
-.danger-item { color: #FF453A; }
-.danger-item:hover { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
-.danger-item .di-icon { color: #FF453A; }
 
+.dropdown-item:hover {
+  background: var(--hover-bg);
+}
+
+.item-icon-wrapper {
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.item-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dropdown-item:hover .item-icon-wrapper {
+  color: var(--text-main);
+}
+
+/* 危险操作项 */
+.danger-item { color: #FF453A; }
+.danger-item .item-icon-wrapper { color: #FF453A; }
+.danger-item:hover { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
+.danger-item:hover .item-icon-wrapper { color: #FF453A; }
+
+/* 丝滑的弹跳过渡动画 */
+.apple-dropdown-enter-active, .apple-dropdown-leave-active {
+  transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.apple-dropdown-enter-from, .apple-dropdown-leave-to {
+  opacity: 0;
+  transform: scale(0.96) translateY(-8px);
+}
+
+/* ================= 滚动区域 ================= */
 .apple-content-scroll {
   flex: 1; overflow-y: auto; overflow-x: hidden; padding: 24px; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent;
 }
