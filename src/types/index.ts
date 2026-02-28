@@ -100,3 +100,25 @@ export interface SysMenu {
   status: number
   children?: SysMenu[]
 }
+
+// 字典类型
+export interface DictType {
+  id: string
+  dictCode: string
+  dictName: string
+  status: number
+  remark: string
+  createTime: string
+}
+
+// 字典数据
+export interface DictData {
+  id: string
+  dictTypeId: string
+  dictLabel: string
+  dictValue: string
+  sort: number
+  status: number
+  remark: string
+  createTime: string
+}

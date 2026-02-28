@@ -38,8 +38,20 @@ const constantRoutes: RouteRecordRaw[] = [
         name: 'SystemMenu',
         component: () => import('@/views/system/menu.vue'),
         meta: { title: ' 菜单管理 ', icon: 'MenuOutlined', permission: 'system:menu:list' }
+      },
+      {
+        path: 'system/dict',
+        name: 'SystemDict',
+        component: () => import('@/views/system/dict.vue'),
+        meta: { title: ' 字典管理 ', icon: 'BookOutlined', permission: 'system:dict:list' }
       }
     ]
+  },
+  {
+    path: '/error/403',
+    name: 'Forbidden',
+    component: () => import('@/views/error/403.vue'),
+    meta: { title: '403', hidden: true }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -81,6 +93,16 @@ router.beforeEach(async (to, from, next) => {
       next('/login')
     }
     return
+  }
+
+  // 权限检查：如果路由需要特定权限，检查用户是否有该权限
+  const requiredPermission = to.meta.permission as string
+  if (requiredPermission) {
+    const hasPermission = userStore.permissions?.includes(requiredPermission)
+    if (!hasPermission) {
+      next('/error/403')
+      return
+    }
   }
 
   next()
