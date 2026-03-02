@@ -417,11 +417,13 @@
                 </div>
               </div>
 
-              <!-- 面板 2：系统偏好 -->
+              <!-- 面板 2：系统偏好 (已深度增强功能，移除菜单折叠) -->
               <div v-else-if="activeSettingsTab === 'preferences'" class="settings-panel">
                 <h2 class="panel-header">系统偏好</h2>
 
                 <div class="settings-groups-container mt-2">
+
+                  <!-- 分组 1：外观与显示 -->
                   <div class="settings-group">
                     <h3 class="group-title">外观与显示</h3>
                     <div class="settings-card">
@@ -434,7 +436,7 @@
                             </div>
                             <span>外观主题</span>
                           </div>
-                          <span class="row-desc ml-icon-offset">切换深色或浅色外观模式</span>
+                          <span class="row-desc ml-icon-offset">切换深色或浅色系统模式</span>
                         </div>
                         <div class="row-content-right">
                           <div class="apple-switch" :class="{ 'is-on': isDark }" @click="toggleTheme">
@@ -448,25 +450,98 @@
 
                       <div class="row-divider"></div>
 
-                      <!-- 折叠菜单栏 -->
+                      <!-- 主题强调色 -->
                       <div class="settings-row">
                         <div class="row-content-left">
                           <div class="row-label">
-                            <div class="setting-icon-box bg-grey">
-                              <font-awesome-icon :icon="['fas', 'bars-staggered']" />
+                            <div class="setting-icon-box bg-orange">
+                              <font-awesome-icon :icon="['fas', 'paint-brush']" />
                             </div>
-                            <span>折叠菜单栏</span>
+                            <span>系统强调色</span>
                           </div>
-                          <span class="row-desc ml-icon-offset">自动收起侧边栏以获得更多工作空间</span>
+                          <span class="row-desc ml-icon-offset">个性化您的系统主要操作与激活色彩</span>
                         </div>
                         <div class="row-content-right">
-                          <div class="apple-switch" :class="{ 'is-on': collapsed }" @click="collapsed = !collapsed">
-                            <div class="switch-knob"></div>
+                          <div class="color-picker-group">
+                            <div v-for="c in accentColors" :key="c.name"
+                                 class="color-dot"
+                                 :style="{ backgroundColor: isDark ? c.value : c.lightValue }"
+                                 :class="{ active: currentAccentName === c.name }"
+                                 @click="setAccentColor(c)">
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
+
+                  <!-- 分组 2：通用设置 -->
+                  <div class="settings-group mt-4">
+                    <h3 class="group-title">通用</h3>
+                    <div class="settings-card">
+                      <!-- 界面动画 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-blue">
+                              <font-awesome-icon :icon="['fas', 'wand-magic-sparkles']" />
+                            </div>
+                            <span>界面动画</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">开启系统级过渡与微动效（关闭可提升性能）</span>
+                        </div>
+                        <div class="row-content-right">
+                          <div class="apple-switch" :class="{ 'is-on': animationsEnabled }" @click="toggleAnimations">
+                            <div class="switch-knob"></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row-divider"></div>
+
+                      <!-- 语言 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-green">
+                              <font-awesome-icon :icon="['fas', 'globe']" />
+                            </div>
+                            <span>系统语言</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">更改系统显示的区域与界面语言</span>
+                        </div>
+                        <div class="row-content-right">
+                          <select v-model="currentLanguage" class="apple-native-select">
+                            <option value="zh-CN">简体中文</option>
+                            <option value="en-US">English</option>
+                            <option value="ja-JP">日本語</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="row-divider"></div>
+
+                      <!-- 桌面通知 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-red">
+                              <font-awesome-icon :icon="['fas', 'bell']" />
+                            </div>
+                            <span>桌面通知</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">允许系统在后台发送重要的应用消息通知</span>
+                        </div>
+                        <div class="row-content-right">
+                          <div class="apple-switch" :class="{ 'is-on': notificationsEnabled }" @click="notificationsEnabled = !notificationsEnabled">
+                            <div class="switch-knob"></div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </transition>
@@ -542,9 +617,63 @@ const headerRightRef = ref<HTMLElement | null>(null)
 const openBreadcrumb = ref<number | null>(null)
 const isDark = ref(true)
 
-// 设置弹窗状态
+// ================== 系统偏好增强状态逻辑 ==================
 const isSettingsModalOpen = ref(false)
 const activeSettingsTab = ref<'profile' | 'preferences'>('profile')
+
+// 主题强调色 (Apple 标准色谱)
+const accentColors = [
+  { value: '#0A84FF', lightValue: '#0066cc', name: 'blue' },
+  { value: '#BF5AF2', lightValue: '#AF52DE', name: 'purple' },
+  { value: '#FF453A', lightValue: '#FF3B30', name: 'red' },
+  { value: '#FF9F0A', lightValue: '#FF9500', name: 'orange' },
+  { value: '#32D74B', lightValue: '#28CD41', name: 'green' },
+  { value: '#8E8E93', lightValue: '#8E8E93', name: 'gray' },
+]
+const currentAccentName = ref(localStorage.getItem('apple-accent-name') || 'blue')
+
+const setAccentColor = (colorObj: any) => {
+  currentAccentName.value = colorObj.name
+  localStorage.setItem('apple-accent-name', colorObj.name)
+  applyAccentColor()
+}
+
+const applyAccentColor = () => {
+  const root = document.documentElement
+  const colorObj = accentColors.find(c => c.name === currentAccentName.value) || accentColors[0]
+  if (isDark.value) {
+    root.style.setProperty('--apple-blue', colorObj.value)
+  } else {
+    root.style.setProperty('--apple-blue', colorObj.lightValue)
+  }
+}
+
+// 动画设置
+const animationsEnabled = ref(localStorage.getItem('apple-animations') !== 'false')
+const toggleAnimations = () => {
+  animationsEnabled.value = !animationsEnabled.value
+  localStorage.setItem('apple-animations', animationsEnabled.value ? 'true' : 'false')
+  if (!animationsEnabled.value) {
+    document.body.classList.add('disable-animations')
+  } else {
+    document.body.classList.remove('disable-animations')
+  }
+}
+
+// 语言与通知
+const currentLanguage = ref(localStorage.getItem('apple-language') || 'zh-CN')
+watch(currentLanguage, (val) => localStorage.setItem('apple-language', val))
+
+const notificationsEnabled = ref(localStorage.getItem('apple-notifications') === 'true')
+watch(notificationsEnabled, (val) => localStorage.setItem('apple-notifications', val ? 'true' : 'false'))
+
+// 主题切换需要重新触发强调色映射
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  localStorage.setItem('apple-theme', isDark.value ? 'dark' : 'light')
+  applyAccentColor()
+}
+
 
 // ==== 个人资料展示及头像上传 ====
 const avatarInput = ref<HTMLInputElement | null>(null)
@@ -589,9 +718,7 @@ const handleAvatarChange = (e: Event) => {
 
 // ==== 密码重置处理 ====
 const handlePasswordReset = () => {
-  // TODO: 这里可以唤起密码重置的弹窗或跳转到专用路由
   console.log('点击了密码重置')
-  // 临时使用系统 alert 提示展示
   alert('将在这里打开密码重置流程')
 }
 
@@ -644,10 +771,7 @@ const submitRebind = async () => {
     return
   }
 
-  // TODO: 接入实际换绑 API
   console.log(`执行换绑 ${rebindTarget.value}:`, rebindForm)
-
-  // 模拟成功后更新状态
   if (userInfo.value) {
     userInfo.value[rebindTarget.value] = rebindForm.targetValue
   }
@@ -666,7 +790,6 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
     openSettingsModal('preferences')
   }
   if (e.key === 'Escape') {
-    // 按顺序关闭：先关嵌套子弹窗，再关主设置弹窗
     if (isRebindModalOpen.value) {
       closeRebindModal()
     } else if (isSettingsModalOpen.value) {
@@ -678,6 +801,13 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
 onMounted(() => {
   const storedTheme = localStorage.getItem('apple-theme')
   if (storedTheme === 'light') isDark.value = false
+
+  // 初始化渲染强调色与动画状态
+  applyAccentColor()
+  if (!animationsEnabled.value) {
+    document.body.classList.add('disable-animations')
+  }
+
   document.addEventListener('click', closeDropdowns)
   window.addEventListener('keydown', handleGlobalKeydown)
 })
@@ -696,10 +826,6 @@ const closeDropdowns = (e: MouseEvent) => {
   activeCollapsedPopup.value = null
 }
 
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  localStorage.setItem('apple-theme', isDark.value ? 'dark' : 'light')
-}
 
 const toggleBreadcrumb = (index: number, crumb: any) => {
   if (crumb.siblings && crumb.siblings.length > 1) {
@@ -827,7 +953,6 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   --pill-bg: rgba(255, 255, 255, 0.04);
   --pill-border: rgba(255, 255, 255, 0.08);
   --logo-text: #ffffff;
-  --apple-blue: #0A84FF;
   --scrollbar-thumb: rgba(255, 255, 255, 0.15);
   --scrollbar-hover: rgba(255, 255, 255, 0.3);
 
@@ -858,9 +983,14 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   --pill-bg: rgba(255, 255, 255, 1);
   --pill-border: rgba(0, 0, 0, 0.1);
   --logo-text: #1d1d1f;
-  --apple-blue: #0066cc;
   --scrollbar-thumb: rgba(0, 0, 0, 0.2);
   --scrollbar-hover: rgba(0, 0, 0, 0.35);
+}
+
+/* 全局动画禁用支持 */
+:global(body.disable-animations *) {
+  transition: none !important;
+  animation: none !important;
 }
 
 .text-muted { color: var(--text-muted); }
@@ -1133,6 +1263,34 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 /* 渐变过渡 */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-4px); }
+
+/* ======== 系统偏好页增强 UI (选择器与色块) ======== */
+.color-picker-group { display: flex; gap: 10px; align-items: center; }
+.color-dot {
+  width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
+  border: 2px solid transparent;
+}
+.color-dot:hover { transform: scale(1.1); }
+.color-dot.active {
+  transform: scale(1.2); border-color: var(--content-bg);
+  box-shadow: 0 0 0 2px var(--apple-blue), inset 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.apple-native-select {
+  appearance: none; background-color: var(--hover-bg, rgba(255,255,255,0.05));
+  border: 1px solid var(--border-color); color: var(--text-main);
+  padding: 4px 28px 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  outline: none; cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat; background-position: right 8px center; background-size: 12px;
+  transition: all 0.2s;
+}
+.apple-native-select:focus, .apple-native-select:hover { border-color: var(--apple-blue); background-color: var(--active-bg); }
+.apple-layout-root.theme-light .apple-native-select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
 
 /* ======== 系统偏好页 Switch ======== */
 .apple-switch { width: 50px; height: 30px; border-radius: 15px; background: rgba(120, 120, 128, 0.32); position: relative; cursor: pointer; transition: background 0.3s ease; display: flex; align-items: center; }

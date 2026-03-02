@@ -48,15 +48,16 @@
         <a-spin :spinning="typeLoading">
           <div class="neo-list">
             <div
-              v-for="(item, index) in typeList"
-              :key="item.id"
-              class="neo-list-item"
-              :class="{
+                v-for="(item, index) in typeList"
+                :key="item.id"
+                class="neo-list-item"
+                :class="{
                 'is-active': selectedTypeKeys.includes(item.id),
                 'is-disabled': item.status === 0
               }"
-              @click="handleTypeRowClick(item, index, $event)"
+                @click="handleTypeRowClick(item, index, $event)"
             >
+              <!-- 核心重构的指示器区域 -->
               <div class="item-prefix">
                 <div class="status-indicator" :class="item.status === 1 ? 'online' : 'offline'"></div>
               </div>
@@ -84,12 +85,12 @@
       <!-- 底部精简分页（去除了 showTotal，仅保留左右切换） -->
       <div class="sidebar-footer">
         <a-pagination
-          v-model:current="typePagination.current"
-          :total="typePagination.total"
-          :pageSize="typePagination.pageSize"
-          size="small"
-          :showSizeChanger="false"
-          @change="handleTypePageChange"
+            v-model:current="typePagination.current"
+            :total="typePagination.total"
+            :pageSize="typePagination.pageSize"
+            size="small"
+            :showSizeChanger="false"
+            @change="handleTypePageChange"
         />
       </div>
     </aside>
@@ -163,29 +164,29 @@
         <!-- 表格主体 -->
         <div class="data-table-wrapper">
           <a-table
-            class="neo-table"
-            :columns="dataColumns"
-            :data-source="dataList"
-            :loading="dataLoading"
-            :pagination="dataPagination"
-            :row-selection="{ selectedRowKeys: selectedDataKeys, onChange: onDataSelectChange }"
-            row-key="id"
-            @change="handleDataTableChange"
+              class="neo-table"
+              :columns="dataColumns"
+              :data-source="dataList"
+              :loading="dataLoading"
+              :pagination="dataPagination"
+              :row-selection="{ selectedRowKeys: selectedDataKeys, onChange: onDataSelectChange }"
+              row-key="id"
+              @change="handleDataTableChange"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'dictLabel'">
-                 <span class="cell-label">{{ record.dictLabel }}</span>
+                <span class="cell-label">{{ record.dictLabel }}</span>
               </template>
               <template v-if="column.key === 'dictValue'">
-                 <span class="cell-value">{{ record.dictValue }}</span>
+                <span class="cell-value">{{ record.dictValue }}</span>
               </template>
               <template v-if="column.key === 'sort'">
                 <span class="cell-sort">{{ record.sort }}</span>
               </template>
               <template v-if="column.key === 'status'">
-                 <div class="cell-status" :class="record.status === 1 ? 'active' : 'inactive'">
-                    {{ record.status === 1 ? '启用' : '禁用' }}
-                 </div>
+                <div class="cell-status" :class="record.status === 1 ? 'active' : 'inactive'">
+                  {{ record.status === 1 ? '启用' : '禁用' }}
+                </div>
               </template>
               <template v-if="column.key === 'action'">
                 <button class="text-action-btn" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
@@ -200,18 +201,18 @@
 
     <!-- 1. 字典类型弹窗 (使用全新重构的表单弹窗组件) -->
     <NeoFormModal
-      v-model:open="typeModalVisible"
-      ref="typeFormRef"
-      :model="typeFormState"
-      :rules="typeRules"
-      :title="typeModalTitle"
-      subtitle="配置字典目录的基础标识与描述"
-      :width="480"
-      :icon="['fas', 'book']"
-      theme="primary"
-      confirmText="保存配置"
-      :confirmLoading="typeSubmitLoading"
-      @ok="handleTypeSubmit"
+        v-model:open="typeModalVisible"
+        ref="typeFormRef"
+        :model="typeFormState"
+        :rules="typeRules"
+        :title="typeModalTitle"
+        subtitle="配置字典目录的基础标识与描述"
+        :width="480"
+        :icon="['fas', 'book']"
+        theme="primary"
+        confirmText="保存配置"
+        :confirmLoading="typeSubmitLoading"
+        @ok="handleTypeSubmit"
     >
       <a-form-item label="字典名称" name="dictName">
         <a-input v-model:value="typeFormState.dictName" placeholder="例如：用户性别" />
@@ -226,17 +227,17 @@
 
     <!-- 2. 字典数据弹窗 -->
     <NeoFormModal
-      v-model:open="dataModalVisible"
-      ref="dataFormRef"
-      :model="dataFormState"
-      :rules="dataRules"
-      :title="dataModalTitle"
-      :width="560"
-      :icon="['fas', 'tag']"
-      theme="success"
-      confirmText="保存数据"
-      :confirmLoading="dataSubmitLoading"
-      @ok="handleDataSubmit"
+        v-model:open="dataModalVisible"
+        ref="dataFormRef"
+        :model="dataFormState"
+        :rules="dataRules"
+        :title="dataModalTitle"
+        :width="560"
+        :icon="['fas', 'tag']"
+        theme="success"
+        confirmText="保存数据"
+        :confirmLoading="dataSubmitLoading"
+        @ok="handleDataSubmit"
     >
       <template #subtitle>
         隶属于：<strong class="highlight-text">{{ currentType?.dictName || '未知' }}</strong>
@@ -261,13 +262,13 @@
 
     <!-- 恢复的 AppleConfirmModal -->
     <AppleConfirmModal
-      v-model:visible="deleteConfirmVisible"
-      type="danger"
-      title="确认删除"
-      :desc="`您确定要删除选中的 ${deleteConfirmTarget === 'type' ? selectedTypeKeys.length : selectedDataKeys.length} 项${deleteConfirmTarget === 'type' ? '字典目录' : '数据明细'}吗？此操作无法撤销。`"
-      confirmText="删除"
-      :loading="deleteConfirmLoading"
-      @confirm="executeDelete"
+        v-model:visible="deleteConfirmVisible"
+        type="danger"
+        title="确认删除"
+        :desc="`您确定要删除选中的 ${deleteConfirmTarget === 'type' ? selectedTypeKeys.length : selectedDataKeys.length} 项${deleteConfirmTarget === 'type' ? '字典目录' : '数据明细'}吗？此操作无法撤销。`"
+        confirmText="删除"
+        :loading="deleteConfirmLoading"
+        @confirm="executeDelete"
     />
   </div>
 </template>
@@ -579,19 +580,19 @@ onMounted(() => fetchTypeList())
   cursor: pointer; transition: all 0.2s;
   display: flex; align-items: center; justify-content: center;
 }
-.icon-btn:hover { background: rgba(10, 132, 255, 0.1); color: #0A84FF; }
+.icon-btn:hover { background: rgba(10, 132, 255, 0.1); color: var(--apple-blue, #0A84FF); }
 .icon-btn.danger:not(:disabled) { color: #FF453A; background: rgba(255, 69, 58, 0.1); }
 .icon-btn.danger:not(:disabled):hover { background: rgba(255, 69, 58, 0.2); }
 .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; background: transparent; }
 
 /* 创新的胶囊搜索 */
 .sidebar-search-wrapper {
-  padding: 0 20px 16px 20px;
+  padding: 0 0 16px 20px; /* 去除右侧 padding，由内部定宽保证对齐 */
   box-sizing: border-box;
 }
 .capsule-search {
   display: flex;
-  width: 100%;
+  width: 300px; /* 严格与下方列表项保持同等宽度 */
   background: var(--hover-bg, #f5f5f7);
   border-radius: 14px;
   padding: 4px;
@@ -601,7 +602,7 @@ onMounted(() => fetchTypeList())
 }
 .capsule-search:focus-within {
   background: transparent;
-  border-color: #0A84FF;
+  border-color: var(--apple-blue, #0A84FF);
   box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.1);
 }
 .search-inputs {
@@ -620,30 +621,33 @@ onMounted(() => fetchTypeList())
 .search-trigger {
   width: 32px; height: 32px;
   border: none; border-radius: 10px;
-  background: #0A84FF; color: #fff;
+  background: var(--apple-blue, #0A84FF); color: #fff;
   cursor: pointer; transition: all 0.2s;
   display: flex; align-items: center; justify-content: center;
 }
-.search-trigger:hover { background: #0071e3; transform: scale(0.95); }
+.search-trigger:hover { filter: brightness(0.9); transform: scale(0.95); }
+
+/* 恢复的重置按钮明显背景 */
 .search-trigger.reset-btn {
-  background: transparent;
-  color: var(--text-muted, #86868b);
+  background: var(--hover-bg, #e5e5ea);
+  color: var(--text-main, #333);
 }
 .search-trigger.reset-btn:hover {
-  background: var(--hover-bg, rgba(0,0,0,0.08));
+  background: var(--active-bg, rgba(0,0,0,0.1));
   color: var(--text-main, #1d1d1f);
+  transform: scale(0.95);
 }
 
 /* 精美卡片列表 */
 .sidebar-list-container {
-  flex: 1; overflow-y: auto;
-  padding: 0 16px 0 20px;
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 0 0 0 20px;
 }
 .sidebar-list-container::-webkit-scrollbar { width: 4px; }
 .sidebar-list-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
 
 .neo-list-item {
-  width: 100%;
+  width: 300px;
   box-sizing: border-box;
   display: flex; align-items: center;
   padding: 14px 12px;
@@ -659,7 +663,7 @@ onMounted(() => fetchTypeList())
   background: var(--hover-bg, #f5f5f7);
 }
 .neo-list-item.is-active {
-  background: #0A84FF;
+  background: var(--apple-blue, #0A84FF);
   box-shadow: 0 8px 20px rgba(10, 132, 255, 0.3);
 }
 
@@ -670,16 +674,101 @@ onMounted(() => fetchTypeList())
   display: flex; align-items: center; justify-content: center;
   padding-right: 12px;
 }
-.status-indicator { width: 8px; height: 8px; border-radius: 50%; transition: all 0.3s; }
-.status-indicator.online { background: #34C759; box-shadow: 0 0 8px rgba(52, 199, 89, 0.6); }
-.status-indicator.offline { background: #FF453A; box-shadow: 0 0 8px rgba(255, 69, 58, 0.6); }
-.neo-list-item.is-active .status-indicator { box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
 
-.item-content { flex: 1; min-width: 0; padding-left: 0; transition: opacity 0.25s; }
-.item-title { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.25s; }
-.item-subtitle { font-size: 12px; color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.25s; }
-.neo-list-item.is-active .item-title { color: #fff; }
-.neo-list-item.is-active .item-subtitle { color: rgba(255,255,255,0.7); }
+/* ================= 左侧列表：全新状态指示点重构 ================= */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-sizing: border-box;
+}
+
+/* 启用态：使用强调色，保持绝对视觉统一，附加微投影提亮 */
+.status-indicator.online {
+  background: var(--apple-blue);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 禁用态：极简空心灰环，不抢焦点 */
+.status-indicator.offline {
+  background: transparent;
+  border: 2px solid var(--text-muted);
+  opacity: 0.5;
+}
+
+/* 选中态的反转逻辑：无论什么强调色背景，一律反转为纯白 */
+.neo-list-item.is-active .status-indicator.online {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.neo-list-item.is-active .status-indicator.offline {
+  border-color: rgba(255, 255, 255, 0.7);
+  opacity: 1;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+  padding-left: 0;
+  transition: opacity 0.25s;
+  display: flex;
+  flex-direction: row;
+  align-items: center; /* 确保标题和编码在横向排列时绝对垂直对齐 */
+  justify-content: flex-start;
+  gap: 10px; /* 增加一点间距，让视觉更加舒展 */
+}
+
+.item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0;
+  line-height: 1; /* 消除原生行高带来的上下偏移杂距 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.3s ease;
+  letter-spacing: 0.3px;
+  flex-shrink: 0; /* 优先保证标题显示空间 */
+  max-width: 50%;
+}
+
+.item-subtitle {
+  /* 使用 inline-flex 结合固定高度，保证内部文字绝对垂直居中 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  line-height: 1;
+
+  font-size: 12px; /* 与 14px 的标题达到更优的层级对比 */
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.3s ease;
+
+  background: var(--hover-bg, rgba(0,0,0,0.05));
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 8px; /* 仅左右 padding，靠 height 撑起上下空间 */
+  box-sizing: border-box;
+  flex-shrink: 1;
+}
+
+.neo-list-item.is-active .item-title {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.neo-list-item.is-active .item-subtitle {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
 
 .item-tail { display: flex; align-items: center; justify-content: flex-end; width: 30px; }
 
@@ -697,10 +786,10 @@ onMounted(() => fetchTypeList())
 .neo-list-item.is-active .edit-hover-btn { background: rgba(255,255,255,0.2); color: #fff; }
 .neo-list-item:hover .status-indicator { opacity: 0; }
 
-.empty-list { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); margin-top: 60px; font-size: 13px; }
+.empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 300px; color: var(--text-muted); margin-top: 60px; font-size: 13px; }
 .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
 
-/* ================= 极简分页器 (严格限制作用域，左侧独享) ================= */
+/* ================= 极简分页器 ================= */
 .sidebar-footer {
   padding: 16px 20px;
   display: flex;
@@ -712,61 +801,51 @@ onMounted(() => fetchTypeList())
   box-sizing: border-box;
 }
 
-.sidebar-footer :deep(ul.ant-pagination) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 150px !important; /* 大间距居中布局 */
-  margin: 0 !important;
-  padding: 0 !important;
-  list-style: none !important;
+.custom-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
+  max-width: 220px;
 }
 
-.sidebar-footer :deep(ul.ant-pagination::after),
-.sidebar-footer :deep(ul.ant-pagination::before) {
-  display: none !important;
-  content: none !important;
-}
-
-/* 核心：隐藏除了上一页和下一页之外的所有元素 (如页码、总数等) */
-.sidebar-footer :deep(ul.ant-pagination > *:not(.ant-pagination-prev):not(.ant-pagination-next)) {
-  display: none !important;
-}
-
-.sidebar-footer :deep(ul.ant-pagination > li.ant-pagination-prev),
-.sidebar-footer :deep(ul.ant-pagination > li.ant-pagination-next) {
-  min-width: 40px !important;
-  height: 40px !important;
-  line-height: 38px !important;
-  border-radius: 12px !important;
-  background: var(--content-bg, #ffffff) !important;
-  border: 1px solid var(--border-color, #e5e5ea) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 !important;
+.page-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--content-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e5ea);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main, #333);
+  cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px var(--shadow-color, rgba(0,0,0,0.05));
 }
 
-.sidebar-footer :deep(.ant-pagination-prev .ant-pagination-item-link),
-.sidebar-footer :deep(.ant-pagination-next .ant-pagination-item-link) {
-  color: var(--text-main, #333) !important;
-  display: flex; align-items: center; justify-content: center;
-  background: transparent !important; border: none !important;
+.page-btn:not(:disabled):hover {
+  border-color: var(--apple-blue, #0A84FF);
+  color: var(--apple-blue, #0A84FF);
 }
 
-.sidebar-footer :deep(.ant-pagination-prev:hover:not(.ant-pagination-disabled)),
-.sidebar-footer :deep(.ant-pagination-next:hover:not(.ant-pagination-disabled)) {
-  border-color: var(--apple-blue, #0A84FF) !important;
-  color: var(--apple-blue, #0A84FF) !important;
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--hover-bg, #f5f5f7);
+  box-shadow: none;
 }
 
-.sidebar-footer :deep(.ant-pagination-disabled) {
-  opacity: 0.4; cursor: not-allowed; background: var(--hover-bg, #f5f5f7) !important; box-shadow: none;
+.page-stats {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
 }
-
 
 /* ================= 右侧主工作区 ================== */
 .neo-main {
@@ -842,8 +921,8 @@ kbd.neo-keycap {
 
 .header-actions { display: flex; gap: 12px; }
 .neo-btn { height: 38px; border-radius: 12px; padding: 0 16px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
-.neo-btn.primary { background: #0A84FF; color: #fff; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.2); }
-.neo-btn.primary:hover { background: #0071e3; transform: translateY(-1px); }
+.neo-btn.primary { background: var(--apple-blue, #0A84FF); color: #fff; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.2); }
+.neo-btn.primary:hover { filter: brightness(0.9); transform: translateY(-1px); }
 .neo-btn.danger-ghost { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
 .neo-btn.danger-ghost:hover { background: rgba(255, 69, 58, 0.2); }
 .neo-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -857,17 +936,17 @@ kbd.neo-keycap {
   border-radius: 10px; height: 36px; padding: 0 12px;
   border: 1px solid transparent; transition: all 0.2s;
 }
-.neo-input-wrap:focus-within { background: transparent; border-color: #0A84FF; }
+.neo-input-wrap:focus-within { background: transparent; border-color: var(--apple-blue, #0A84FF); }
 .prefix-icon { color: var(--text-muted); margin-right: 8px; font-size: 13px; }
 .neo-input-wrap input { border: none; background: transparent; outline: none; font-size: 13px; color: var(--text-main); width: 140px; }
 .neo-select-wrap { background: var(--hover-bg, #f5f5f7); border-radius: 10px; height: 36px; display: flex; align-items: center; padding: 0 8px; }
 .transparent-select { width: 100px; }
 :deep(.transparent-select .ant-select-selector) { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
 
-.neo-icon-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: #0A84FF; color: #fff; cursor: pointer; transition: all 0.2s; }
-.neo-icon-btn:hover { transform: scale(0.95); }
+.neo-icon-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--apple-blue, #0A84FF); color: #fff; cursor: pointer; transition: all 0.2s; }
+.neo-icon-btn:hover { filter: brightness(0.9); transform: scale(0.95); }
 .neo-icon-btn.secondary { background: var(--hover-bg, #e5e5ea); color: var(--text-main); }
-.neo-icon-btn.secondary:hover { background: #d1d1d6; }
+.neo-icon-btn.secondary:hover { filter: brightness(0.9); }
 
 /* 表格主体美化 */
 .data-table-wrapper { flex: 1; padding: 0 32px 20px; overflow: hidden; }
@@ -897,10 +976,35 @@ kbd.neo-keycap {
 .cell-label { font-weight: 600; font-size: 14px; color: var(--text-main); }
 .cell-value { font-family: monospace; color: var(--text-muted); font-size: 13px; background: var(--hover-bg, #f5f5f7); padding: 2px 8px; border-radius: 6px; }
 .cell-sort { background: rgba(0,0,0,0.04); color: var(--text-muted); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
-.cell-status { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-.cell-status.active { background: rgba(52, 199, 89, 0.1); color: #34C759; }
-.cell-status.inactive { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
-.text-action-btn { background: transparent; border: none; color: #0A84FF; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+
+/* ================= 右侧表格：全新幽灵状态标签 (Ghost Badge) ================= */
+.cell-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 8px; /* 偏方正的现代圆角 */
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+/* 启用态：直接使用幽灵强调色，彻底杜绝色彩冲突 */
+.cell-status.active {
+  color: var(--apple-blue);
+  background: transparent;
+  border: 1px solid var(--apple-blue);
+}
+
+/* 禁用态：透明降噪边框 */
+.cell-status.inactive {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  opacity: 0.7;
+}
+
+.text-action-btn { background: transparent; border: none; color: var(--apple-blue, #0A84FF); font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
 .text-action-btn:hover { opacity: 0.7; }
 
 :deep(.neo-table .ant-pagination) { margin-top: 16px !important; margin-bottom: 0 !important; }
