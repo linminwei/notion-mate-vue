@@ -6,19 +6,15 @@
       <div class="sidebar-header">
         <h2 class="sidebar-title">
           字典目录
-          <a-tooltip title="支持按住 Shift 连选，或按住 Cmd/Ctrl 自由多选" placement="right" :overlayClassName="tooltipClass">
-            <font-awesome-icon :icon="['fas', 'info-circle']" class="title-hint-icon" />
-          </a-tooltip>
         </h2>
         <div class="sidebar-actions">
           <button class="icon-btn" v-permission="'system:dict:add'" @click="handleAddType">
             <font-awesome-icon :icon="['fas', 'plus']" />
           </button>
-          <button class="icon-btn" v-permission="'system:dict:edit'" :disabled="selectedTypeKeys.length === 0" @click="handleToggleStatusType">
+          <button v-if="selectedTypeKeys.length > 0" class="icon-btn" v-permission="'system:dict:edit'" @click="handleToggleStatusType">
             <font-awesome-icon :icon="['fas', 'power-off']" />
           </button>
-          <!-- 恢复使用 AppleConfirmModal 触发删除 -->
-          <button class="icon-btn danger" v-permission="'system:dict:delete'" :disabled="selectedTypeKeys.length === 0" @click="confirmDelete('type')">
+          <button v-if="selectedTypeKeys.length > 0" class="icon-btn danger" v-permission="'system:dict:delete'" @click="confirmDelete('type')">
             <font-awesome-icon :icon="['fas', 'trash']" />
           </button>
         </div>
@@ -28,16 +24,16 @@
       <div class="sidebar-search-wrapper">
         <div class="capsule-search">
           <div class="search-inputs">
-            <input type="text" v-model="typeSearchForm.dictName" placeholder="搜索名称" @keyup.enter="handleTypeSearch" />
+            <input type="text" v-model="typeSearchForm.dictName" placeholder="名称" @keyup.enter="handleTypeSearch" />
             <div class="divider"></div>
-            <input type="text" v-model="typeSearchForm.dictCode" placeholder="搜索编码" @keyup.enter="handleTypeSearch" />
+            <input type="text" v-model="typeSearchForm.dictCode" placeholder="编码" @keyup.enter="handleTypeSearch" />
           </div>
           <div class="search-actions">
-            <button class="search-trigger reset-btn" @click="handleTypeReset" title="重置">
-              <font-awesome-icon :icon="['fas', 'redo']" />
-            </button>
             <button class="search-trigger" @click="handleTypeSearch" title="搜索">
               <font-awesome-icon :icon="['fas', 'search']" />
+            </button>
+            <button class="search-trigger reset-btn" @click="handleTypeReset" title="重置">
+              <font-awesome-icon :icon="['fas', 'redo']" />
             </button>
           </div>
         </div>
@@ -57,7 +53,6 @@
               }"
                 @click="handleTypeRowClick(item, index, $event)"
             >
-              <!-- 核心重构的指示器区域 -->
               <div class="item-prefix">
                 <div class="status-indicator" :class="item.status === 1 ? 'online' : 'offline'"></div>
               </div>
@@ -74,125 +69,191 @@
               </div>
             </div>
 
-            <div v-if="typeList.length === 0 && !typeLoading" class="empty-list">
-              <font-awesome-icon :icon="['fas', 'inbox']" class="empty-icon" />
-              <span>暂无字典类型</span>
+            <!-- 左侧列表：全新现代插画空状态 -->
+            <div v-if="typeList.length === 0 && !typeLoading" class="sidebar-empty-wrap">
+              <div class="modern-empty-card mini">
+                <div class="modern-empty-illus">
+                  <div class="mockup-window">
+                    <div class="mockup-header"><div class="mockup-dot"></div><div class="mockup-line short"></div></div>
+                    <div class="mockup-row"><div class="mockup-avatar"></div><div class="mockup-line"></div></div>
+                  </div>
+                </div>
+                <div class="modern-empty-content">
+                  <h4 class="modern-empty-title">暂无字典目录</h4>
+                  <p class="modern-empty-desc">未找到匹配数据</p>
+                  <button class="modern-empty-btn mini-btn" v-permission="'system:dict:add'" @click="handleAddType">
+                    <font-awesome-icon :icon="['fas', 'plus']" /> 快捷新增
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </a-spin>
       </div>
 
-      <!-- 底部精简分页（去除了 showTotal，仅保留左右切换） -->
+      <!-- 底部精简自定义分页：仅统计当前页总数 -->
       <div class="sidebar-footer">
-        <a-pagination
-            v-model:current="typePagination.current"
-            :total="typePagination.total"
-            :pageSize="typePagination.pageSize"
-            size="small"
-            :showSizeChanger="false"
-            @change="handleTypePageChange"
-        />
+        <div class="custom-pagination">
+          <button
+              class="page-btn"
+              :disabled="typePagination.current <= 1"
+              @click="handleTypePageChange(typePagination.current - 1)"
+          >
+            <font-awesome-icon :icon="['fas', 'chevron-left']" />
+          </button>
+
+          <div class="page-stats">
+            本页 {{ typeList.length }} 条
+          </div>
+
+          <button
+              class="page-btn"
+              :disabled="typePagination.current >= Math.ceil(typePagination.total / typePagination.pageSize) || typeList.length === 0"
+              @click="handleTypePageChange(typePagination.current + 1)"
+          >
+            <font-awesome-icon :icon="['fas', 'chevron-right']" />
+          </button>
+        </div>
       </div>
     </aside>
 
     <!-- ================= 右侧：数据工作区 ================= -->
     <main class="neo-main">
 
-      <!-- 未选择 / 多选时的占位界面 -->
+      <!-- 未选择 / 多选时的占位界面 (全新现代插画空状态) -->
       <div v-if="!currentType" class="neo-empty-state">
-        <div class="empty-glass-card">
-          <font-awesome-icon :icon="['fas', 'book']" class="huge-icon" />
-          <template v-if="selectedTypeKeys.length > 1">
-            <h3>已选择 {{ selectedTypeKeys.length }} 个字典类型</h3>
-            <p>您可以对选中的字典类型进行批量操作（如删除、切换状态）。</p>
-          </template>
-          <template v-else>
-            <h3>字典数据中心</h3>
-            <p>请在左侧选择一个字典目录，以查看和管理其详细数据配置。</p>
-            <div class="keyboard-hint">
-              <font-awesome-icon :icon="['fas', 'info-circle']" />
-              支持按住 <kbd class="neo-keycap">Shift</kbd> 或 <kbd class="neo-keycap">Cmd / Ctrl</kbd> 多选左侧目录
+        <div class="modern-empty-card">
+          <div class="modern-empty-illus">
+            <div class="mockup-window">
+              <div class="mockup-header"><div class="mockup-dot"></div><div class="mockup-line short"></div></div>
+              <div class="mockup-row"><font-awesome-icon :icon="['fas', 'star']" class="mockup-star"/><div class="mockup-avatar"></div><div class="mockup-line"></div></div>
+              <div class="mockup-row"><font-awesome-icon :icon="['fas', 'star']" class="mockup-star"/><div class="mockup-avatar"></div><div class="mockup-line shorter"></div></div>
             </div>
-          </template>
+          </div>
+          <div class="modern-empty-content">
+            <template v-if="selectedTypeKeys.length > 1">
+              <h3 class="modern-empty-title">已选择 {{ selectedTypeKeys.length }} 个字典类型</h3>
+              <p class="modern-empty-desc">您可以对选中的字典类型进行批量操作<br/>如删除、切换状态等。</p>
+            </template>
+            <template v-else>
+              <h3 class="modern-empty-title">字典数据中心</h3>
+              <p class="modern-empty-desc">请在左侧选择一个字典目录，<br/>以查看和管理其详细数据配置。</p>
+            </template>
+          </div>
         </div>
       </div>
 
       <!-- 已选择且唯一：数据明细 -->
       <div v-else class="neo-data-view fade-in">
+        <!-- 全新设计的头部信息 -->
         <header class="data-header">
           <div class="header-info">
-            <h1>{{ currentType.dictName }}</h1>
-            <span class="code-badge">{{ currentType.dictCode }}</span>
-          </div>
-          <div class="header-actions">
-            <button class="neo-btn primary" v-permission="'system:dict:add'" @click="handleAddData">
-              <font-awesome-icon :icon="['fas', 'plus']" /> 新增数据项
-            </button>
-            <!-- 恢复使用 AppleConfirmModal 触发删除 -->
-            <button class="neo-btn danger-ghost" v-permission="'system:dict:delete'" :disabled="selectedDataKeys.length === 0" @click="confirmDelete('data')">
-              <font-awesome-icon :icon="['fas', 'trash']" /> 批量删除
-            </button>
+            <div class="title-row">
+              <h1>{{ currentType.dictName }}</h1>
+              <div class="dict-meta-badges">
+                <span class="meta-badge code-badge">
+                  <font-awesome-icon :icon="['fas', 'code']" />
+                  {{ currentType.dictCode }}
+                </span>
+              </div>
+            </div>
+            <p class="dict-remark" v-if="currentType.remark">{{ currentType.remark }}</p>
+            <p class="dict-remark empty" v-else>暂无字典类型描述</p>
           </div>
         </header>
 
-        <!-- 过滤工具栏 -->
+        <!-- 过滤工具栏 (胶囊风格 + 快捷操作按钮集成) -->
         <div class="data-toolbar">
-          <div class="filter-group">
-            <div class="neo-input-wrap">
-              <font-awesome-icon :icon="['fas', 'tag']" class="prefix-icon" />
-              <input type="text" v-model="dataSearchForm.dictLabel" placeholder="字典标签" @keyup.enter="handleDataSearch" />
-            </div>
-            <div class="neo-input-wrap">
-              <font-awesome-icon :icon="['fas', 'barcode']" class="prefix-icon" />
-              <input type="text" v-model="dataSearchForm.dictValue" placeholder="字典键值" @keyup.enter="handleDataSearch" />
-            </div>
-            <div class="neo-select-wrap">
-              <a-select v-model:value="dataSearchForm.status" placeholder="状态" :bordered="false" class="transparent-select">
-                <a-select-option :value="1">启用</a-select-option>
-                <a-select-option :value="0">禁用</a-select-option>
+          <div class="capsule-search data-capsule">
+            <div class="search-inputs">
+              <input type="text" v-model="dataSearchForm.dictLabel" placeholder="搜索标签名称" @keyup.enter="handleDataSearch" />
+              <div class="divider"></div>
+              <input type="text" v-model="dataSearchForm.dictValue" placeholder="搜索存储键值" @keyup.enter="handleDataSearch" />
+              <div class="divider"></div>
+              <a-select v-model:value="dataSearchForm.status" placeholder="状态" :bordered="false" class="status-select" allowClear @change="handleDataSearch">
+                <a-select-option v-for="dict in commonStatusDict" :key="dict.dictValue" :value="Number(dict.dictValue)">
+                  {{ dict.dictLabel }}
+                </a-select-option>
               </a-select>
             </div>
-            <button class="neo-icon-btn" @click="handleDataSearch" title="搜索">
-              <font-awesome-icon :icon="['fas', 'search']" />
+            <div class="search-actions">
+              <button class="search-trigger" @click="handleDataSearch" title="搜索">
+                <font-awesome-icon :icon="['fas', 'search']" />
+              </button>
+              <button class="search-trigger reset-btn" @click="handleDataReset" title="重置">
+                <font-awesome-icon :icon="['fas', 'redo']" />
+              </button>
+            </div>
+          </div>
+
+          <!-- 新增的操作按钮区域，仅图标，与胶囊并排对齐 -->
+          <div class="data-actions">
+            <button class="toolbar-action-btn primary" v-permission="'system:dict:add'" @click="handleAddData" title="新增数据项">
+              <font-awesome-icon :icon="['fas', 'plus']" />
             </button>
-            <button class="neo-icon-btn secondary" @click="handleDataReset" title="重置">
-              <font-awesome-icon :icon="['fas', 'redo']" />
-            </button>
+            <transition name="fade-slide">
+              <button v-if="selectedDataKeys.length > 0" class="toolbar-action-btn danger" v-permission="'system:dict:delete'" @click="confirmDelete('data')" title="批量删除">
+                <font-awesome-icon :icon="['fas', 'trash']" />
+              </button>
+            </transition>
           </div>
         </div>
 
-        <!-- 表格主体 -->
+        <!-- 表格主体包裹层：负责撑满剩余空间，骨架级重构 -->
         <div class="data-table-wrapper">
-          <a-table
-              class="neo-table"
-              :columns="dataColumns"
-              :data-source="dataList"
-              :loading="dataLoading"
-              :pagination="dataPagination"
-              :row-selection="{ selectedRowKeys: selectedDataKeys, onChange: onDataSelectChange }"
-              row-key="id"
-              @change="handleDataTableChange"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'dictLabel'">
-                <span class="cell-label">{{ record.dictLabel }}</span>
-              </template>
-              <template v-if="column.key === 'dictValue'">
-                <span class="cell-value">{{ record.dictValue }}</span>
-              </template>
-              <template v-if="column.key === 'sort'">
-                <span class="cell-sort">{{ record.sort }}</span>
-              </template>
-              <template v-if="column.key === 'status'">
-                <div class="cell-status" :class="record.status === 1 ? 'active' : 'inactive'">
-                  {{ record.status === 1 ? '启用' : '禁用' }}
+          <a-spin :spinning="dataLoading" wrapperClassName="data-spin-wrap">
+            <!-- 数据为空时，隐藏整个表格，显示全新现代插画空状态 -->
+            <div v-if="dataList.length === 0" class="data-empty-container fade-in">
+              <div class="modern-empty-card">
+                <div class="modern-empty-illus">
+                  <div class="mockup-window">
+                    <div class="mockup-header"><div class="mockup-dot"></div><div class="mockup-line short"></div></div>
+                    <div class="mockup-row"><font-awesome-icon :icon="['fas', 'star']" class="mockup-star"/><div class="mockup-avatar"></div><div class="mockup-line"></div></div>
+                    <div class="mockup-row"><font-awesome-icon :icon="['fas', 'star']" class="mockup-star"/><div class="mockup-avatar"></div><div class="mockup-line shorter"></div></div>
+                  </div>
                 </div>
+                <div class="modern-empty-content">
+                  <h3 class="modern-empty-title">该字典尚无数据</h3>
+                  <p class="modern-empty-desc">现在开始构建您的字典明细数据，<br/>点击下方按钮立即添加。</p>
+                  <button class="modern-empty-btn" v-permission="'system:dict:add'" @click="handleAddData">
+                    <font-awesome-icon :icon="['fas', 'plus']" /> 新增数据项
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 有数据时正常显示表格 -->
+            <a-table
+                v-else
+                class="neo-table"
+                :columns="dataColumns"
+                :data-source="dataList"
+                :pagination="dataPagination"
+                :row-selection="{ selectedRowKeys: selectedDataKeys, onChange: onDataSelectChange }"
+                row-key="id"
+                @change="handleDataTableChange"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'dictLabel'">
+                  <span class="cell-label">{{ record.dictLabel }}</span>
+                </template>
+                <template v-if="column.key === 'dictValue'">
+                  <span class="cell-value">{{ record.dictValue }}</span>
+                </template>
+                <template v-if="column.key === 'sort'">
+                  <span class="cell-sort">{{ record.sort }}</span>
+                </template>
+                <template v-if="column.key === 'status'">
+                  <div class="cell-status" :class="record.status === 1 ? 'active' : 'inactive'">
+                    {{ getStatusLabel(record.status) }}
+                  </div>
+                </template>
+                <template v-if="column.key === 'action'">
+                  <button class="text-action-btn" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
+                </template>
               </template>
-              <template v-if="column.key === 'action'">
-                <button class="text-action-btn" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
-              </template>
-            </template>
-          </a-table>
+            </a-table>
+          </a-spin>
         </div>
       </div>
     </main>
@@ -260,7 +321,7 @@
       </a-form-item>
     </NeoFormModal>
 
-    <!-- 恢复的 AppleConfirmModal -->
+    <!-- 确认操作弹窗 -->
     <AppleConfirmModal
         v-model:visible="deleteConfirmVisible"
         type="danger"
@@ -277,17 +338,13 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   getDictTypePage, addDictType, updateDictType, deleteDictTypeBatch,
-  getDictDataPage, addDictData, updateDictData, deleteDictDataBatch
+  getDictDataPage, addDictData, updateDictData, deleteDictDataBatch, getDictDataByDictCode
 } from '@/api/dict.ts'
 import type { DictType, DictData } from '@/types'
 import type { Rule } from 'ant-design-vue/es/form'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
-import { useAppStore } from '@/stores/app'
-
-const appStore = useAppStore()
-const tooltipClass = computed(() => `neo-tooltip ${appStore.isDark ? 'tooltip-dark' : 'tooltip-light'}`)
 
 // ==================== 全局状态与类型管理 ====================
 const typeLoading = ref(false)
@@ -297,7 +354,7 @@ const currentType = ref<DictType | null>(null)
 const selectedTypeKeys = ref<string[]>([])
 const lastSelectedIndex = ref<number>(-1)
 
-const typeSearchForm = ref({ dictCode: '', dictName: '' })
+const typeSearchForm = ref({ dictCode: '', dictName: '', status: undefined as number | undefined })
 const typePagination = ref({ current: 1, pageSize: 15, total: 0 })
 
 const typeModalVisible = ref(false)
@@ -309,6 +366,24 @@ const typeModalTitle = computed(() => typeFormState.value.id ? '编辑字典类�
 const typeRules: Record<string, Rule[]> = {
   dictCode: [{ required: true, message: '请填写字典编码', trigger: 'blur' }],
   dictName: [{ required: true, message: '请填写字典名称', trigger: 'blur' }]
+}
+
+// ==================== 字典状态数据 ====================
+const commonStatusDict = ref<DictData[]>([])
+
+const fetchCommonStatus = async () => {
+  try {
+    const res = await getDictDataByDictCode('common_status')
+    commonStatusDict.value = res.data || []
+  } catch (error) {
+    console.warn('获取 common_status 字典失败', error)
+  }
+}
+
+const getStatusLabel = (statusValue: number) => {
+  if (!commonStatusDict.value.length) return statusValue === 1 ? '启用' : '禁用'
+  const dict = commonStatusDict.value.find(d => Number(d.dictValue) === statusValue)
+  return dict ? dict.dictLabel : (statusValue === 1 ? '启用' : '禁用')
 }
 
 // ==================== 自定义确认删除逻辑 ====================
@@ -361,7 +436,14 @@ const fetchTypeList = async () => {
 const handleTypeSearch = () => { typePagination.value.current = 1; fetchTypeList() }
 
 const handleTypeReset = () => {
+  // 1. 清空搜索表单
   typeSearchForm.value = { dictCode: '', dictName: '' }
+  // 2. 清空所有的选中状态及当前展开的数据列表
+  selectedTypeKeys.value = []
+  currentType.value = null
+  dataList.value = []
+  lastSelectedIndex.value = -1
+  // 3. 重新发起查询
   handleTypeSearch()
 }
 
@@ -451,7 +533,15 @@ const dataList = ref<DictData[]>([])
 const selectedDataKeys = ref<string[]>([])
 
 const dataSearchForm = ref({ dictLabel: '', dictValue: '', status: undefined as number | undefined })
-const dataPagination = ref({ current: 1, pageSize: 10, total: 0 })
+// 开启更完善的分页配置
+const dataPagination = ref({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100'],
+  showTotal: (total: number) => `共 ${total} 项`
+})
 
 const dataModalVisible = ref(false)
 const dataSubmitLoading = ref(false)
@@ -517,7 +607,10 @@ const handleDataSubmit = async () => {
   } catch (error) {} finally { dataSubmitLoading.value = false }
 }
 
-onMounted(() => fetchTypeList())
+onMounted(() => {
+  fetchCommonStatus()
+  fetchTypeList()
+})
 </script>
 
 <style scoped>
@@ -559,17 +652,6 @@ onMounted(() => fetchTypeList())
   display: flex;
   align-items: center;
 }
-.title-hint-icon {
-  font-size: 14px;
-  color: var(--text-muted, #a1a1aa);
-  margin-left: 6px;
-  font-weight: normal;
-  cursor: help;
-  transition: color 0.2s;
-}
-.title-hint-icon:hover {
-  color: var(--apple-blue, #0A84FF);
-}
 
 .sidebar-actions { display: flex; gap: 8px; }
 .icon-btn {
@@ -580,7 +662,8 @@ onMounted(() => fetchTypeList())
   cursor: pointer; transition: all 0.2s;
   display: flex; align-items: center; justify-content: center;
 }
-.icon-btn:hover { background: rgba(10, 132, 255, 0.1); color: var(--apple-blue, #0A84FF); }
+/* 应用全局强调色 */
+.icon-btn:hover { background: color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, transparent); color: var(--apple-blue, #0A84FF); }
 .icon-btn.danger:not(:disabled) { color: #FF453A; background: rgba(255, 69, 58, 0.1); }
 .icon-btn.danger:not(:disabled):hover { background: rgba(255, 69, 58, 0.2); }
 .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; background: transparent; }
@@ -599,24 +682,78 @@ onMounted(() => fetchTypeList())
   border: 1px solid transparent;
   transition: all 0.3s;
   box-sizing: border-box;
+  align-items: center;
 }
 .capsule-search:focus-within {
   background: transparent;
   border-color: var(--apple-blue, #0A84FF);
-  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.1);
+  /* 应用全局强调色 */
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, transparent);
 }
+
+/* ================= 核心修复：绝对像素级居中与等高对齐 ================= */
 .search-inputs {
   flex: 1; display: flex; align-items: center;
-  padding: 0 8px;
+  padding: 0 4px; height: 26px;
 }
+
 .search-inputs input {
-  flex: 1; width: 50%;
+  flex: 1; min-width: 0; width: 0;
   border: none; background: transparent;
   font-size: 13px; color: var(--text-main);
-  outline: none; padding: 6px 4px;
+  outline: none; padding: 0 8px; /* 调整内间距以呼吸感 */
+  height: 26px; line-height: 26px;
 }
 .search-inputs input::placeholder { color: var(--text-muted, #a1a1aa); }
-.divider { width: 1px; height: 14px; background: var(--border-color, #e5e5ea); margin: 0 8px; }
+.divider { width: 1px; height: 14px; background: var(--border-color, #e5e5ea); margin: 0 4px; flex-shrink: 0; }
+
+/* Status Select 绝对高度锁定 */
+.status-select {
+  flex: 1; min-width: 0; width: 0;
+  height: 26px; display: flex; align-items: center;
+}
+:deep(.status-select .ant-select-selector) {
+  padding: 0 2px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+:deep(.status-select .ant-select-selection-item),
+:deep(.status-select .ant-select-selection-placeholder) {
+  font-size: 13px !important;
+  color: var(--text-main) !important;
+  line-height: 26px !important;
+  padding-right: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+}
+:deep(.status-select .ant-select-selection-placeholder) {
+  color: var(--text-muted, #a1a1aa) !important;
+  left: 4px !important;
+}
+:deep(.status-select .ant-select-arrow) {
+  right: 0px !important;
+  font-size: 10px !important;
+  color: var(--text-muted) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  margin-top: 0 !important;
+}
+:deep(.status-select .ant-select-clear) {
+  right: 0px !important;
+  background: transparent !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  margin-top: 0 !important;
+}
+
 .search-actions { display: flex; gap: 4px; }
 .search-trigger {
   width: 32px; height: 32px;
@@ -664,7 +801,6 @@ onMounted(() => fetchTypeList())
 }
 .neo-list-item.is-active {
   background: var(--apple-blue, #0A84FF);
-  box-shadow: 0 8px 20px rgba(10, 132, 255, 0.3);
 }
 
 .neo-list-item.is-disabled .item-content { opacity: 0.45; }
@@ -675,7 +811,7 @@ onMounted(() => fetchTypeList())
   padding-right: 12px;
 }
 
-/* ================= 左侧列表：全新状态指示点重构 ================= */
+/* ================= 左侧列表：极高辨识度的绝对语义状态点 ================= */
 .status-indicator {
   width: 8px;
   height: 8px;
@@ -684,27 +820,24 @@ onMounted(() => fetchTypeList())
   box-sizing: border-box;
 }
 
-/* 启用态：使用强调色，保持绝对视觉统一，附加微投影提亮 */
+/* 启用态：永远是经典的苹果绿 */
 .status-indicator.online {
-  background: var(--apple-blue);
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.1);
+  background: #34C759;
+  box-shadow: 0 0 6px rgba(52, 199, 89, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
-/* 禁用态：极简空心灰环，不抢焦点 */
+/* 禁用态：永远是警示的苹果红 */
 .status-indicator.offline {
-  background: transparent;
-  border: 2px solid var(--text-muted);
-  opacity: 0.5;
+  background: #FF453A;
+  box-shadow: 0 0 6px rgba(255, 69, 58, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
-/* 选中态的反转逻辑：无论什么强调色背景，一律反转为纯白 */
+/* 重点保护机制：当行被选中时（背景变深色），保留原本的红/绿颜色，外加 2px 纯白保护环！这样绝不丢失状态，且极度清晰 */
 .neo-list-item.is-active .status-indicator.online {
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 0 0 2px #ffffff, 0 2px 4px rgba(0,0,0,0.2);
 }
 .neo-list-item.is-active .status-indicator.offline {
-  border-color: rgba(255, 255, 255, 0.7);
-  opacity: 1;
+  box-shadow: 0 0 0 2px #ffffff, 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .item-content {
@@ -724,7 +857,7 @@ onMounted(() => fetchTypeList())
   font-weight: 600;
   color: var(--text-main);
   margin-bottom: 0;
-  line-height: 1; /* 消除原生行高带来的上下偏移杂距 */
+  line-height: normal; /* 消除原生行高带来的上下偏移杂距 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -740,7 +873,7 @@ onMounted(() => fetchTypeList())
   align-items: center;
   justify-content: center;
   height: 22px;
-  line-height: 1;
+  line-height: normal; /* 回归 normal，由 flex 接管垂直居中，避免文字下沉 */
 
   font-size: 12px; /* 与 14px 的标题达到更优的层级对比 */
   color: var(--text-muted);
@@ -786,10 +919,14 @@ onMounted(() => fetchTypeList())
 .neo-list-item.is-active .edit-hover-btn { background: rgba(255,255,255,0.2); color: #fff; }
 .neo-list-item:hover .status-indicator { opacity: 0; }
 
-.empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 300px; color: var(--text-muted); margin-top: 60px; font-size: 13px; }
-.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
+/* ================= 左侧列表：空状态高级重构与快捷按钮 ================= */
+.sidebar-empty-wrap {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
 
-/* ================= 极简分页器 ================= */
+/* ================= 极简分页器 (恢复统计功能与逻辑) ================= */
 .sidebar-footer {
   padding: 16px 20px;
   display: flex;
@@ -810,9 +947,9 @@ onMounted(() => fetchTypeList())
 }
 
 .page-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: var(--content-bg, #ffffff);
   border: 1px solid var(--border-color, #e5e5ea);
   display: flex;
@@ -858,195 +995,468 @@ onMounted(() => fetchTypeList())
   position: relative; overflow: hidden;
 }
 
+/* ================= 全新现代插画卡片风格空状态 ================= */
 .neo-empty-state {
-  position: absolute; width: 100%; height: 100%;
+  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at center, var(--hover-bg, #fcfcfc) 0%, transparent 100%);
-}
-.empty-glass-card {
-  text-align: center; max-width: 380px;
-  padding: 40px; border-radius: 24px;
-}
-.empty-glass-card .huge-icon { font-size: 64px; color: var(--apple-blue, #0A84FF); margin-bottom: 24px; filter: drop-shadow(0 10px 20px rgba(10, 132, 255, 0.2)); }
-.empty-glass-card h3 { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 12px; }
-.empty-glass-card p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 0; }
-
-.keyboard-hint {
-  margin-top: 24px;
-  padding: 12px 20px;
-  background: var(--hover-bg, rgba(10, 132, 255, 0.05));
-  border: 1px solid var(--border-color, rgba(10, 132, 255, 0.15));
-  border-radius: 14px;
-  color: var(--text-muted, #666);
-  font-size: 13px;
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  gap: 6px;
-  animation: fadeIn 0.8s ease;
+  background: radial-gradient(circle at top right, color-mix(in srgb, var(--apple-blue, #0A84FF) 3%, transparent) 0%, transparent 50%),
+  radial-gradient(circle at bottom left, color-mix(in srgb, var(--apple-blue, #0A84FF) 2%, transparent) 0%, transparent 50%);
+  z-index: 10;
 }
 
-kbd.neo-keycap {
-  display: inline-flex;
+/* 右侧局部数据为空时的完美居中占位层 */
+.data-empty-container {
+  flex: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
-  margin: 0 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main, #333);
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* 通用空状态卡片基座 */
+.modern-empty-card {
+  width: 100%;
+  max-width: 380px;
   background: var(--content-bg, #ffffff);
-  border: 1px solid var(--border-color, #d1d1d6);
-  border-bottom-width: 3px;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px var(--shadow-color, rgba(0,0,0,0.05)), inset 0 -1px 1px rgba(0,0,0,0.05);
-  letter-spacing: 0.5px;
-  transform: translateY(-1px);
+  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  animation: float-up-fade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+:global(.dark) .modern-empty-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* 顶部渐变插画区域 */
+.modern-empty-illus {
+  width: 100%;
+  height: 140px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue) 40%, transparent), color-mix(in srgb, var(--apple-blue) 5%, transparent));
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 40px;
+  box-sizing: border-box;
+}
+
+/* 虚拟拟物化 UI 窗口 */
+.mockup-window {
+  width: 100%;
+  height: 100px;
+  background: var(--content-bg);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
+}
+:global(.dark) .mockup-window {
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+}
+.mockup-header { display: flex; align-items: center; gap: 8px; }
+.mockup-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-color); }
+.mockup-line { height: 6px; border-radius: 3px; background: var(--hover-bg); flex: 1; }
+.mockup-line.short { width: 60%; flex: none; }
+.mockup-line.shorter { width: 40%; flex: none; }
+.mockup-row { display: flex; align-items: center; gap: 10px; }
+.mockup-star { color: var(--border-color); font-size: 10px; }
+.mockup-avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--hover-bg); }
+
+/* 文字内容和按钮区域 */
+.modern-empty-content {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.modern-empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.3px;
+}
+
+.modern-empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+.modern-empty-desc:last-child {
+  margin-bottom: 0;
+}
+
+/* 反色胶囊按钮 */
+.modern-empty-btn {
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 20px;
+  background: var(--text-main);
+  color: var(--bg-base);
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.modern-empty-btn:hover {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
+/* 侧边栏迷你版卡片修饰 */
+.modern-empty-card.mini {
+  max-width: 260px;
+}
+.modern-empty-card.mini .modern-empty-illus {
+  height: 100px;
+  padding: 0 20px;
+}
+.modern-empty-card.mini .mockup-window {
+  height: 70px;
+  gap: 12px;
+}
+.modern-empty-card.mini .modern-empty-content {
+  padding: 20px 16px;
+}
+.modern-empty-card.mini .modern-empty-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.modern-empty-card.mini .modern-empty-desc {
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.modern-empty-card.mini .modern-empty-btn {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+@keyframes float-up-fade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .neo-data-view { display: flex; flex-direction: column; height: 100%; }
-.fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Header */
+/* ================= 右侧：全新头部信息排版 ================= */
 .data-header {
   padding: 32px 32px 24px;
-  display: flex; justify-content: space-between; align-items: flex-end;
+  display: flex; justify-content: space-between; align-items: flex-start;
 }
-.header-info h1 { font-size: 28px; font-weight: 800; color: var(--text-main); margin: 0 0 8px 0; letter-spacing: -0.5px; }
-.code-badge { font-family: monospace; font-size: 13px; color: var(--text-muted); background: var(--hover-bg, #f5f5f7); padding: 4px 10px; border-radius: 6px; }
 
-.header-actions { display: flex; gap: 12px; }
-.neo-btn { height: 38px; border-radius: 12px; padding: 0 16px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
-.neo-btn.primary { background: var(--apple-blue, #0A84FF); color: #fff; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.2); }
-.neo-btn.primary:hover { filter: brightness(0.9); transform: translateY(-1px); }
-.neo-btn.danger-ghost { background: rgba(255, 69, 58, 0.1); color: #FF453A; }
-.neo-btn.danger-ghost:hover { background: rgba(255, 69, 58, 0.2); }
-.neo-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* 过滤工具栏 */
-.data-toolbar { padding: 0 32px 20px; }
-.filter-group { display: flex; gap: 12px; align-items: center; }
-.neo-input-wrap {
-  display: flex; align-items: center;
-  background: var(--hover-bg, #f5f5f7);
-  border-radius: 10px; height: 36px; padding: 0 12px;
-  border: 1px solid transparent; transition: all 0.2s;
+.header-info { display: flex; flex-direction: column; gap: 8px; }
+.title-row { display: flex; align-items: center; gap: 16px; }
+.header-info h1 {
+  font-size: 26px; font-weight: 800; color: var(--text-main);
+  margin: 0; letter-spacing: -0.5px;
+  line-height: 1.1;
 }
-.neo-input-wrap:focus-within { background: transparent; border-color: var(--apple-blue, #0A84FF); }
-.prefix-icon { color: var(--text-muted); margin-right: 8px; font-size: 13px; }
-.neo-input-wrap input { border: none; background: transparent; outline: none; font-size: 13px; color: var(--text-main); width: 140px; }
-.neo-select-wrap { background: var(--hover-bg, #f5f5f7); border-radius: 10px; height: 36px; display: flex; align-items: center; padding: 0 8px; }
-.transparent-select { width: 100px; }
-:deep(.transparent-select .ant-select-selector) { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
 
-.neo-icon-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--apple-blue, #0A84FF); color: #fff; cursor: pointer; transition: all 0.2s; }
-.neo-icon-btn:hover { filter: brightness(0.9); transform: scale(0.95); }
-.neo-icon-btn.secondary { background: var(--hover-bg, #e5e5ea); color: var(--text-main); }
-.neo-icon-btn.secondary:hover { filter: brightness(0.9); }
+/* 右侧字典编码高级徽标 - 绝对垂直居中修复 */
+.meta-badge {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px; color: var(--apple-blue);
+  background: color-mix(in srgb, var(--apple-blue) 12%, transparent);
+  padding: 0 10px; height: 24px; border-radius: 8px; font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--apple-blue) 20%, transparent);
+  line-height: normal; /* 由 flex 接管垂直居中 */
+}
 
-/* 表格主体美化 */
-.data-table-wrapper { flex: 1; padding: 0 32px 20px; overflow: hidden; }
-:deep(.neo-table) { height: 100%; display: flex; flex-direction: column; }
-:deep(.neo-table .ant-spin-nested-loading) { height: 100%; }
-:deep(.neo-table .ant-spin-container) { display: flex; flex-direction: column; height: 100%; }
-:deep(.neo-table .ant-table) { flex: 1; overflow: hidden; background: transparent; }
-:deep(.neo-table .ant-table-container) { height: 100%; display: flex; flex-direction: column; }
-:deep(.neo-table .ant-table-body) { flex: 1; overflow-y: auto; }
+/* 字典描述文本 */
+.dict-remark { font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.5; max-width: 600px; }
+.dict-remark.empty { opacity: 0.5; }
 
-/* 彻底重构 Antd 表格样式 */
+/* ================= 过滤工具栏 ================= */
+.data-toolbar { padding: 0 32px 16px; display: flex; align-items: center; justify-content: flex-start; gap: 12px; }
+
+.data-capsule {
+  width: auto;
+  min-width: 450px;
+  max-width: 100%;
+}
+
+.data-capsule .search-inputs {
+  padding: 0 8px;
+}
+
+.data-capsule input {
+  min-width: 80px;
+}
+
+/* 右侧顶部工具栏新操作按钮组 */
+.data-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.toolbar-action-btn {
+  width: 36px; height: 36px;
+  border-radius: 12px; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; transition: all 0.2s;
+}
+.toolbar-action-btn.primary {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 15%, transparent);
+  color: var(--apple-blue, #0A84FF);
+}
+.toolbar-action-btn.primary:hover {
+  background: var(--apple-blue, #0A84FF);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--apple-blue, #0A84FF) 20%, transparent);
+}
+.toolbar-action-btn.danger {
+  background: rgba(255, 69, 58, 0.1);
+  color: #FF453A;
+}
+.toolbar-action-btn.danger:hover:not(:disabled) {
+  background: #FF453A;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(255, 69, 58, 0.2);
+}
+
+/* 渐显渐隐动画 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
+  width: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ================= 核心修复：表格与分页器的弹性布局重写 ================= */
+.data-table-wrapper {
+  flex: 1; /* 撑满剩余空间 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 深度渗透 Ant Design 内部结构，打通 Flex 链条 */
+:deep(.data-spin-wrap),
+:deep(.data-spin-wrap > .ant-spin-container) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+:deep(.neo-table) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+:deep(.neo-table .ant-table) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}
+:deep(.neo-table .ant-table-container) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* 在这里进行表体的自适应滚动 */
+  scrollbar-width: thin;
+  padding: 0 24px; /* 将原本外层的 padding 移到滚动区域内部 */
+}
+
+/* 彻底重构 Antd 表格样式，添加吸顶表头 */
 :deep(.neo-table .ant-table-thead > tr > th) {
-  background: transparent !important;
-  border-bottom: 1px solid var(--border-color, #e5e5ea) !important;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--content-bg) !important; /* 吸顶时遮挡下方滚动内容 */
+  border-bottom: 1px solid var(--border-color) !important;
   color: var(--text-muted) !important;
-  font-weight: 500; font-size: 13px; padding: 12px 16px;
+  font-weight: 500; font-size: 13px; padding: 14px 16px;
 }
-:deep(.neo-table .ant-table-thead > tr > th::before) { display: none; }
+:deep(.neo-table .ant-table-thead > tr > th::before) { display: none !important; }
+
 :deep(.neo-table .ant-table-tbody > tr > td) {
-  border-bottom: 1px solid var(--border-color, #f4f4f5) !important;
-  padding: 16px; transition: background 0.2s;
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 16px;
+  transition: background 0.2s;
+  background: transparent !important;
 }
-:deep(.neo-table .ant-table-tbody > tr:hover > td) { background: var(--hover-bg, #fbfbfc) !important; }
-:deep(.neo-table .ant-checkbox-inner) { border-radius: 4px; }
+
+/* 极简、克制的选中与悬浮状态（无刺眼颜色混合） */
+:deep(.neo-table .ant-table-tbody > tr:hover > td) {
+  background: var(--hover-bg) !important;
+}
+:deep(.neo-table .ant-table-tbody > tr.ant-table-row-selected > td) {
+  background: var(--active-bg) !important;
+}
+
+/* 修复复选框在暗黑模式下的显示 */
+:deep(.neo-table .ant-checkbox-inner) {
+  border-color: var(--text-muted);
+  background-color: transparent;
+  border-radius: 4px;
+}
+:deep(.neo-table .ant-checkbox-checked .ant-checkbox-inner) {
+  background-color: var(--apple-blue) !important;
+  border-color: var(--apple-blue) !important;
+}
 
 /* 单元格定制 */
 .cell-label { font-weight: 600; font-size: 14px; color: var(--text-main); }
 .cell-value { font-family: monospace; color: var(--text-muted); font-size: 13px; background: var(--hover-bg, #f5f5f7); padding: 2px 8px; border-radius: 6px; }
 .cell-sort { background: rgba(0,0,0,0.04); color: var(--text-muted); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
 
-/* ================= 右侧表格：全新幽灵状态标签 (Ghost Badge) ================= */
+/* ================= 右侧表格：语义化高级状态标签 ================= */
 .cell-status {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 12px;
-  border-radius: 8px; /* 偏方正的现代圆角 */
+  padding: 4px 10px;
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
-/* 启用态：直接使用幽灵强调色，彻底杜绝色彩冲突 */
-.cell-status.active {
-  color: var(--apple-blue);
-  background: transparent;
-  border: 1px solid var(--apple-blue);
+.cell-status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 6px;
 }
 
-/* 禁用态：透明降噪边框 */
-.cell-status.inactive {
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid var(--border-color);
-  opacity: 0.7;
+/* 启用态 */
+.cell-status.active {
+  color: #248A3D;
+  background: rgba(52, 199, 89, 0.12);
+  border: 1px solid rgba(52, 199, 89, 0.2);
 }
+.cell-status.active::before {
+  background-color: #34C759;
+  box-shadow: 0 0 4px rgba(52, 199, 89, 0.6);
+}
+
+/* 禁用态 */
+.cell-status.inactive {
+  color: #D70015;
+  background: rgba(255, 69, 58, 0.12);
+  border: 1px solid rgba(255, 69, 58, 0.2);
+}
+.cell-status.inactive::before {
+  background-color: #FF453A;
+  box-shadow: 0 0 4px rgba(255, 69, 58, 0.6);
+}
+
+/* 暗黑模式适配 */
+:global(.dark) .cell-status.active { color: #34C759; }
+:global(.dark) .cell-status.inactive { color: #FF453A; }
 
 .text-action-btn { background: transparent; border: none; color: var(--apple-blue, #0A84FF); font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
 .text-action-btn:hover { opacity: 0.7; }
 
-:deep(.neo-table .ant-pagination) { margin-top: 16px !important; margin-bottom: 0 !important; }
 
-/* ================== 全局悬浮提示框 (Tooltip) 皮肤注入 ================== */
-:global(.neo-tooltip) {
-  max-width: none !important;
+/* ================= 深度定制右侧 Ant Design 高级分页器 (绝对底部常驻) ================= */
+:deep(.neo-table .ant-pagination) {
+  margin: auto 0 0 0 !important; /* 强制推至容器绝对最底部 */
+  padding: 16px 32px; /* 与表格外部对齐 */
+  border-top: 1px solid var(--border-color);
+  background: var(--content-bg);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  z-index: 10;
 }
-:global(.neo-tooltip .ant-tooltip-inner) {
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  border-radius: 10px !important;
-  padding: 8px 14px !important;
-  font-weight: 500 !important;
-  font-size: 13px !important;
-  white-space: nowrap !important;
-  width: max-content !important;
-  max-width: none !important;
-  min-height: auto !important;
+:deep(.neo-table .ant-pagination-total-text) {
+  color: var(--text-muted);
+  margin-right: auto; /* 将分页统计推至最左侧，实现完美两端对齐 */
+  font-size: 13px;
+}
+:deep(.neo-table .ant-pagination-item) {
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+:deep(.neo-table .ant-pagination-item a) {
+  color: var(--text-main);
+}
+:deep(.neo-table .ant-pagination-item:hover) {
+  background: var(--hover-bg);
+}
+:deep(.neo-table .ant-pagination-item-active) {
+  background: var(--apple-blue) !important;
+  border-color: var(--apple-blue) !important;
+}
+:deep(.neo-table .ant-pagination-item-active a) {
+  color: #fff !important;
+}
+:deep(.neo-table .ant-pagination-prev .ant-pagination-item-link),
+:deep(.neo-table .ant-pagination-next .ant-pagination-item-link) {
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  display: flex; align-items: center; justify-content: center;
+}
+:deep(.neo-table .ant-pagination-prev:hover .ant-pagination-item-link),
+:deep(.neo-table .ant-pagination-next:hover .ant-pagination-item-link) {
+  background: var(--hover-bg);
+}
+:deep(.neo-table .ant-pagination-disabled .ant-pagination-item-link) {
+  color: var(--text-muted) !important;
+  opacity: 0.5;
+  background: transparent !important;
 }
 
-/* 亮色主题 Tooltip */
-:global(.tooltip-light .ant-tooltip-inner) {
-  background-color: rgba(28, 28, 30, 0.85) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+/* 自定义分页条数下拉选择器 */
+:deep(.neo-table .ant-pagination-options-size-changer.ant-select) {
+  margin-left: 16px;
 }
-:global(.tooltip-light .ant-tooltip-arrow::before) {
-  background-color: rgba(28, 28, 30, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+:deep(.neo-table .ant-pagination-options-size-changer .ant-select-selector) {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-main);
+  transition: all 0.2s;
+  height: 32px !important;
+  display: flex;
+  align-items: center;
+}
+:deep(.neo-table .ant-pagination-options-size-changer:hover .ant-select-selector) {
+  border-color: var(--apple-blue);
+}
+:deep(.neo-table .ant-select-arrow) {
+  color: var(--text-muted);
 }
 
-/* 暗黑主题 Tooltip */
-:global(.tooltip-dark .ant-tooltip-inner) {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  color: #1d1d1f !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
-}
-:global(.tooltip-dark .ant-tooltip-arrow::before) {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-}
 </style>

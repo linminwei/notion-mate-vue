@@ -26,3 +26,7 @@ export const updateDictData = (data: any) =>
 
 export const deleteDictDataBatch = (ids: string[]) =>
   request.delete('/system/dict/data/batch', { data: ids })
+
+// 根据字典编码查询字典值
+export const getDictDataByDictCode = (dictCode: string) =>
+    request.get<DictData[]>('/system/dict/data/by-type-code', { params: { dictCode } })
