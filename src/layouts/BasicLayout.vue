@@ -383,21 +383,6 @@
                       </div>
                       <div class="row-divider"></div>
 
-                      <!-- 安全邮箱 -->
-                      <div class="settings-row">
-                        <div class="row-label">
-                          <div class="setting-icon-box bg-blue">
-                            <font-awesome-icon :icon="['fas', 'envelope']" />
-                          </div>
-                          <span>安全邮箱</span>
-                        </div>
-                        <div class="row-content">
-                          <span class="row-value" :class="{'placeholder-text': !userInfo?.email}">{{ userInfo?.email || '未绑定' }}</span>
-                        </div>
-                        <button class="action-text-btn ml-3" @click="openRebindModal('email')">{{ userInfo?.email ? '换绑' : '绑定' }}</button>
-                      </div>
-                      <div class="row-divider"></div>
-
                       <!-- 手机号码 -->
                       <div class="settings-row">
                         <div class="row-label">
@@ -409,7 +394,7 @@
                         <div class="row-content">
                           <span class="row-value" :class="{'placeholder-text': !userInfo?.phone}">{{ userInfo?.phone || '未绑定' }}</span>
                         </div>
-                        <button class="action-text-btn ml-3" @click="openRebindModal('phone')">{{ userInfo?.phone ? '换绑' : '绑定' }}</button>
+                        <button class="action-text-btn ml-3" @click="openRebindModal">{{ userInfo?.phone ? '换绑' : '绑定' }}</button>
                       </div>
                     </div>
                   </div>
@@ -547,49 +532,178 @@
             </transition>
           </div>
 
-          <!-- 换绑/绑定操作弹窗 (嵌套在当前 Modal 顶层) -->
-          <transition name="modal-fade">
-            <div v-if="isRebindModalOpen" class="apple-modal-overlay nested-overlay" @click="closeRebindModal">
-              <div class="apple-dialog" @click.stop>
-                <h3 class="dialog-title">{{ rebindTarget === 'email' ? '换绑安全邮箱' : '换绑手机号码' }}</h3>
-                <p class="dialog-subtitle">为了您的账号安全，本次操作需要验证短信验证码。</p>
+        </div>
+      </div>
+    </transition>
 
-                <div class="dialog-form">
-                  <div class="apple-input-group">
-                    <div class="input-icon-wrapper">
-                      <font-awesome-icon :icon="rebindTarget === 'email' ? 'email' : 'mobile-alt'" />
-                    </div>
-                    <input
-                        :type="rebindTarget === 'email' ? 'email' : 'tel'"
-                        v-model="rebindForm.targetValue"
-                        class="apple-dialog-input has-icon"
-                        :placeholder="rebindTarget === 'email' ? '请输入新邮箱地址' : '请输入新手机号码'"
-                    />
-                  </div>
-                  <div class="apple-input-group flex-group">
-                    <div class="input-icon-wrapper verify-icon">
-                      <font-awesome-icon :icon="['fas', 'shield-alt']" />
-                    </div>
-                    <input
-                        type="text"
-                        v-model="rebindForm.verifyCode"
-                        class="apple-dialog-input has-icon flex-1"
-                        placeholder="短信验证码"
-                    />
-                    <button class="dialog-btn outline send-code-btn" :disabled="countdown > 0" @click="sendVerifyCode">
-                      {{ countdown > 0 ? `${countdown}s 后重试` : '获取验证码' }}
-                    </button>
-                  </div>
+    <!-- 换绑/绑定操作弹窗 (移出主容器，避免 CSS Transform 造成的绝对定位偏移) -->
+    <transition name="modal-fade">
+      <div v-if="isRebindModalOpen" class="apple-modal-overlay nested-overlay" @click="closeRebindModal">
+        <div class="apple-dialog" @click.stop>
+          <h3 class="dialog-title">{{ rebindStep === 1 ? '安全验证' : '绑定新手机号' }}</h3>
+          <p class="dialog-subtitle">
+            {{ rebindStep === 1 ? '为了您的账号安全，请先验证当前绑定的手机号。' : '请输入您的新手机号码并完成验证。' }}
+          </p>
+
+          <div class="dialog-form">
+            <template v-if="rebindStep === 1">
+              <div class="apple-input-group">
+                <div class="input-icon-wrapper">
+                  <font-awesome-icon :icon="['fas', 'mobile-alt']" />
                 </div>
+                <input
+                    type="tel"
+                    :value="userInfo?.phone"
+                    class="apple-dialog-input has-icon"
+                    placeholder="当前绑定的手机号码"
+                    disabled
+                />
+              </div>
+              <div class="apple-input-group flex-group">
+                <div class="input-icon-wrapper verify-icon">
+                  <font-awesome-icon :icon="['fas', 'shield-alt']" />
+                </div>
+                <input
+                    type="text"
+                    v-model="rebindForm.oldVerifyCode"
+                    class="apple-dialog-input has-icon flex-1"
+                    placeholder="短信验证码"
+                />
+                <button class="dialog-btn outline send-code-btn" :disabled="countdown > 0" @click="sendOldPhoneCode">
+                  {{ countdown > 0 ? `${countdown}s 后重试` : '获取验证码' }}
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="apple-input-group">
+                <div class="input-icon-wrapper">
+                  <font-awesome-icon :icon="['fas', 'mobile-alt']" />
+                </div>
+                <input
+                    type="tel"
+                    v-model="rebindForm.newPhone"
+                    class="apple-dialog-input has-icon"
+                    placeholder="请输入新手机号码"
+                />
+              </div>
+              <div class="apple-input-group flex-group">
+                <div class="input-icon-wrapper verify-icon">
+                  <font-awesome-icon :icon="['fas', 'shield-alt']" />
+                </div>
+                <input
+                    type="text"
+                    v-model="rebindForm.newVerifyCode"
+                    class="apple-dialog-input has-icon flex-1"
+                    placeholder="短信验证码"
+                />
+                <button class="dialog-btn outline send-code-btn" :disabled="countdown > 0" @click="sendNewPhoneCode">
+                  {{ countdown > 0 ? `${countdown}s 后重试` : '获取验证码' }}
+                </button>
+              </div>
+            </template>
+          </div>
 
-                <div class="dialog-actions">
-                  <button class="dialog-btn outline" @click="closeRebindModal">取消</button>
-                  <button class="dialog-btn primary" @click="submitRebind">确认</button>
+          <div class="dialog-actions">
+            <button class="dialog-btn outline" @click="closeRebindModal">取消</button>
+            <button v-if="rebindStep === 1" class="dialog-btn primary" @click="nextRebindStep">下一步</button>
+            <button v-else class="dialog-btn primary" @click="submitRebind">确认换绑</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 密码重置操作弹窗 (嵌套在当前 Modal 顶层) -->
+    <transition name="modal-fade">
+      <div v-if="isResetPwdModalOpen" class="apple-modal-overlay nested-overlay" @click="closeResetPwdModal">
+        <div class="apple-dialog" @click.stop>
+          <h3 class="dialog-title">{{ resetPwdStep === 1 ? '安全验证' : '设置新密码' }}</h3>
+          <p class="dialog-subtitle">
+            {{ resetPwdStep === 1 ? '为了您的账号安全，请验证绑定的手机号。' : '请输入您的新密码并确认。' }}
+          </p>
+
+          <div class="dialog-form">
+            <template v-if="resetPwdStep === 1">
+              <div class="apple-input-group">
+                <div class="input-icon-wrapper">
+                  <font-awesome-icon :icon="['fas', 'mobile-alt']" />
+                </div>
+                <input
+                    type="tel"
+                    v-model="resetPwdForm.phone"
+                    class="apple-dialog-input has-icon"
+                    placeholder="绑定的手机号码"
+                    disabled
+                />
+              </div>
+              <div class="apple-input-group flex-group">
+                <div class="input-icon-wrapper verify-icon">
+                  <font-awesome-icon :icon="['fas', 'shield-alt']" />
+                </div>
+                <input
+                    type="text"
+                    v-model="resetPwdForm.verifyCode"
+                    class="apple-dialog-input has-icon flex-1"
+                    placeholder="短信验证码"
+                />
+                <button class="dialog-btn outline send-code-btn" :disabled="resetPwdCountdown > 0" @click="sendResetPwdCode">
+                  {{ resetPwdCountdown > 0 ? `${resetPwdCountdown}s 后重试` : '获取验证码' }}
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="apple-input-group">
+                <div class="input-icon-wrapper">
+                  <font-awesome-icon :icon="['fas', 'lock']" />
+                </div>
+                <input
+                    :type="showNewPassword ? 'text' : 'password'"
+                    v-model="resetPwdForm.newPassword"
+                    class="apple-dialog-input has-icon"
+                    placeholder="请输入新密码"
+                />
+                <div class="input-suffix-icon" @click="showNewPassword = !showNewPassword">
+                  <font-awesome-icon :icon="showNewPassword ? ['fas', 'eye'] : ['fas', 'eye-slash']" />
                 </div>
               </div>
-            </div>
-          </transition>
 
+              <!-- 密码强度指示器 -->
+              <div class="password-strength-container" v-if="resetPwdForm.newPassword">
+                <div class="strength-bars">
+                  <div class="strength-bar" :style="{ backgroundColor: passwordStrength.score >= 1 ? passwordStrength.color : 'var(--border-color)' }"></div>
+                  <div class="strength-bar" :style="{ backgroundColor: passwordStrength.score >= 2 ? passwordStrength.color : 'var(--border-color)' }"></div>
+                  <div class="strength-bar" :style="{ backgroundColor: passwordStrength.score >= 3 ? passwordStrength.color : 'var(--border-color)' }"></div>
+                </div>
+                <span class="strength-text" :style="{ color: passwordStrength.color }">{{ passwordStrength.text }}</span>
+              </div>
+
+              <div class="apple-input-group">
+                <div class="input-icon-wrapper" :class="{ 'success-icon': isPasswordMatching === true }">
+                  <font-awesome-icon :icon="['fas', 'check-circle']" />
+                </div>
+                <input
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    v-model="resetPwdForm.confirmPassword"
+                    class="apple-dialog-input has-icon"
+                    :class="{ 'is-error': isPasswordMatching === false, 'is-success': isPasswordMatching === true }"
+                    placeholder="请确认新密码"
+                />
+                <div class="input-suffix-icon" @click="showConfirmPassword = !showConfirmPassword">
+                  <font-awesome-icon :icon="showConfirmPassword ? ['fas', 'eye'] : ['fas', 'eye-slash']" />
+                </div>
+              </div>
+
+              <!-- 密码不一致提示 -->
+              <div class="validation-message" v-if="isPasswordMatching === false">
+                <font-awesome-icon :icon="['fas', 'exclamation-circle']" /> 两次输入的密码不一致
+              </div>
+            </template>
+          </div>
+
+          <div class="dialog-actions">
+            <button class="dialog-btn outline" @click="closeResetPwdModal">取消</button>
+            <button v-if="resetPwdStep === 1" class="dialog-btn primary" @click="nextResetPwdStep">下一步</button>
+            <button v-else class="dialog-btn primary" @click="submitResetPwd">确认重置</button>
+          </div>
         </div>
       </div>
     </transition>
@@ -602,6 +716,8 @@ import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { library } from '@fortawesome/fontawesome-svg-core'
+import { sendCaptcha, verifyCaptcha, resetPassword } from '@/api/auth'
+import { AppleAlert } from '@/components/common/AppleAlert'
 
 const router = useRouter()
 const route = useRoute()
@@ -717,29 +833,153 @@ const handleAvatarChange = (e: Event) => {
 }
 
 // ==== 密码重置处理 ====
+const isResetPwdModalOpen = ref(false)
+const resetPwdStep = ref(1)
+const resetPwdCountdown = ref(0)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+let resetPwdTimer: number | null = null
+
+const resetPwdForm = reactive({
+  phone: '',
+  verifyCode: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// 密码强度计算逻辑
+const passwordStrength = computed(() => {
+  const pwd = resetPwdForm.newPassword
+  if (!pwd) return { score: 0, text: '', color: '' }
+
+  let score = 0
+  if (pwd.length >= 8) score += 1
+  if (/[A-Za-z]/.test(pwd) && /[0-9]/.test(pwd)) score += 1
+  if (/[^A-Za-z0-9]/.test(pwd)) score += 1
+
+  // 长度小于8强制为弱
+  if (pwd.length > 0 && pwd.length < 8) score = 1
+
+  if (score === 1) return { score: 1, text: '弱', color: '#ff4d4f' }
+  if (score === 2) return { score: 2, text: '中', color: '#faad14' }
+  if (score >= 3) return { score: 3, text: '强', color: '#52c41a' }
+
+  return { score: 0, text: '', color: '' }
+})
+
+// 密码一致性校验逻辑
+const isPasswordMatching = computed(() => {
+  if (!resetPwdForm.confirmPassword) return null
+  return resetPwdForm.newPassword === resetPwdForm.confirmPassword
+})
+
 const handlePasswordReset = () => {
-  console.log('点击了密码重置')
-  alert('将在这里打开密码重置流程')
+  if (!userInfo.value?.phone) {
+    AppleAlert.error('未绑定手机', '请先绑定手机号码后再进行密码重置操作。')
+    return
+  }
+  resetPwdForm.phone = userInfo.value.phone
+  resetPwdForm.verifyCode = ''
+  resetPwdForm.newPassword = ''
+  resetPwdForm.confirmPassword = ''
+  showNewPassword.value = false
+  showConfirmPassword.value = false
+  resetPwdStep.value = 1
+  resetPwdCountdown.value = 0
+  if (resetPwdTimer) clearInterval(resetPwdTimer)
+  isResetPwdModalOpen.value = true
+}
+
+const closeResetPwdModal = () => {
+  isResetPwdModalOpen.value = false
+  if (resetPwdTimer) clearInterval(resetPwdTimer)
+}
+
+const sendResetPwdCode = async () => {
+  if (resetPwdCountdown.value > 0) return
+  if (!resetPwdForm.phone) {
+    AppleAlert.error('错误', '手机号码不能为空')
+    return
+  }
+  try {
+    await sendCaptcha(resetPwdForm.phone)
+    AppleAlert.success('验证码已发送', '请注意查收短信')
+    resetPwdCountdown.value = 60
+    resetPwdTimer = window.setInterval(() => {
+      resetPwdCountdown.value--
+      if (resetPwdCountdown.value <= 0 && resetPwdTimer) {
+        clearInterval(resetPwdTimer)
+      }
+    }, 1000)
+  } catch (error: any) {
+    AppleAlert.error('发送失败', error.message || '验证码发送失败')
+  }
+}
+
+const nextResetPwdStep = async () => {
+  if (!resetPwdForm.verifyCode) {
+    AppleAlert.error('提示', '请输入验证码')
+    return
+  }
+  try {
+    await verifyCaptcha(resetPwdForm.phone, resetPwdForm.verifyCode)
+    resetPwdStep.value = 2
+  } catch (error: any) {
+    AppleAlert.error('验证失败', error.message || '验证码错误')
+  }
+}
+
+const submitResetPwd = async () => {
+  if (!resetPwdForm.newPassword || !resetPwdForm.confirmPassword) {
+    AppleAlert.error('提示', '请填写完整密码信息')
+    return
+  }
+  if (resetPwdForm.newPassword !== resetPwdForm.confirmPassword) {
+    AppleAlert.error('错误', '两次输入的密码不一致')
+    return
+  }
+  if (resetPwdForm.newPassword.length < 8) {
+    AppleAlert.error('提示', '密码长度不能少于8位')
+    return
+  }
+
+  try {
+    await resetPassword(resetPwdForm.phone, resetPwdForm.verifyCode, resetPwdForm.newPassword, resetPwdForm.confirmPassword)
+    AppleAlert.success('重置成功', '密码已成功重置，请重新登录')
+    closeResetPwdModal()
+    closeSettingsModal()
+    handleLogout()
+  } catch (error: any) {
+    AppleAlert.error('重置失败', error.message || '密码重置失败')
+  }
 }
 
 
-// ==== 换绑相关逻辑 ====
+// ==== 换绑/绑定手机号相关逻辑 ====
 const isRebindModalOpen = ref(false)
-const rebindTarget = ref<'email' | 'phone'>('phone')
+const rebindStep = ref(1)
 const countdown = ref(0)
 let timer: number | null = null
 
 const rebindForm = reactive({
-  targetValue: '',
-  verifyCode: ''
+  oldVerifyCode: '',
+  newPhone: '',
+  newVerifyCode: ''
 })
 
-const openRebindModal = (target: 'email' | 'phone') => {
-  rebindTarget.value = target
-  rebindForm.targetValue = ''
-  rebindForm.verifyCode = ''
+const openRebindModal = () => {
+  rebindForm.oldVerifyCode = ''
+  rebindForm.newPhone = ''
+  rebindForm.newVerifyCode = ''
   countdown.value = 0
   if (timer) clearInterval(timer)
+
+  // 判断是否已有绑定手机，如果有则进入换绑流程(验证旧号)，否则进入绑定流程(直接绑新号)
+  if (userInfo.value?.phone) {
+    rebindStep.value = 1
+  } else {
+    rebindStep.value = 2
+  }
   isRebindModalOpen.value = true
 }
 
@@ -748,15 +988,9 @@ const closeRebindModal = () => {
   if (timer) clearInterval(timer)
 }
 
-const sendVerifyCode = () => {
-  if (countdown.value > 0) return
-  if (!rebindForm.targetValue) {
-    console.warn('请输入目标信息')
-    return
-  }
-
-  // 模拟发送验证码，开启倒计时
+const startCountdown = () => {
   countdown.value = 60
+  if (timer) clearInterval(timer)
   timer = window.setInterval(() => {
     countdown.value--
     if (countdown.value <= 0 && timer) {
@@ -765,17 +999,75 @@ const sendVerifyCode = () => {
   }, 1000)
 }
 
-const submitRebind = async () => {
-  if (!rebindForm.targetValue || !rebindForm.verifyCode) {
-    console.warn('请填写完整信息及验证码')
+const sendOldPhoneCode = async () => {
+  if (countdown.value > 0) return
+  if (!userInfo.value?.phone) return
+  try {
+    await sendCaptcha(userInfo.value.phone)
+    AppleAlert.success('验证码已发送', '请注意查收短信')
+    startCountdown()
+  } catch (error: any) {
+    AppleAlert.error('发送失败', error.message || '验证码发送失败')
+  }
+}
+
+const nextRebindStep = async () => {
+  if (!rebindForm.oldVerifyCode) {
+    AppleAlert.error('提示', '请输入验证码')
+    return
+  }
+  try {
+    await verifyCaptcha(userInfo.value!.phone, rebindForm.oldVerifyCode)
+    // 验证成功，进入第二步，并重置倒计时
+    rebindStep.value = 2
+    countdown.value = 0
+    if (timer) clearInterval(timer)
+  } catch (error: any) {
+    AppleAlert.error('验证失败', error.message || '验证码错误')
+  }
+}
+
+const sendNewPhoneCode = async () => {
+  if (countdown.value > 0) return
+  if (!rebindForm.newPhone) {
+    AppleAlert.error('错误', '请输入新手机号码')
+    return
+  }
+  // 简单的手机号正则验证
+  if (!/^1[3-9]\d{9}$/.test(rebindForm.newPhone)) {
+    AppleAlert.error('错误', '手机号码格式不正确')
     return
   }
 
-  console.log(`执行换绑 ${rebindTarget.value}:`, rebindForm)
-  if (userInfo.value) {
-    userInfo.value[rebindTarget.value] = rebindForm.targetValue
+  try {
+    await sendCaptcha(rebindForm.newPhone)
+    AppleAlert.success('验证码已发送', '请注意查收短信')
+    startCountdown()
+  } catch (error: any) {
+    AppleAlert.error('发送失败', error.message || '验证码发送失败')
   }
-  closeRebindModal()
+}
+
+const submitRebind = async () => {
+  if (!rebindForm.newPhone || !rebindForm.newVerifyCode) {
+    AppleAlert.error('提示', '请填写完整信息及验证码')
+    return
+  }
+
+  try {
+    await verifyCaptcha(rebindForm.newPhone, rebindForm.newVerifyCode)
+
+    // 模拟换绑成功逻辑 (此处应当调用专门的更新手机号API)
+    // 目前仅更新 store 的状态展示
+    if (userInfo.value) {
+      userInfo.value.phone = rebindForm.newPhone
+    }
+
+    AppleAlert.success('成功', userInfo.value?.phone ? '手机号换绑成功' : '手机号绑定成功')
+    closeRebindModal()
+  } catch (error: any) {
+    AppleAlert.error('验证失败', error.message || '验证码错误')
+  }
 }
 
 
@@ -792,6 +1084,8 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     if (isRebindModalOpen.value) {
       closeRebindModal()
+    } else if (isResetPwdModalOpen.value) {
+      closeResetPwdModal()
     } else if (isSettingsModalOpen.value) {
       closeSettingsModal()
     }
@@ -816,6 +1110,7 @@ onUnmounted(() => {
   document.removeEventListener('click', closeDropdowns)
   window.removeEventListener('keydown', handleGlobalKeydown)
   if (timer) clearInterval(timer)
+  if (resetPwdTimer) clearInterval(resetPwdTimer)
 })
 
 const closeDropdowns = (e: MouseEvent) => {
@@ -1022,16 +1317,18 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .apple-menu { width: 100%; list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .apple-menu-item-group { width: 100%; position: relative; padding: 0; margin: 0; display: block; }
 
-.apple-menu-title { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; margin: 0 14px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; }
+.apple-menu-title { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; margin: 0 14px; border-radius: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); user-select: none; outline: none; -webkit-tap-highlight-color: transparent; }
 .apple-menu-title:hover { background: var(--hover-bg); color: var(--text-main); }
 .apple-menu-title.is-active { color: var(--text-main); }
-.apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(10, 132, 255, 0.25); }
+/* ✅ 优化：侧边栏菜单激活项的阴影和背景，全面使用 color-mix 混合全局强调色 */
+.apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; font-weight: 600; box-shadow: 0 2px 10px color-mix(in srgb, var(--apple-blue) 30%, transparent); }
 
-.apple-sidebar.is-collapsed .apple-menu-title { width: 44px; height: 44px; margin: 8px auto; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+.apple-sidebar.is-collapsed .apple-menu-title { width: 44px; height: 44px; margin: 8px 14px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; outline: none; }
 .apple-sidebar.is-collapsed .title-left { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; }
 .apple-sidebar.is-collapsed .menu-icon-wrap { width: auto; height: auto; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+/* ✅ 优化：折叠侧边栏时激活项的阴影全面使用 color-mix 跟随全局强调色，并移除导致白边的 inset shadow */
 .apple-sidebar.is-collapsed .apple-menu-title.parent-is-selected,
-.apple-sidebar.is-collapsed .apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; box-shadow: 0 4px 14px rgba(10, 132, 255, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3); }
+.apple-sidebar.is-collapsed .apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; box-shadow: 0 4px 14px color-mix(in srgb, var(--apple-blue) 40%, transparent); }
 
 .title-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .menu-icon-wrap { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; color: currentColor; }
@@ -1059,8 +1356,9 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .popup-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
 .popup-item { display: flex; align-items: center; justify-content: flex-start; gap: 12px; height: 34px; padding: 0 16px; border-radius: 8px; color: var(--text-main); cursor: pointer; }
 .popup-item .menu-text { font-size: 13px; font-weight: 500; line-height: 1; white-space: nowrap; }
-.popup-item.is-selected { background: rgba(10, 132, 255, 0.15); color: var(--apple-blue); }
-.apple-layout-root.theme-light .popup-item.is-selected { background: rgba(10, 132, 255, 0.08); }
+/* ✅ 优化：弹出子菜单选中状态颜色跟随全局强调色 */
+.popup-item.is-selected { background: color-mix(in srgb, var(--apple-blue) 15%, transparent); color: var(--apple-blue); }
+.apple-layout-root.theme-light .popup-item.is-selected { background: color-mix(in srgb, var(--apple-blue) 8%, transparent); }
 .popup-item.is-selected .menu-icon-wrap.sub { opacity: 1; color: var(--apple-blue); }
 .popup-item:hover, .popup-item.is-selected:hover { background: var(--apple-blue); color: #fff; }
 .popup-item:hover .menu-icon-wrap.sub, .popup-item.is-selected:hover .menu-icon-wrap.sub { opacity: 1; color: #fff; }
@@ -1102,14 +1400,16 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .user-pill-btn:hover { background: var(--hover-bg); border-color: var(--border-color); }
 .user-pill-btn.is-active { background: var(--active-bg); border-color: var(--border-color); }
 
-.user-avatar-small { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), #3b99fc); color: #ffffff; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(10, 132, 255, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+/* ✅ 优化：用户头像阴影完全跟随全局强调色 */
+.user-avatar-small { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white)); color: #ffffff; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 30%, transparent); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-main); }
 .dropdown-icon { font-size: 11px; color: var(--text-muted); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .dropdown-icon.rotated { transform: rotate(180deg); }
 
 .user-dropdown-panel { position: absolute; top: calc(100% + 14px); right: 0; background: var(--popup-bg); backdrop-filter: blur(32px) saturate(200%); -webkit-backdrop-filter: blur(32px) saturate(200%); border: 1px solid var(--border-color); border-radius: 16px; min-width: 240px; padding: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.02), 0 10px 40px -10px var(--shadow-color), 0 4px 12px rgba(0,0,0,0.08); z-index: 1000; transform-origin: top right; }
 .dropdown-profile-header { display: flex; align-items: center; gap: 14px; padding: 12px; margin-bottom: 2px; }
-.user-avatar-large { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), #3b99fc); color: #ffffff; font-weight: 600; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+/* ✅ 优化：下拉列表中的大头像跟随全局强调色 */
+.user-avatar-large { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white)); color: #ffffff; font-weight: 600; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px color-mix(in srgb, var(--apple-blue) 30%, transparent); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .profile-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .profile-name { font-size: 15px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
 .profile-email { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
@@ -1187,8 +1487,9 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   position: relative; width: 72px; height: 72px; border-radius: 50%; cursor: pointer;
   overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex-shrink: 0;
 }
+/* ✅ 优化：系统设置内极大的用户头像也一并跟随强调色 */
 .avatar-huge {
-  width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), #3b99fc);
+  width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white));
   color: #fff; font-size: 28px; font-weight: 600; display: flex; align-items: center; justify-content: center;
 }
 .avatar-overlay {
@@ -1316,33 +1617,59 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .nested-overlay { z-index: 2500; background: rgba(0,0,0,0.5); }
 
 .apple-dialog {
-  width: 340px; background: var(--modal-card-bg); border-radius: 16px;
-  padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  width: 380px; background: var(--modal-card-bg); border-radius: 16px;
+  padding: 32px 24px; display: flex; flex-direction: column; gap: 20px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid var(--border-color);
 }
 .apple-layout-root.theme-light .apple-dialog { box-shadow: 0 20px 40px rgba(0,0,0,0.15); background: #ffffff; }
 
-.dialog-title { font-size: 18px; font-weight: 600; text-align: center; color: var(--text-main); margin: 0; }
-.dialog-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; margin: 0; line-height: 1.4; }
+.dialog-title { font-size: 20px; font-weight: 600; text-align: center; color: var(--text-main); margin: 0; }
+.dialog-subtitle { font-size: 14px; color: var(--text-muted); text-align: center; margin-top: -12px; margin-bottom: 8px; line-height: 1.4; }
 
-.dialog-form { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.dialog-form { display: flex; flex-direction: column; gap: 16px; margin-top: 0; }
 .apple-input-group { position: relative; display: flex; width: 100%; align-items: center; }
 
 .input-icon-wrapper {
-  position: absolute; left: 12px; color: var(--text-muted); font-size: 14px;
+  position: absolute; left: 14px; color: var(--text-muted); font-size: 15px;
   display: flex; align-items: center; justify-content: center; pointer-events: none;
 }
 
 .apple-dialog-input {
-  width: 100%; background: var(--bg-base); border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 10px 12px; color: var(--text-main); font-size: 14px;
-  outline: none; transition: border-color 0.2s;
+  width: 100%; height: 44px; background: var(--bg-base); border: 1px solid var(--border-color);
+  border-radius: 10px; padding: 12px 14px; color: var(--text-main); font-size: 15px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.apple-dialog-input.has-icon { padding-left: 36px; }
+.apple-dialog-input.has-icon { padding-left: 40px; }
 .apple-dialog-input:focus { border-color: var(--apple-blue); }
+.apple-dialog-input.is-error { border-color: #ff4d4f; }
+.apple-dialog-input.is-error:focus { border-color: #ff4d4f; box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2); }
+.apple-dialog-input:disabled { opacity: 0.6; cursor: not-allowed; background-color: var(--hover-bg); }
+
+.input-icon-wrapper.success-icon { color: #32D74B !important; }
+.apple-dialog-input.is-success { border-color: #32D74B; }
+.apple-dialog-input.is-success:focus { border-color: #32D74B; box-shadow: 0 0 0 2px rgba(50, 215, 75, 0.2); }
+
+.apple-layout-root.theme-light .input-icon-wrapper.success-icon { color: #34C759 !important; }
+.apple-layout-root.theme-light .apple-dialog-input.is-success { border-color: #34C759; }
+.apple-layout-root.theme-light .apple-dialog-input.is-success:focus { border-color: #34C759; box-shadow: 0 0 0 2px rgba(52, 199, 89, 0.2); }
+
+.input-suffix-icon {
+  position: absolute; right: 14px; color: var(--text-muted); font-size: 15px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.2s;
+}
+.input-suffix-icon:hover { color: var(--text-main); }
+
+/* 密码强度样式 */
+.password-strength-container { display: flex; align-items: center; gap: 8px; margin-top: -8px; margin-bottom: 4px; padding: 0 8px; }
+.strength-bars { display: flex; gap: 4px; flex: 1; }
+.strength-bar { height: 4px; flex: 1; border-radius: 2px; background-color: var(--border-color); transition: background-color 0.3s ease; }
+.strength-text { font-size: 12px; font-weight: 600; min-width: 14px; text-align: right; transition: color 0.3s ease; }
+
+/* 验证提示样式 */
+.validation-message { font-size: 13px; color: #ff4d4f; margin-top: -8px; margin-bottom: 4px; padding: 0 8px; display: flex; align-items: center; gap: 6px; }
 
 .dialog-btn {
-  padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  height: 44px; padding: 0 16px; border-radius: 10px; font-size: 15px; font-weight: 600;
   cursor: pointer; transition: all 0.2s; border: none; flex: 1; text-align: center;
 }
 .dialog-btn.primary { background: var(--apple-blue); color: #fff; }
@@ -1352,6 +1679,6 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .dialog-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 
 .dialog-actions { display: flex; gap: 12px; margin-top: 8px; }
-.send-code-btn { flex: 0 0 100px; padding: 0 8px; font-size: 13px; white-space: nowrap; }
+.send-code-btn { flex: 0 0 110px; padding: 0 8px; font-size: 14px; font-weight: 500; height: 44px; white-space: nowrap; border-radius: 10px; }
 
 </style>
