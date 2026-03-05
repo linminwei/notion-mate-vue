@@ -120,47 +120,49 @@
           </div>
 
           <!-- 面包屑导航 -->
-          <div class="breadcrumb-area">
-            <div class="apple-breadcrumb-container">
-              <template v-for="(crumb, index) in breadcrumbs" :key="index">
+          <transition name="fade-slide">
+            <div class="breadcrumb-area" v-if="showBreadcrumbs">
+              <div class="apple-breadcrumb-container">
+                <template v-for="(crumb, index) in breadcrumbs" :key="index">
 
-                <div class="crumb-node" :class="{ 'interactive-node': crumb.siblings && crumb.siblings.length > 1 }">
-                  <div
-                      class="crumb-trigger"
-                      :class="{ 'is-open': openBreadcrumb === index, 'is-last': crumb.isLast }"
-                      @click.stop="toggleBreadcrumb(index, crumb)"
-                  >
-                    <div class="crumb-icon-raw">
-                      <font-awesome-icon v-if="crumb.icon" :icon="getFaIcon(crumb.icon)" />
+                  <div class="crumb-node" :class="{ 'interactive-node': crumb.siblings && crumb.siblings.length > 1 }">
+                    <div
+                        class="crumb-trigger"
+                        :class="{ 'is-open': openBreadcrumb === index, 'is-last': crumb.isLast }"
+                        @click.stop="toggleBreadcrumb(index, crumb)"
+                    >
+                      <div class="crumb-icon-raw">
+                        <font-awesome-icon v-if="crumb.icon" :icon="getFaIcon(crumb.icon)" />
+                      </div>
+                      <span class="crumb-text">{{ crumb.name }}</span>
                     </div>
-                    <span class="crumb-text">{{ crumb.name }}</span>
+
+                    <!-- 面包屑悬浮面板 -->
+                    <transition name="dropdown-fade">
+                      <div v-show="openBreadcrumb === index && crumb.siblings && crumb.siblings.length > 1" class="crumb-dropdown-panel" @click.stop>
+                        <div
+                            v-for="sibling in crumb.siblings"
+                            :key="sibling.path || sibling.menuName"
+                            class="crumb-dropdown-item"
+                            :class="{ 'is-active': sibling.menuName === crumb.name }"
+                            @click="navigateToMenu(sibling)"
+                        >
+                          <div class="crumb-dropdown-icon">
+                            <font-awesome-icon :icon="getFaIcon(sibling.icon)" />
+                          </div>
+                          <span class="dropdown-item-text">{{ sibling.menuName }}</span>
+                        </div>
+                      </div>
+                    </transition>
                   </div>
 
-                  <!-- 面包屑悬浮面板 -->
-                  <transition name="dropdown-fade">
-                    <div v-show="openBreadcrumb === index && crumb.siblings && crumb.siblings.length > 1" class="crumb-dropdown-panel" @click.stop>
-                      <div
-                          v-for="sibling in crumb.siblings"
-                          :key="sibling.path || sibling.menuName"
-                          class="crumb-dropdown-item"
-                          :class="{ 'is-active': sibling.menuName === crumb.name }"
-                          @click="navigateToMenu(sibling)"
-                      >
-                        <div class="crumb-dropdown-icon">
-                          <font-awesome-icon :icon="getFaIcon(sibling.icon)" />
-                        </div>
-                        <span class="dropdown-item-text">{{ sibling.menuName }}</span>
-                      </div>
-                    </div>
-                  </transition>
-                </div>
+                  <!-- 分隔符 -->
+                  <span class="crumb-separator" v-if="index < breadcrumbs.length - 1">/</span>
 
-                <!-- 分隔符 -->
-                <span class="crumb-separator" v-if="index < breadcrumbs.length - 1">/</span>
-
-              </template>
+                </template>
+              </div>
             </div>
-          </div>
+          </transition>
         </div>
 
         <!-- 右侧功能区 -->
@@ -214,7 +216,6 @@
                       </div>
                       <span class="item-text">系统偏好</span>
                     </div>
-                    <span class="item-shortcut">⌘,</span>
                   </div>
                 </div>
 
@@ -314,7 +315,7 @@
                       <div class="settings-row">
                         <div class="row-label">
                           <div class="setting-icon-box bg-grey">
-                            <font-awesome-icon :icon="['fas', 'id-badge']" />
+                            <font-awesome-icon :icon="['fas', 'fa-at']" />
                           </div>
                           <span>用户名</span>
                         </div>
@@ -328,19 +329,19 @@
                       <div class="settings-row">
                         <div class="row-label">
                           <div class="setting-icon-box bg-blue">
-                            <font-awesome-icon :icon="['fas', 'user-tag']" />
+                            <font-awesome-icon :icon="['fas', 'fa-eraser']" />
                           </div>
                           <span>显示昵称</span>
                         </div>
                         <div class="row-content">
                           <input
-                            v-if="isEditingNickname"
-                            v-model="editNicknameValue"
-                            class="inline-edit-input"
-                            placeholder="请输入昵称"
-                            @keyup.enter="saveNickname"
-                            @blur="saveNickname"
-                            ref="nicknameInputRef"
+                              v-if="isEditingNickname"
+                              v-model="editNicknameValue"
+                              class="inline-edit-input"
+                              placeholder="请输入昵称"
+                              @keyup.enter="saveNickname"
+                              @blur="saveNickname"
+                              ref="nicknameInputRef"
                           />
                           <span v-else class="row-value editable-text" @click="startEditNickname">{{ userInfo?.nickname || '未设置' }}</span>
                         </div>
@@ -466,6 +467,54 @@
                                  :class="{ active: currentAccentName === c.name }"
                                  @click="setAccentColor(c)">
                             </div>
+                            <!-- 自定义颜色选择器 -->
+                            <div class="color-dot custom-color-wrapper"
+                                 :class="{ active: currentAccentName === 'custom' }"
+                                 style="background: conic-gradient(from 180deg, #FF3B30, #FF9500, #FFCC00, #4CD964, #5AC8FA, #0A84FF, #BF5AF2, #FF3B30);"
+                                 title="自定义颜色"
+                                 @click="triggerCustomColor">
+                              <input type="color" ref="customColorInput" v-model="customColorValue" class="invisible-color-input" tabindex="-1" @input="onCustomColorInput">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row-divider"></div>
+
+                      <!-- 面包屑导航 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-grey">
+                              <font-awesome-icon :icon="['fas', 'compass']" />
+                            </div>
+                            <span>面包屑导航</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">在顶部导航栏显示当前页面路径</span>
+                        </div>
+                        <div class="row-content-right">
+                          <div class="apple-switch" :class="{ 'is-on': showBreadcrumbs }" @click="toggleBreadcrumbs">
+                            <div class="switch-knob"></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row-divider"></div>
+
+                      <!-- 侧边栏默认折叠 -->
+                      <div class="settings-row">
+                        <div class="row-content-left">
+                          <div class="row-label">
+                            <div class="setting-icon-box bg-blue">
+                              <font-awesome-icon :icon="['fas', 'outdent']" />
+                            </div>
+                            <span>默认折叠侧边栏</span>
+                          </div>
+                          <span class="row-desc ml-icon-offset">启动系统时默认收起左侧导航菜单</span>
+                        </div>
+                        <div class="row-content-right">
+                          <div class="apple-switch" :class="{ 'is-on': defaultCollapsed }" @click="toggleDefaultCollapsed">
+                            <div class="switch-knob"></div>
                           </div>
                         </div>
                       </div>
@@ -496,41 +545,19 @@
 
                       <div class="row-divider"></div>
 
-                      <!-- 语言 -->
-                      <div class="settings-row">
-                        <div class="row-content-left">
-                          <div class="row-label">
-                            <div class="setting-icon-box bg-green">
-                              <font-awesome-icon :icon="['fas', 'globe']" />
-                            </div>
-                            <span>系统语言</span>
-                          </div>
-                          <span class="row-desc ml-icon-offset">更改系统显示的区域与界面语言</span>
-                        </div>
-                        <div class="row-content-right">
-                          <select v-model="currentLanguage" class="apple-native-select">
-                            <option value="zh-CN">简体中文</option>
-                            <option value="en-US">English</option>
-                            <option value="ja-JP">日本語</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div class="row-divider"></div>
-
-                      <!-- 桌面通知 -->
+                      <!-- 退出清理缓存 -->
                       <div class="settings-row">
                         <div class="row-content-left">
                           <div class="row-label">
                             <div class="setting-icon-box bg-red">
-                              <font-awesome-icon :icon="['fas', 'bell']" />
+                              <font-awesome-icon :icon="['fas', 'broom']" />
                             </div>
-                            <span>桌面通知</span>
+                            <span>退出时清理缓存</span>
                           </div>
-                          <span class="row-desc ml-icon-offset">允许系统在后台发送重要的应用消息通知</span>
+                          <span class="row-desc ml-icon-offset">注销账号时自动清理本地临时缓存数据</span>
                         </div>
                         <div class="row-content-right">
-                          <div class="apple-switch" :class="{ 'is-on': notificationsEnabled }" @click="notificationsEnabled = !notificationsEnabled">
+                          <div class="apple-switch" :class="{ 'is-on': clearCacheOnExit }" @click="toggleClearCache">
                             <div class="switch-knob"></div>
                           </div>
                         </div>
@@ -749,16 +776,20 @@ const isDark = ref(true)
 const isSettingsModalOpen = ref(false)
 const activeSettingsTab = ref<'profile' | 'preferences'>('profile')
 
-// 主题强调色 (Apple 标准色谱)
+// 主题强调色 (保留前5个经典 Apple 色彩)
 const accentColors = [
   { value: '#0A84FF', lightValue: '#0066cc', name: 'blue' },
   { value: '#BF5AF2', lightValue: '#AF52DE', name: 'purple' },
   { value: '#FF453A', lightValue: '#FF3B30', name: 'red' },
   { value: '#FF9F0A', lightValue: '#FF9500', name: 'orange' },
-  { value: '#32D74B', lightValue: '#28CD41', name: 'green' },
-  { value: '#8E8E93', lightValue: '#8E8E93', name: 'gray' },
+  { value: '#32D74B', lightValue: '#28CD41', name: 'green' }
 ]
 const currentAccentName = ref(localStorage.getItem('apple-accent-name') || 'blue')
+
+// ====== 自定义强调色状态管理 ======
+// 用户保存的自定义颜色，默认以苹果品红为例
+const customColorValue = ref(localStorage.getItem('apple-custom-accent') || '#FF2D55')
+const customColorInput = ref<HTMLInputElement | null>(null)
 
 const setAccentColor = (colorObj: any) => {
   currentAccentName.value = colorObj.name
@@ -766,13 +797,32 @@ const setAccentColor = (colorObj: any) => {
   applyAccentColor()
 }
 
+const triggerCustomColor = () => {
+  currentAccentName.value = 'custom'
+  localStorage.setItem('apple-accent-name', 'custom')
+  applyAccentColor()
+  customColorInput.value?.click()
+}
+
+// 颜色选取时实时应用
+const onCustomColorInput = (e: Event) => {
+  const val = (e.target as HTMLInputElement).value
+  customColorValue.value = val
+  localStorage.setItem('apple-custom-accent', val)
+  applyAccentColor()
+}
+
 const applyAccentColor = () => {
   const root = document.documentElement
-  const colorObj = accentColors.find(c => c.name === currentAccentName.value) || accentColors[0]
-  if (isDark.value) {
-    root.style.setProperty('--apple-blue', colorObj.value)
+  if (currentAccentName.value === 'custom') {
+    root.style.setProperty('--apple-blue', customColorValue.value)
   } else {
-    root.style.setProperty('--apple-blue', colorObj.lightValue)
+    const colorObj = accentColors.find(c => c.name === currentAccentName.value) || accentColors[0]
+    if (isDark.value) {
+      root.style.setProperty('--apple-blue', colorObj.value)
+    } else {
+      root.style.setProperty('--apple-blue', colorObj.lightValue)
+    }
   }
 }
 
@@ -788,12 +838,29 @@ const toggleAnimations = () => {
   }
 }
 
-// 语言与通知
-const currentLanguage = ref(localStorage.getItem('apple-language') || 'zh-CN')
-watch(currentLanguage, (val) => localStorage.setItem('apple-language', val))
+// ==== 外观与显示增强设置 ====
+// 面包屑导航显隐
+const showBreadcrumbs = ref(localStorage.getItem('apple-show-breadcrumbs') !== 'false')
+const toggleBreadcrumbs = () => {
+  showBreadcrumbs.value = !showBreadcrumbs.value
+  localStorage.setItem('apple-show-breadcrumbs', showBreadcrumbs.value ? 'true' : 'false')
+}
 
-const notificationsEnabled = ref(localStorage.getItem('apple-notifications') === 'true')
-watch(notificationsEnabled, (val) => localStorage.setItem('apple-notifications', val ? 'true' : 'false'))
+// 侧边栏默认状态
+const defaultCollapsed = ref(localStorage.getItem('apple-default-collapsed') === 'true')
+const toggleDefaultCollapsed = () => {
+  defaultCollapsed.value = !defaultCollapsed.value
+  localStorage.setItem('apple-default-collapsed', defaultCollapsed.value ? 'true' : 'false')
+}
+
+// ==== 通用增强设置 ====
+
+// 退出时清理缓存
+const clearCacheOnExit = ref(localStorage.getItem('apple-clear-cache') === 'true')
+const toggleClearCache = () => {
+  clearCacheOnExit.value = !clearCacheOnExit.value
+  localStorage.setItem('apple-clear-cache', clearCacheOnExit.value ? 'true' : 'false')
+}
 
 // 主题切换需要重新触发强调色映射
 const toggleTheme = () => {
@@ -873,7 +940,7 @@ const handleAvatarChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-  
+
   // 转换为 base64 用于预览
   const reader = new FileReader()
   reader.onload = async (ev) => {
@@ -1160,10 +1227,6 @@ watch(collapsed, (newVal) => {
 
 // 添加全局快捷键监听
 const handleGlobalKeydown = (e: KeyboardEvent) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === ',') {
-    e.preventDefault()
-    openSettingsModal('preferences')
-  }
   if (e.key === 'Escape') {
     if (isRebindModalOpen.value) {
       closeRebindModal()
@@ -1178,6 +1241,11 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
 onMounted(() => {
   const storedTheme = localStorage.getItem('apple-theme')
   if (storedTheme === 'light') isDark.value = false
+
+  // 初始化侧边栏状态
+  if (defaultCollapsed.value) {
+    collapsed.value = true
+  }
 
   // 初始化渲染强调色与动画状态
   applyAccentColor()
@@ -1203,7 +1271,6 @@ const closeDropdowns = (e: MouseEvent) => {
   openBreadcrumb.value = null
   activeCollapsedPopup.value = null
 }
-
 
 const toggleBreadcrumb = (index: number, crumb: any) => {
   if (crumb.siblings && crumb.siblings.length > 1) {
@@ -1258,6 +1325,9 @@ const closeSettingsModal = () => {
 
 const handleLogout = async () => {
   isUserMenuOpen.value = false
+  if (clearCacheOnExit.value) {
+    sessionStorage.clear()
+  }
   await userStore.logout()
 }
 
@@ -1474,6 +1544,8 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .crumb-dropdown-item:hover { background: var(--hover-bg); color: var(--text-main); }
 .crumb-dropdown-item.is-active { background: var(--apple-blue); color: #fff; }
 .crumb-separator { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 400; color: var(--text-muted); opacity: 0.4; margin: 0 6px; width: 12px; user-select: none; }
+.fade-slide-enter-active, .fade-slide-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateX(-10px); }
 
 /* ================= 用户下拉菜单区 ================= */
 .header-right { display: flex; align-items: center; }
@@ -1669,12 +1741,35 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
-  border: 2px solid transparent;
+  /* 彻底移除 border: 2px solid transparent，解决渐变色环在 Chromium 浏览器下的溢出渲染 Bug */
 }
-.color-dot:hover { transform: scale(1.1); }
+.color-dot:hover { transform: scale(1.15); }
 .color-dot.active {
-  transform: scale(1.2); border-color: var(--content-bg);
-  box-shadow: 0 0 0 2px var(--apple-blue), inset 0 1px 2px rgba(0,0,0,0.3);
+  transform: scale(1.15);
+  /* 使用双重阴影模拟镂空边框，第一层取卡片背景色作为间隙，第二层取全局强调色作为发光环 */
+  box-shadow: 0 0 0 2.5px var(--modal-card-bg), 0 0 0 4.5px var(--apple-blue), inset 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* 自定义拾色器专用包装容器 */
+.custom-color-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 移除 overflow: hidden，防止选中态的外发光光圈被暴力裁切 */
+}
+
+/* 隐藏原生 input="color" 但保留其交互点击功能，使用剪裁法彻底消除浏览器默认渲染黑块 */
+.invisible-color-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  pointer-events: none;
 }
 
 .apple-native-select {
