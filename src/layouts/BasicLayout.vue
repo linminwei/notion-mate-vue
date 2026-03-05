@@ -557,7 +557,7 @@
                 <div class="dialog-form">
                   <div class="apple-input-group">
                     <div class="input-icon-wrapper">
-                      <font-awesome-icon :icon="rebindTarget === 'email' ? ['fas', 'envelope'] : ['fas', 'mobile-alt']" />
+                      <font-awesome-icon :icon="rebindTarget === 'email' ? 'email' : 'mobile-alt'" />
                     </div>
                     <input
                         :type="rebindTarget === 'email' ? 'email' : 'tel'"
@@ -1068,7 +1068,8 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 /* ================= 主内容区域 ================= */
 .apple-main-container { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
 
-.apple-header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); z-index: 10; transition: background 0.4s ease, border-color 0.4s ease; }
+/* 提升 Header 的 z-index 至 100，确保绝对处于内部页面的上方 */
+.apple-header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); z-index: 100; transition: background 0.4s ease, border-color 0.4s ease; }
 .header-left { display: flex; align-items: center; gap: 16px; }
 
 .action-btn { background: var(--pill-bg); border: 1px solid var(--pill-border); color: var(--text-main); font-size: 15px; width: 36px; height: 36px; padding: 0 !important; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 10px; transition: all 0.2s ease; }
