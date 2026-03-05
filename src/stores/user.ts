@@ -23,7 +23,7 @@ export const useUserStore = defineStore('user', () => {
 
   // 手机号登录
   async function loginByPhone(phone: string, captcha: string) {
-    const res = await loginPhone(phone,captcha)
+    const res = await loginPhone(phone, captcha)
     token.value = res.data.accessToken
     localStorage.setItem('token', token.value)
     await fetchUserInfo()

@@ -173,8 +173,9 @@
           <!-- 用户下拉菜单区 -->
           <div class="custom-dropdown-container">
             <div class="user-pill-btn" :class="{ 'is-active': isUserMenuOpen }" @click.stop="isUserMenuOpen = !isUserMenuOpen">
-              <div class="user-avatar-small" :style="previewAvatar ? { backgroundImage: `url(${previewAvatar})`, backgroundSize: 'cover' } : {}">
-                <span v-if="!previewAvatar">{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}</span>
+              <div class="user-avatar-small">
+                <img v-if="previewAvatar" :src="previewAvatar" class="avatar-img" referrerpolicy="no-referrer" @error="onAvatarError" />
+                <span v-else>{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}</span>
               </div>
               <span class="user-name">{{ userInfo?.nickname || userInfo?.username }}</span>
               <font-awesome-icon :icon="['fas', 'chevron-down']" class="dropdown-icon" :class="{ 'rotated': isUserMenuOpen }" />
@@ -184,8 +185,9 @@
               <div v-if="isUserMenuOpen" class="user-dropdown-panel" @click.stop>
 
                 <div class="dropdown-profile-header">
-                  <div class="user-avatar-large" :style="previewAvatar ? { backgroundImage: `url(${previewAvatar})`, backgroundSize: 'cover' } : {}">
-                    <span v-if="!previewAvatar">{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}</span>
+                  <div class="user-avatar-large">
+                    <img v-if="previewAvatar" :src="previewAvatar" class="avatar-img" referrerpolicy="no-referrer" @error="onAvatarError" />
+                    <span v-else>{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || 'U' }}</span>
                   </div>
                   <div class="profile-info">
                     <div class="profile-name">{{ userInfo?.nickname || userInfo?.username }}</div>
@@ -286,8 +288,9 @@
                 <div class="profile-hero-section">
                   <!-- 顶部头像 -->
                   <div class="avatar-editable-wrapper" @click="triggerAvatarUpload">
-                    <div class="avatar-huge" :style="previewAvatar ? { backgroundImage: `url(${previewAvatar})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
-                      <span v-if="!previewAvatar">{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || '我' }}</span>
+                    <div class="avatar-huge">
+                      <img v-if="previewAvatar" :src="previewAvatar" class="avatar-img" referrerpolicy="no-referrer" @error="onAvatarError" />
+                      <span v-else>{{ userInfo?.nickname?.charAt(0) || userInfo?.username?.charAt(0) || '我' }}</span>
                     </div>
                     <div class="avatar-overlay">
                       <font-awesome-icon :icon="['fas', 'camera']" class="camera-icon" />
@@ -330,7 +333,16 @@
                           <span>显示昵称</span>
                         </div>
                         <div class="row-content">
-                          <span class="row-value readonly-text">{{ userInfo?.nickname || '未设置' }}</span>
+                          <input
+                            v-if="isEditingNickname"
+                            v-model="editNicknameValue"
+                            class="inline-edit-input"
+                            placeholder="请输入昵称"
+                            @keyup.enter="saveNickname"
+                            @blur="saveNickname"
+                            ref="nicknameInputRef"
+                          />
+                          <span v-else class="row-value editable-text" @click="startEditNickname">{{ userInfo?.nickname || '未设置' }}</span>
                         </div>
                       </div>
                       <div class="row-divider"></div>
@@ -712,11 +724,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, reactive, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { sendCaptcha, verifyCaptcha, resetPassword } from '@/api/auth'
+import { sendCaptcha, verifyCaptcha, resetPassword, changePhone, updateCurrentUser } from '@/api/auth'
 import { AppleAlert } from '@/components/common/AppleAlert'
 
 const router = useRouter()
@@ -810,6 +822,45 @@ const formatTime = (timeStr?: string) => {
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
+// 头像加载失败时回退显示首字母
+const onAvatarError = () => {
+  previewAvatar.value = null
+}
+
+// ==== 昵称编辑相关 ====
+const isEditingNickname = ref(false)
+const editNicknameValue = ref('')
+const nicknameInputRef = ref<HTMLInputElement | null>(null)
+
+const startEditNickname = () => {
+  editNicknameValue.value = userInfo.value?.nickname || ''
+  isEditingNickname.value = true
+  nextTick(() => {
+    nicknameInputRef.value?.focus()
+  })
+}
+
+const saveNickname = async () => {
+  if (!isEditingNickname.value) return
+  const newNickname = editNicknameValue.value.trim()
+  if (!newNickname) {
+    AppleAlert.error('提示', '昵称不能为空')
+    return
+  }
+  if (newNickname === userInfo.value?.nickname) {
+    isEditingNickname.value = false
+    return
+  }
+  try {
+    await updateCurrentUser({ nickname: newNickname })
+    await userStore.fetchUserInfo()
+    AppleAlert.success('成功', '昵称修改成功')
+    isEditingNickname.value = false
+  } catch (error: any) {
+    AppleAlert.error('修改失败', error.message || '昵称修改失败')
+  }
+}
+
 // 唤起文件选择器
 const triggerAvatarUpload = () => {
   if (avatarInput.value) {
@@ -818,17 +869,28 @@ const triggerAvatarUpload = () => {
 }
 
 // 处理头像变更
-const handleAvatarChange = (e: Event) => {
+const handleAvatarChange = async (e: Event) => {
   const target = e.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    const file = target.files[0]
-    // 预览逻辑
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewAvatar.value = e.target?.result as string
+  const file = target.files?.[0]
+  if (!file) return
+  
+  // 转换为 base64 用于预览
+  const reader = new FileReader()
+  reader.onload = async (ev) => {
+    const base64 = ev.target?.result as string
+    previewAvatar.value = base64
+    // TODO: 实际上传应上传到对象存储获取 URL，此处更新使用 base64 作为示例
+    try {
+      await updateCurrentUser({ avatar: base64 })
+      await userStore.fetchUserInfo()
+      AppleAlert.success('成功', '头像修改成功')
+    } catch (error: any) {
+      AppleAlert.error('修改失败', error.message || '头像修改失败')
+      // 回滚预览
+      previewAvatar.value = userInfo.value?.avatar || null
     }
-    reader.readAsDataURL(file)
   }
+  reader.readAsDataURL(file)
   if (avatarInput.value) avatarInput.value.value = ''
 }
 
@@ -1054,19 +1116,40 @@ const submitRebind = async () => {
     return
   }
 
-  try {
-    await verifyCaptcha(rebindForm.newPhone, rebindForm.newVerifyCode)
+  // 手机号格式验证
+  if (!/^1[3-9]\d{9}$/.test(rebindForm.newPhone)) {
+    AppleAlert.error('错误', '手机号码格式不正确')
+    return
+  }
 
-    // 模拟换绑成功逻辑 (此处应当调用专门的更新手机号API)
-    // 目前仅更新 store 的状态展示
-    if (userInfo.value) {
-      userInfo.value.phone = rebindForm.newPhone
+  try {
+    // 判断是绑定还是换绑
+    if (userInfo.value?.phone) {
+      // 换绑：调用换绑接口
+      await changePhone({
+        oldPhone: userInfo.value.phone,
+        oldCaptcha: rebindForm.oldVerifyCode,
+        newPhone: rebindForm.newPhone,
+        newCaptcha: rebindForm.newVerifyCode
+      })
+    } else {
+      // 绑定：先验证新手机号的验证码，然后调用换绑接口（oldPhone/oldCaptcha传空）
+      await verifyCaptcha(rebindForm.newPhone, rebindForm.newVerifyCode)
+      await changePhone({
+        oldPhone: '',
+        oldCaptcha: '',
+        newPhone: rebindForm.newPhone,
+        newCaptcha: rebindForm.newVerifyCode
+      })
     }
+
+    // 刷新用户信息
+    await userStore.fetchUserInfo()
 
     AppleAlert.success('成功', userInfo.value?.phone ? '手机号换绑成功' : '手机号绑定成功')
     closeRebindModal()
   } catch (error: any) {
-    AppleAlert.error('验证失败', error.message || '验证码错误')
+    AppleAlert.error('操作失败', error.message || '换绑失败，请稍后重试')
   }
 }
 
@@ -1401,7 +1484,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .user-pill-btn.is-active { background: var(--active-bg); border-color: var(--border-color); }
 
 /* ✅ 优化：用户头像阴影完全跟随全局强调色 */
-.user-avatar-small { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white)); color: #ffffff; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 30%, transparent); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.user-avatar-small { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white)); color: #ffffff; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 30%, transparent); text-shadow: 0 1px 2px rgba(0,0,0,0.1); overflow: hidden; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-main); }
 .dropdown-icon { font-size: 11px; color: var(--text-muted); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .dropdown-icon.rotated { transform: rotate(180deg); }
@@ -1409,7 +1492,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .user-dropdown-panel { position: absolute; top: calc(100% + 14px); right: 0; background: var(--popup-bg); backdrop-filter: blur(32px) saturate(200%); -webkit-backdrop-filter: blur(32px) saturate(200%); border: 1px solid var(--border-color); border-radius: 16px; min-width: 240px; padding: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.02), 0 10px 40px -10px var(--shadow-color), 0 4px 12px rgba(0,0,0,0.08); z-index: 1000; transform-origin: top right; }
 .dropdown-profile-header { display: flex; align-items: center; gap: 14px; padding: 12px; margin-bottom: 2px; }
 /* ✅ 优化：下拉列表中的大头像跟随全局强调色 */
-.user-avatar-large { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white)); color: #ffffff; font-weight: 600; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px color-mix(in srgb, var(--apple-blue) 30%, transparent); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.user-avatar-large { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white)); color: #ffffff; font-weight: 600; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px color-mix(in srgb, var(--apple-blue) 30%, transparent); text-shadow: 0 1px 2px rgba(0,0,0,0.1); overflow: hidden; }
 .profile-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
 .profile-name { font-size: 15px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
 .profile-email { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
@@ -1490,8 +1573,9 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 /* ✅ 优化：系统设置内极大的用户头像也一并跟随强调色 */
 .avatar-huge {
   width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--apple-blue), color-mix(in srgb, var(--apple-blue) 70%, white));
-  color: #fff; font-size: 28px; font-weight: 600; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 28px; font-weight: 600; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-overlay {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
   display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;
@@ -1556,8 +1640,21 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .row-content-right { flex-shrink: 0; }
 
 /* 换绑按钮操作文本 */
-.action-text-btn { background: transparent; border: none; font-size: 14px; color: var(--apple-blue); cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
+.action-text-btn { background: transparent; border: none; font-size: 14px; color: var(--apple-blue); cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; flex-shrink: 0; }
 .action-text-btn:hover { background: rgba(10, 132, 255, 0.1); }
+
+/* 行内编辑输入框 */
+.inline-edit-input {
+  background: var(--bg-base); border: 1px solid var(--apple-blue); border-radius: 6px;
+  padding: 4px 8px; font-size: 14px; color: var(--text-main); outline: none;
+  width: 120px; text-align: right;
+}
+
+/* 可编辑文本样式 */
+.editable-text {
+  cursor: pointer; color: var(--text-main); transition: color 0.2s;
+}
+.editable-text:hover { color: var(--apple-blue); }
 
 /* 分割线：精确对齐文本 */
 .row-divider { height: 1px; background: var(--border-color); margin-left: 54px; }

@@ -809,7 +809,7 @@
                       <!-- Avatar Upload -->
                       <div class="avatar-upload-container">
                         <div class="avatar-wrapper" @click="triggerFileInput">
-                          <img v-if="registerForm.avatar" :src="avatarPreviewUrl" class="avatar-img" />
+                          <img v-if="registerForm.avatarFile" :src="avatarPreviewUrl" class="avatar-img" />
                           <div v-else class="avatar-placeholder" :style="{ backgroundColor: registerForm.nickname ? '#2563eb' : '#e5e7eb' }">
                             <span class="avatar-char">{{ generatedAvatarChar }}</span>
                           </div>
@@ -1081,7 +1081,7 @@ const clearRegisterForm = () => {
   registerForm.code = ''
   registerForm.password = ''
   registerForm.confirmPassword = ''
-  registerForm.avatar = null as unknown as File
+  registerForm.avatarFile = null
   Object.keys(registerErrors).forEach(key => registerErrors[key as keyof typeof registerErrors] = '')
   isPhoneVerified.value = false
   showRegisterCodeInput.value = false
@@ -1319,7 +1319,7 @@ const handleResetConfirm = async () => {
 }
 
 /* ----------------- Register Logic ----------------- */
-const registerForm = reactive({ username: '', nickname: '', email: '', phone: '', code: '', password: '', confirmPassword: '', avatar: null as unknown as File })
+const registerForm = reactive({ username: '', nickname: '', email: '', phone: '', code: '', password: '', confirmPassword: '', avatarFile: null as File | null })
 const registerErrors = reactive({ username: '', nickname: '', email: '', phone: '', code: '', password: '', confirmPassword: '' })
 const isPhoneVerified = ref(false)
 const showRegisterCodeInput = ref(false)
@@ -1328,25 +1328,16 @@ let registerSmsTimer: any = null
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const triggerFileInput = () => fileInput.value?.click()
+
 const handleFileChange = (e: Event) => {
   const files = (e.target as HTMLInputElement).files
-  if (files && files[0]) { registerForm.avatar = files[0] }
-}
-
-const generateDefaultAvatar = async (): Promise<File> => {
-  const canvas = document.createElement('canvas'); canvas.width = 200; canvas.height = 200;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.fillStyle = '#0A84FF'; ctx.fillRect(0, 0, 200, 200);
-    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 80px -apple-system, BlinkMacSystemFont, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const char = registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U';
-    ctx.fillText(char, 100, 100);
+  if (files && files[0]) {
+    registerForm.avatarFile = files[0]
   }
-  return new Promise((resolve) => { canvas.toBlob((blob) => { if (blob) { const file = new File([blob], 'default-avatar.png', { type: 'image/png' }); resolve(file); } }, 'image/png'); });
 }
 
 const generatedAvatarChar = computed(() => registerForm.nickname ? registerForm.nickname.charAt(0).toUpperCase() : 'U')
-const avatarPreviewUrl = computed(() => registerForm.avatar ? URL.createObjectURL(registerForm.avatar) : '')
+const avatarPreviewUrl = computed(() => registerForm.avatarFile ? URL.createObjectURL(registerForm.avatarFile) : '')
 
 const registerPasswordStrength = computed(() => {
   const val = registerForm.password; if (!val) return 0; let score = 0
@@ -1392,13 +1383,23 @@ const handleRegister = async () => {
 
   isLoading.value = true
   try {
-    let avatarFile = registerForm.avatar; if (!avatarFile) { avatarFile = await generateDefaultAvatar(); }
-    const registerData = { username: registerForm.username, nickname: registerForm.nickname, email: registerForm.email, phone: registerForm.phone, avatar: avatarFile, password: registerForm.password, confirmPassword: registerForm.confirmPassword, captcha: registerForm.code }
-    await userStore.register(registerData)
+    // 头像字段为可选，暂不传递（后端暂无文件上传接口）
+    await userStore.register({
+      username: registerForm.username,
+      nickname: registerForm.nickname,
+      email: registerForm.email,
+      phone: registerForm.phone,
+      password: registerForm.password,
+      confirmPassword: registerForm.confirmPassword,
+      captcha: registerForm.code
+    })
     AppleAlert.success("注册成功", "请登录您的账户")
     viewMode.value = 'auth'
-  } catch (error: any) { AppleAlert.error("注册失败", error.message) }
-  finally { isLoading.value = false }
+  } catch (error: any) {
+    AppleAlert.error("注册失败", error.message)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const handleRegisterInputBlur = (field: string) => {

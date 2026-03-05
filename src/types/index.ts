@@ -24,10 +24,24 @@ export interface RegisterForm {
   nickname: string
   email: string
   phone: string
-  avatar: File
+  avatar?: string
   password: string
   confirmPassword: string
   captcha: string
+}
+
+// 手机号换绑表单
+export interface ChangePhoneForm {
+  oldPhone: string
+  oldCaptcha: string
+  newPhone: string
+  newCaptcha: string
+}
+
+// 当前用户资料修改表单
+export interface UserCurrentUpdateForm {
+  avatar?: string
+  nickname?: string
 }
 
 export interface LoginResult {
