@@ -168,8 +168,8 @@
         <!-- 右侧功能区 -->
         <div class="header-right" ref="headerRightRef">
           <div class="action-btn theme-btn" role="button" @click="toggleTheme" :title="isDark ? '切换至亮色' : '切换至暗色'">
-            <font-awesome-icon :icon="['fas', 'sun']" v-if="isDark" />
-            <font-awesome-icon :icon="['fas', 'moon']" v-else />
+            <font-awesome-icon :icon="['fas', 'moon']" v-if="isDark" />
+            <font-awesome-icon :icon="['fas', 'sun']" v-else />
           </div>
 
           <!-- 用户下拉菜单区 -->
