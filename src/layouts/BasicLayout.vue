@@ -1,5 +1,6 @@
 ﻿<template>
-  <div class="apple-layout-root" :class="{ 'theme-light': !isDark }">
+  <!-- 核心修改 1：根节点绑定 appStore 的状态，下发 theme-dark 和 theme-light -->
+  <div class="apple-layout-root" :class="appStore.isDark ? 'theme-dark dark' : 'theme-light'">
 
     <!-- 侧边栏 (纯手写 Native Sidebar，极致对齐) -->
     <aside class="apple-sidebar" :class="{ 'is-collapsed': collapsed }">
@@ -167,8 +168,9 @@
 
         <!-- 右侧功能区 -->
         <div class="header-right" ref="headerRightRef">
-          <div class="action-btn theme-btn" role="button" @click="toggleTheme" :title="isDark ? '切换至亮色' : '切换至暗色'">
-            <font-awesome-icon :icon="['fas', 'moon']" v-if="isDark" />
+          <!-- 核心修改 2：绑定 appStore.isDark -->
+          <div class="action-btn theme-btn" role="button" @click="toggleTheme" :title="appStore.isDark ? '切换至亮色' : '切换至暗色'">
+            <font-awesome-icon :icon="['fas', 'moon']" v-if="appStore.isDark" />
             <font-awesome-icon :icon="['fas', 'sun']" v-else />
           </div>
 
@@ -437,9 +439,9 @@
                           <span class="row-desc ml-icon-offset">切换深色或浅色系统模式</span>
                         </div>
                         <div class="row-content-right">
-                          <div class="apple-switch" :class="{ 'is-on': isDark }" @click="toggleTheme">
+                          <div class="apple-switch" :class="{ 'is-on': appStore.isDark }" @click="toggleTheme">
                             <div class="switch-knob">
-                              <font-awesome-icon :icon="['fas', 'moon']" v-if="isDark" class="knob-icon" />
+                              <font-awesome-icon :icon="['fas', 'moon']" v-if="appStore.isDark" class="knob-icon" />
                               <font-awesome-icon :icon="['fas', 'sun']" v-else class="knob-icon light" />
                             </div>
                           </div>
@@ -463,7 +465,7 @@
                           <div class="color-picker-group">
                             <div v-for="c in accentColors" :key="c.name"
                                  class="color-dot"
-                                 :style="{ backgroundColor: isDark ? c.value : c.lightValue }"
+                                 :style="{ backgroundColor: appStore.isDark ? c.value : c.lightValue }"
                                  :class="{ active: currentAccentName === c.name }"
                                  @click="setAccentColor(c)">
                             </div>
@@ -753,6 +755,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, reactive, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+// 核心修改 3：引入 appStore，实现多组件主题联动
+import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { sendCaptcha, verifyCaptcha, resetPassword, changePhone, updateCurrentUser } from '@/api/auth'
@@ -761,6 +765,7 @@ import { AppleAlert } from '@/components/common/AppleAlert'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const collapsed = ref(false)
 const selectedKeys = ref<string[]>([])
@@ -770,7 +775,6 @@ const activeCollapsedPopup = ref<string | null>(null)
 const isUserMenuOpen = ref(false)
 const headerRightRef = ref<HTMLElement | null>(null)
 const openBreadcrumb = ref<number | null>(null)
-const isDark = ref(true)
 
 // ================== 系统偏好增强状态逻辑 ==================
 const isSettingsModalOpen = ref(false)
@@ -812,13 +816,14 @@ const onCustomColorInput = (e: Event) => {
   applyAccentColor()
 }
 
+// 核心修改 4：读取全局 appStore.isDark 判断强调色色值
 const applyAccentColor = () => {
   const root = document.documentElement
   if (currentAccentName.value === 'custom') {
     root.style.setProperty('--apple-blue', customColorValue.value)
   } else {
     const colorObj = accentColors.find(c => c.name === currentAccentName.value) || accentColors[0]
-    if (isDark.value) {
+    if (appStore.isDark) {
       root.style.setProperty('--apple-blue', colorObj.value)
     } else {
       root.style.setProperty('--apple-blue', colorObj.lightValue)
@@ -862,10 +867,17 @@ const toggleClearCache = () => {
   localStorage.setItem('apple-clear-cache', clearCacheOnExit.value ? 'true' : 'false')
 }
 
-// 主题切换需要重新触发强调色映射
+// 核心修改 5：主题切换逻辑全面接管到 appStore 和 document.documentElement
 const toggleTheme = () => {
-  isDark.value = !isDark.value
-  localStorage.setItem('apple-theme', isDark.value ? 'dark' : 'light')
+  appStore.isDark = !appStore.isDark
+  localStorage.setItem('apple-theme', appStore.isDark ? 'dark' : 'light')
+
+  if (appStore.isDark) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+
   applyAccentColor()
 }
 
@@ -1240,7 +1252,18 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
 
 onMounted(() => {
   const storedTheme = localStorage.getItem('apple-theme')
-  if (storedTheme === 'light') isDark.value = false
+  // 核心修改 6：初始化时校验并同步到 appStore 以及 document.documentElement
+  if (storedTheme === 'light') {
+    appStore.isDark = false
+  } else {
+    appStore.isDark = true
+  }
+
+  if (appStore.isDark) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
 
   // 初始化侧边栏状态
   if (defaultCollapsed.value) {
