@@ -1,250 +1,282 @@
 ﻿<template>
-  <div class="menu-manage-container">
-    <!-- 操作工具栏 -->
-    <div class="table-toolbar">
-      <div class="toolbar-left">
-        <a-button v-permission="'system:menu:add'" type="primary" @click="handleAdd()">
-          <template #icon><plus-outlined /></template>
-          新增菜单
-        </a-button>
-        <a-button @click="toggleExpandAll">
-          <template #icon>
-            <swap-outlined :rotate="90" />
-          </template>
+  <div class="neo-page-container">
+
+    <!-- ================= 页面头部与工具栏 ================= -->
+    <header class="neo-page-header">
+      <div class="header-actions">
+        <button class="neo-icon-btn" @click="fetchData" title="刷新数据">
+          <font-awesome-icon :icon="['fas', 'sync-alt']" :class="{ 'fa-spin': loading }" />
+        </button>
+
+        <button class="neo-btn-flat" @click="toggleExpandAll">
+          <font-awesome-icon :icon="['fas', 'sort']" />
           {{ isExpandedAll ? '折叠全部' : '展开全部' }}
-        </a-button>
+        </button>
+
+        <button class="neo-btn-solid primary" v-permission="'system:menu:add'" @click="handleAdd('0')">
+          <font-awesome-icon :icon="['fas', 'plus']" />
+          新增菜单
+        </button>
       </div>
-      <div class="toolbar-right">
-        <a-tooltip title="刷新数据">
-          <a-button shape="circle" type="text" @click="fetchData">
-            <template #icon><sync-outlined :spin="loading" /></template>
-          </a-button>
-        </a-tooltip>
-      </div>
+    </header>
+
+    <!-- ================= 核心数据表格区域 ================= -->
+    <div class="neo-card table-card fade-in">
+      <a-table
+          class="neo-table menu-table"
+          :columns="columns"
+          :data-source="tableData"
+          :loading="loading"
+          :pagination="false"
+          row-key="id"
+          :expanded-row-keys="expandedRowKeys"
+          @expandedRowsChange="handleExpandedRowsChange"
+      >
+        <template #bodyCell="{ column, record }">
+
+          <!-- 菜单名称列 (带展开图标缩进) -->
+          <template v-if="column.key === 'menuName'">
+            <span class="cell-primary-text">{{ record.menuName }}</span>
+          </template>
+
+          <!-- 图标列 -->
+          <template v-if="column.key === 'icon'">
+            <div class="icon-cell-box">
+              <font-awesome-icon
+                  v-if="record.icon"
+                  :icon="formatFaIcon(record.icon)"
+                  class="menu-fa-icon"
+              />
+              <span v-else class="text-placeholder">-</span>
+            </div>
+          </template>
+
+          <!-- 菜单类型列 (高定 Apple Pill) -->
+          <template v-if="column.key === 'menuType'">
+            <span class="neo-pill type-pill" :class="getMenuTypeClass(record.menuType)">
+              {{ menuTypeLabels[record.menuType] }}
+            </span>
+          </template>
+
+          <!-- 路由与权限 (高定徽标样式) -->
+          <template v-if="column.key === 'path' || column.key === 'permission'">
+            <span v-if="record[column.key]" class="mono-badge" :title="record[column.key]">{{ record[column.key] }}</span>
+            <span v-else class="text-placeholder">-</span>
+          </template>
+
+          <!-- 排序权重 -->
+          <template v-if="column.key === 'sort'">
+            <span class="sort-badge">{{ record.sort }}</span>
+          </template>
+
+          <!-- 状态列 (带光晕的指示器) -->
+          <template v-if="column.key === 'status'">
+            <div class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
+              <div class="status-dot"></div>
+              <span>{{ record.status === 1 ? '启用' : '禁用' }}</span>
+            </div>
+          </template>
+
+          <!-- 操作列 -->
+          <template v-if="column.key === 'action'">
+            <div class="action-btn-group">
+              <button
+                  class="text-action-btn safe"
+                  v-permission="'system:menu:add'"
+                  v-if="record.menuType !== 3"
+                  @click="handleAdd(record.id)"
+              >
+                新增下级
+              </button>
+              <span class="action-divider" v-if="record.menuType !== 3"></span>
+
+              <button
+                  class="text-action-btn primary"
+                  v-permission="'system:menu:edit'"
+                  @click="handleEdit(record)"
+              >
+                编辑
+              </button>
+              <span class="action-divider"></span>
+
+              <button
+                  class="text-action-btn danger"
+                  v-permission="'system:menu:delete'"
+                  @click="confirmDelete(record.id)"
+              >
+                删除
+              </button>
+            </div>
+          </template>
+        </template>
+      </a-table>
     </div>
 
-    <!-- 数据表格 -->
-    <a-table
-        v-if="refreshTable"
-        :columns="columns"
-        :data-source="tableData"
-        :loading="loading"
-        :pagination="false"
-        row-key="id"
-        :default-expand-all-rows="isExpandedAll"
-        :scroll="{ x: 1200 }"
-        size="middle"
-        bordered
-        class="custom-table"
-    >
-      <template #bodyCell="{ column, record }">
-        <!-- 图标列 -->
-        <template v-if="column.key === 'icon'">
-          <div class="icon-cell">
-            <font-awesome-icon
-                v-if="record.icon"
-                :icon="formatFaIcon(record.icon)"
-                class="menu-fa-icon"
-            />
-            <span v-else class="text-placeholder">-</span>
-          </div>
-        </template>
-
-        <!-- 菜单类型列 - 强化居中容器 -->
-        <template v-if="column.key === 'menuType'">
-          <div class="type-cell">
-            <a-tag :color="menuTypeColors[record.menuType]" class="type-tag">
-              {{ menuTypeLabels[record.menuType] }}
-            </a-tag>
-          </div>
-        </template>
-
-        <!-- 状态列 -->
-        <template v-if="column.key === 'status'">
-          <a-badge
-              :status="record.status === 1 ? 'success' : 'error'"
-              :text="record.status === 1 ? '启用' : '禁用'"
-          />
-        </template>
-
-        <!-- 操作列 -->
-        <template v-if="column.key === 'action'">
-          <div class="action-btns">
-            <a-button
-                v-permission="'system:menu:add'"
-                v-if="record.menuType !== 3"
-                type="link"
-                size="small"
-                @click="handleAdd(record.id)"
-            >
-              新增下级
-            </a-button>
-
-            <a-divider v-if="record.menuType !== 3" type="vertical" />
-
-            <a-button
-                v-permission="'system:menu:edit'"
-                type="link"
-                size="small"
-                @click="handleEdit(record)"
-            >
-              编辑
-            </a-button>
-
-            <a-divider type="vertical" />
-
-            <a-popconfirm
-                title="是否确认删除该菜单及其所有子项？"
-                ok-text="确认"
-                cancel-text="取消"
-                @confirm="handleDelete(record.id)"
-            >
-              <a-button v-permission="'system:menu:delete'" type="link" danger size="small">
-                删除
-              </a-button>
-            </a-popconfirm>
-          </div>
-        </template>
-      </template>
-    </a-table>
-
-    <!-- 弹窗表单 -->
-    <a-modal
+    <!-- ================= 高级表单弹窗 (NeoFormModal) ================= -->
+    <NeoFormModal
         v-model:open="modalVisible"
+        ref="formRef"
+        :model="formState"
+        :rules="rules"
         :title="modalTitle"
-        :confirm-loading="submitLoading"
-        width="680px"
-        destroy-on-close
-        centered
+        subtitle="配置菜单的路由与显示权限属性"
+        :width="640"
+        :icon="['fas', 'layer-group']"
+        theme="primary"
+        confirmText="保存配置"
+        :confirmLoading="submitLoading"
         @ok="handleSubmit"
     >
-      <a-form
-          ref="formRef"
-          :model="formState"
-          :rules="rules"
-          :label-col="{ span: 5 }"
-          :wrapper-col="{ span: 18 }"
-      >
-        <a-form-item label="上级菜单" name="parentId">
-          <a-tree-select
-              v-model:value="formState.parentId"
-              :tree-data="menuTreeOptions"
-              :field-names="{ label: 'menuName', value: 'id' }"
-              placeholder="请选择上级菜单"
-              allow-clear
-              show-search
-              tree-default-expand-all
-              tree-node-filter-prop="menuName"
-          />
-        </a-form-item>
+      <a-form-item label="上级菜单" name="parentId">
+        <a-tree-select
+            v-model:value="formState.parentId"
+            :tree-data="menuTreeOptions"
+            :field-names="{ label: 'menuName', value: 'id' }"
+            placeholder="请选择上级菜单 (默认顶级)"
+            allow-clear
+            show-search
+            tree-default-expand-all
+            tree-node-filter-prop="menuName"
+            class="neo-tree-select"
+        />
+      </a-form-item>
 
-        <a-form-item label="菜单类型" name="menuType">
-          <a-radio-group v-model:value="formState.menuType" button-style="solid">
-            <a-radio-button :value="1">目录</a-radio-button>
-            <a-radio-button :value="2">菜单</a-radio-button>
-            <a-radio-button :value="3">按钮</a-radio-button>
-          </a-radio-group>
-        </a-form-item>
+      <a-form-item label="菜单类型" name="menuType">
+        <div class="neo-radio-group">
+          <label class="neo-radio-card" :class="{ 'is-active': formState.menuType === 1 }">
+            <input type="radio" v-model="formState.menuType" :value="1" class="hidden-radio" />
+            <div class="radio-icon text-blue"><font-awesome-icon :icon="['fas', 'folder']" /></div>
+            <span>目录</span>
+          </label>
+          <label class="neo-radio-card" :class="{ 'is-active': formState.menuType === 2 }">
+            <input type="radio" v-model="formState.menuType" :value="2" class="hidden-radio" />
+            <div class="radio-icon text-green"><font-awesome-icon :icon="['fas', 'file-alt']" /></div>
+            <span>菜单</span>
+          </label>
+          <label class="neo-radio-card" :class="{ 'is-active': formState.menuType === 3 }">
+            <input type="radio" v-model="formState.menuType" :value="3" class="hidden-radio" />
+            <div class="radio-icon text-orange"><font-awesome-icon :icon="['fas', 'hand-pointer']" /></div>
+            <span>按钮</span>
+          </label>
+        </div>
+      </a-form-item>
 
+      <div class="form-grid">
         <a-form-item label="菜单名称" name="menuName">
-          <a-input v-model:value="formState.menuName" placeholder="请输入菜单名称" :maxlength="50" show-count />
+          <a-input v-model:value="formState.menuName" placeholder="如：用户管理" :maxlength="50" />
         </a-form-item>
 
         <a-form-item v-if="formState.menuType !== 3" name="path">
           <template #label>
             路由路径
             <a-tooltip title="访问的路由地址，如：`user`">
-              <question-circle-outlined class="help-icon" />
+              <font-awesome-icon :icon="['fas', 'info-circle']" class="help-icon" />
             </a-tooltip>
           </template>
-          <a-input v-model:value="formState.path" placeholder="请输入路由路径" />
+          <a-input v-model:value="formState.path" placeholder="如：user" />
         </a-form-item>
+      </div>
 
+      <div class="form-grid">
         <a-form-item v-if="formState.menuType === 2" name="component">
           <template #label>
             组件路径
-            <a-tooltip title="访问的组件路径，如：`system/user/index`">
-              <question-circle-outlined class="help-icon" />
+            <a-tooltip title="访问的视图组件路径，如：`system/user/index`">
+              <font-awesome-icon :icon="['fas', 'info-circle']" class="help-icon" />
             </a-tooltip>
           </template>
-          <a-input v-model:value="formState.component" placeholder="请输入组件路径" />
+          <a-input v-model:value="formState.component" placeholder="如：system/user/index" />
         </a-form-item>
 
         <a-form-item v-if="formState.menuType === 3" name="permission">
           <template #label>
             权限标识
-            <a-tooltip title="权限字符，如：`system:user:add`">
-              <question-circle-outlined class="help-icon" />
+            <a-tooltip title="权限控制字符，如：`system:user:add`">
+              <font-awesome-icon :icon="['fas', 'info-circle']" class="help-icon" />
             </a-tooltip>
           </template>
-          <a-input v-model:value="formState.permission" placeholder="请输入权限标识" />
+          <a-input v-model:value="formState.permission" placeholder="如：system:user:add" />
         </a-form-item>
 
-        <!-- 图标输入预览 -->
-        <a-form-item v-if="formState.menuType !== 3" label="图标" name="icon">
-          <a-input v-model:value="formState.icon" placeholder="例如: fa-solid fa-bars">
+        <a-form-item v-if="formState.menuType !== 3" label="菜单图标" name="icon">
+          <a-input v-model:value="formState.icon" placeholder="如：fa-solid fa-user">
             <template #prefix>
               <font-awesome-icon
                   v-if="formState.icon"
                   :icon="formatFaIcon(formState.icon)"
-                  style="color: #1890ff; font-size: 16px;"
+                  style="color: var(--apple-blue); font-size: 14px; margin-right: 4px;"
               />
-              <setting-outlined v-else style="color: #d9d9d9" />
+              <font-awesome-icon v-else :icon="['fas', 'icons']" class="text-placeholder" style="margin-right: 4px;" />
             </template>
           </a-input>
-          <div class="icon-tip">请输入 FontAwesome 类名，系统将自动转换。示例：fa-solid fa-user</div>
+        </a-form-item>
+      </div>
+
+      <div class="form-grid">
+        <a-form-item label="显示排序" name="sort">
+          <a-input-number v-model:value="formState.sort" :min="0" :max="9999" style="width: 100%" placeholder="数值越小越靠前" />
         </a-form-item>
 
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="排序" name="sort" :label-col="{ span: 10 }" :wrapper-col="{ span: 14 }">
-              <a-input-number v-model:value="formState.sort" :min="0" :max="9999" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="状态" name="status" :label-col="{ span: 10 }" :wrapper-col="{ span: 14 }">
-              <a-switch
-                  v-model:checked="formState.status"
-                  :checked-value="1"
-                  :un-checked-value="0"
-                  checked-children="启"
-                  un-checked-children="停"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
-      </a-form>
-    </a-modal>
+        <a-form-item label="菜单状态" name="status">
+          <div class="neo-switch-wrapper">
+            <span class="switch-label" :class="{ 'active': formState.status === 1 }">启用</span>
+            <a-switch
+                v-model:checked="formState.status"
+                :checked-value="1"
+                :un-checked-value="0"
+                class="apple-native-switch"
+            />
+            <span class="switch-label" :class="{ 'inactive': formState.status === 0 }">停用</span>
+          </div>
+        </a-form-item>
+      </div>
+    </NeoFormModal>
+
+    <!-- ================= 苹果风确认弹窗 ================= -->
+    <AppleConfirmModal
+        v-model:visible="deleteConfirmVisible"
+        type="danger"
+        title="删除菜单"
+        desc="您确定要删除该菜单及其所有下级子项吗？此操作不可恢复。"
+        confirmText="确认删除"
+        :loading="deleteConfirmLoading"
+        @confirm="executeDelete"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, nextTick } from 'vue'
-import { message } from 'ant-design-vue'
-import {
-  PlusOutlined, SyncOutlined, SwapOutlined, QuestionCircleOutlined, SettingOutlined
-} from '@ant-design/icons-vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/menu.ts'
 import type { SysMenu } from '@/types'
 import type { FormInstance, Rule } from 'ant-design-vue/es/form'
+import NeoFormModal from '@/components/common/NeoFormModal.vue'
+import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
+import { AppleAlert } from '@/components/common/AppleAlert.ts'
 
 // --- 表格列定义 ---
 const columns = [
-  { title: '菜单名称', dataIndex: 'menuName', key: 'menuName', width: 220, ellipsis: true },
-  { title: '图标', dataIndex: 'icon', key: 'icon', width: 80, align: 'center' },
-  { title: '类型', dataIndex: 'menuType', key: 'menuType', width: 100, align: 'center' },
-  { title: '路由路径', dataIndex: 'path', key: 'path', width: 200, ellipsis: true, align: 'center' },
-  { title: '权限标识', dataIndex: 'permission', key: 'permission', width: 200, ellipsis: true, align: 'center' },
-  { title: '排序', dataIndex: 'sort', key: 'sort', width: 80, align: 'center' },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 100, align: 'center' },
-  { title: '操作', key: 'action', width: 220, fixed: 'right', align: 'center' }
+  { title: '菜单名称', dataIndex: 'menuName', key: 'menuName', align: 'left', width: 220 },
+  { title: '图标', dataIndex: 'icon', key: 'icon', align: 'center', width: 80 },
+  { title: '类型', dataIndex: 'menuType', key: 'menuType', align: 'center', width: 100 },
+  { title: '路由/组件路径', dataIndex: 'path', key: 'path', ellipsis: true },
+  { title: '权限标识', dataIndex: 'permission', key: 'permission', ellipsis: true },
+  { title: '排序', dataIndex: 'sort', key: 'sort', align: 'center', width: 80 },
+  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 100 },
+  { title: '操作', key: 'action', align: 'center', width: 220 } // 设置操作列表头居中
 ]
 
 // --- 字典数据 ---
 const menuTypeLabels: Record<number, string> = { 1: '目录', 2: '菜单', 3: '按钮' }
-const menuTypeColors: Record<number, string> = { 1: 'processing', 2: 'success', 3: 'warning' }
+const getMenuTypeClass = (type: number) => {
+  if (type === 1) return 'type-dir';
+  if (type === 2) return 'type-menu';
+  if (type === 3) return 'type-btn';
+  return '';
+}
 
-// --- 工具方法：转换 FA 类名为组件识别的格式 ---
+// --- 工具方法 ---
 const formatFaIcon = (iconStr: string) => {
   if (!iconStr) return '';
   const parts = iconStr.split(' ');
@@ -268,28 +300,45 @@ const formatFaIcon = (iconStr: string) => {
 // --- 状态与数据 ---
 const loading = ref(false)
 const tableData = ref<SysMenu[]>([])
-
 const menuTreeOptions = computed(() => [{ id: '0', menuName: '顶级菜单', children: tableData.value }])
 
+// --- 树形展开逻辑 ---
 const isExpandedAll = ref(false)
-const refreshTable = ref(true)
-const toggleExpandAll = () => {
-  isExpandedAll.value = !isExpandedAll.value
-  refreshTable.value = false
-  nextTick(() => {
-    refreshTable.value = true
-  })
+const expandedRowKeys = ref<string[]>([])
+
+const handleExpandedRowsChange = (keys: string[]) => {
+  expandedRowKeys.value = keys
 }
 
-// --- 弹窗与表单 ---
+const getAllParentRowKeys = (nodes: any[]): string[] => {
+  const keys: string[] = []
+  for (const node of nodes) {
+    if (node.children && node.children.length > 0) {
+      keys.push(node.id)
+      keys.push(...getAllParentRowKeys(node.children))
+    }
+  }
+  return keys
+}
+
+const toggleExpandAll = () => {
+  isExpandedAll.value = !isExpandedAll.value
+  if (isExpandedAll.value) {
+    expandedRowKeys.value = getAllParentRowKeys(tableData.value)
+  } else {
+    expandedRowKeys.value = []
+  }
+}
+
+// --- 弹窗与表单 (NeoFormModal) ---
 const modalVisible = ref(false)
 const submitLoading = ref(false)
-const formRef = ref<FormInstance>()
+const formRef = ref<InstanceType<typeof NeoFormModal>>()
 const formState = reactive<Partial<SysMenu>>({
   id: undefined, parentId: '0', menuName: '', menuType: 1,
   path: '', component: '', permission: '', icon: '', sort: 0, status: 1
 })
-const modalTitle = computed(() => formState.id ? '编辑菜单信息' : '新增菜单项')
+const modalTitle = computed(() => formState.id ? '编辑菜单配置' : '新增菜单/按钮')
 
 const rules: Record<string, Rule[]> = {
   menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
@@ -297,14 +346,43 @@ const rules: Record<string, Rule[]> = {
   path: [{ required: true, message: '请输入路由路径', trigger: 'blur' }]
 }
 
-// --- 方法 ---
+// --- 删除确认逻辑 (AppleConfirmModal) ---
+const deleteConfirmVisible = ref(false)
+const deleteConfirmLoading = ref(false)
+const deleteTargetId = ref<string | null>(null)
+
+const confirmDelete = (id: string) => {
+  deleteTargetId.value = id
+  deleteConfirmVisible.value = true
+}
+
+const executeDelete = async () => {
+  if (!deleteTargetId.value) return
+  deleteConfirmLoading.value = true
+  try {
+    await deleteMenu(deleteTargetId.value)
+    AppleAlert.success('删除成功', '菜单项及其子项已移除')
+    fetchData()
+  } catch (error: any) {
+    AppleAlert.error('删除失败', error.message || '操作未完成')
+  } finally {
+    deleteConfirmLoading.value = false
+    deleteConfirmVisible.value = false
+  }
+}
+
+// --- API 方法 ---
 const fetchData = async () => {
   loading.value = true
   try {
     const res = await getMenuList()
     tableData.value = res.data
-  } catch (error) {
-    message.error('获取列表失败')
+    // 保持展开状态
+    if (isExpandedAll.value) {
+      expandedRowKeys.value = getAllParentRowKeys(tableData.value)
+    }
+  } catch (error: any) {
+    AppleAlert.error('数据加载失败', error.message || '无法获取菜单列表')
   } finally {
     loading.value = false
   }
@@ -330,25 +408,17 @@ const handleSubmit = async () => {
     submitLoading.value = true
     if (formState.id) {
       await updateMenu(formState)
-      message.success('更新成功')
+      AppleAlert.success('保存成功', '菜单配置已更新')
     } else {
       await addMenu(formState)
-      message.success('创建成功')
+      AppleAlert.success('创建成功', '新菜单已添加到系统')
     }
     modalVisible.value = false
     fetchData()
+  } catch (error: any) {
+    // 验证失败不处理，子组件已有提示
   } finally {
     submitLoading.value = false
-  }
-}
-
-const handleDelete = async (id: string) => {
-  try {
-    await deleteMenu(id)
-    message.success('已成功删除')
-    fetchData()
-  } catch (error) {
-    message.error('删除失败')
   }
 }
 
@@ -356,91 +426,215 @@ onMounted(() => fetchData())
 </script>
 
 <style scoped>
-.menu-manage-container {
-  padding: 16px;
-  background-color: transparent;
-  min-height: 100%;
+/* ================= 全局容器规划 ================= */
+.neo-page-container {
+  padding: 8px 0;
+  box-sizing: border-box;
 }
 
-.table-toolbar {
+/* ================= 页面头部 ================= */
+.neo-page-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 12px;
   padding: 0 4px;
+  margin-bottom: 24px;
 }
 
-.toolbar-left {
-  display: flex;
-  gap: 12px;
+/* 顶部按钮组 */
+.header-actions { display: flex; gap: 12px; align-items: center; }
+
+.neo-icon-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: none;
+  background: var(--content-bg, #ffffff); color: var(--text-main, #333);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 2px 6px var(--shadow-color, rgba(0,0,0,0.04)), 0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
+}
+.neo-icon-btn:hover { background: var(--hover-bg, #f5f5f7); transform: scale(0.95); }
+
+.neo-btn-flat, .neo-btn-solid {
+  height: 36px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
+}
+.neo-btn-flat {
+  background: var(--content-bg, #ffffff); color: var(--text-main, #333);
+  box-shadow: 0 2px 6px var(--shadow-color, rgba(0,0,0,0.04)), 0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
+}
+.neo-btn-flat:hover { background: var(--hover-bg, #f5f5f7); }
+
+.neo-btn-solid.primary {
+  background: var(--apple-blue, #0A84FF); color: #ffffff;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--apple-blue) 30%, transparent);
+}
+.neo-btn-solid.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* ================= 核心卡片与表格覆盖 ================= */
+.neo-card {
+  background: var(--content-bg, #ffffff);
+  border-radius: 20px;
+  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04));
+  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+  overflow: visible;
 }
 
-.custom-table {
-  background: #fff;
-  border-radius: 8px !important;
-  overflow: hidden !important;
+.table-card { padding: 12px 24px; }
+
+/* 深度定制 Antd Table 结构 */
+:deep(.neo-table .ant-table) { background: transparent !important; }
+
+/* 表头加入右侧柔和边线 */
+:deep(.neo-table .ant-table-thead > tr > th) {
+  background: transparent !important;
+  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08)) !important;
+  border-right: 1px solid var(--border-color, rgba(0,0,0,0.06)) !important;
+  color: var(--text-muted, #86868b) !important;
+  font-weight: 500; font-size: 13px; padding: 14px 16px;
+}
+:deep(.neo-table .ant-table-thead > tr > th:last-child) { border-right: none !important; }
+:deep(.neo-table .ant-table-thead > tr > th::before) { display: none !important; }
+
+/* 修复树形表格第一列表头与底层节点内容缩位错位的问题 */
+:deep(.neo-table .ant-table-thead > tr > th:first-child) {
+  padding-left: 42px !important; /* 补偿展开图标(icon+margin)的宽度 */
 }
 
-:deep(.ant-table) { border-radius: 8px !important; }
-:deep(.ant-table-container) { border-radius: 8px !important; }
+/* 表格内容加入右侧柔和边线 */
+:deep(.neo-table .ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.04)) !important;
+  border-right: 1px solid var(--border-color, rgba(0,0,0,0.03)) !important;
+  padding: 14px 16px; background: transparent !important; transition: background 0.2s;
+}
+:deep(.neo-table .ant-table-tbody > tr > td:last-child) { border-right: none !important; }
+:deep(.neo-table .ant-table-tbody > tr:hover > td) { background: var(--hover-bg, rgba(0,0,0,0.02)) !important; }
 
-:deep(.ant-table-thead > tr > th:first-child) { border-top-left-radius: 8px !important; }
-:deep(.ant-table-thead > tr > th:last-child) { border-top-right-radius: 8px !important; }
+/* 修正展开图标样式 */
+:deep(.neo-table .ant-table-row-expand-icon) {
+  border: 1px solid var(--border-color); background: var(--content-bg); color: var(--text-muted);
+  border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+:deep(.neo-table .ant-table-row-expand-icon:hover) { border-color: var(--apple-blue); color: var(--apple-blue); }
 
-:deep(.ant-table-tbody > tr:nth-child(odd)) {
-  background-color: rgba(0, 0, 0, 0.015);
+/* ================= 单元格定制 ================= */
+.cell-primary-text { font-weight: 600; font-size: 14px; color: var(--text-main); }
+.text-placeholder { opacity: 0.3; }
+
+.icon-cell-box {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--hover-bg, rgba(0,0,0,0.04));
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text-main);
 }
 
-:deep(.ant-table-tbody > tr:hover > td) {
-  background-color: rgba(24, 144, 255, 0.05) !important;
+/* 高定徽标 Badge (针对路由和权限列优化) */
+.mono-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--text-main);
+  background: var(--hover-bg, rgba(120, 120, 128, 0.06));
+  border: 1px solid var(--border-color, rgba(120, 120, 128, 0.15));
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  cursor: default;
+}
+.mono-badge:hover {
+  color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue) 8%, transparent);
+  border-color: color-mix(in srgb, var(--apple-blue) 30%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 15%, transparent);
+}
+:global(.dark) .mono-badge {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+:global(.dark) .mono-badge:hover {
+  color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue) 15%, transparent);
+  border-color: color-mix(in srgb, var(--apple-blue) 40%, transparent);
 }
 
-.icon-cell {
-  font-size: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* 高级药丸标签 (Type Pill) */
+.neo-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+}
+.type-dir { background: color-mix(in srgb, var(--apple-blue) 12%, transparent); color: var(--apple-blue); }
+.type-menu { background: rgba(52, 199, 89, 0.12); color: #248A3D; border: 1px solid rgba(52, 199, 89, 0.1); }
+.type-btn { background: rgba(255, 159, 10, 0.12); color: #CC7A00; border: 1px solid rgba(255, 159, 10, 0.1); }
+:global(.dark) .type-menu { color: #34C759; }
+:global(.dark) .type-btn { color: #FF9F0A; }
+
+.sort-badge {
+  background: var(--hover-bg, rgba(0,0,0,0.05)); color: var(--text-muted);
+  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
 }
 
-/* 完美居中关键样式 */
-.type-cell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%; /* 填满单元格 */
+/* 状态光晕点 */
+.status-indicator-wrap {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500;
 }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-indicator-wrap.is-active { color: var(--text-main); }
+.status-indicator-wrap.is-active .status-dot { background: #34C759; box-shadow: 0 0 6px rgba(52,199,89,0.5); }
+.status-indicator-wrap.is-inactive { color: var(--text-muted); }
+.status-indicator-wrap.is-inactive .status-dot { background: #FF453A; box-shadow: 0 0 6px rgba(255,69,58,0.5); }
 
-.type-tag {
-  margin: 0 !important; /* 强制去除 Ant Design Tag 默认的 margin-right */
-  min-width: 60px;
-  text-align: center;
-  font-weight: 500;
+/* 操作按钮 */
+.action-btn-group { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.action-divider { width: 1px; height: 12px; background: var(--border-color); }
+.text-action-btn {
+  background: transparent; border: none; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; padding: 4px 8px; border-radius: 6px;
 }
+.text-action-btn.safe { color: var(--text-muted); }
+.text-action-btn.safe:hover { color: var(--text-main); background: var(--hover-bg); }
+.text-action-btn.primary { color: var(--apple-blue); }
+.text-action-btn.primary:hover { background: color-mix(in srgb, var(--apple-blue) 10%, transparent); }
+.text-action-btn.danger { color: #FF453A; }
+.text-action-btn.danger:hover { background: rgba(255, 69, 58, 0.1); }
 
-.menu-fa-icon {
-  color: #555;
-}
+/* ================= 模态框表单细节 ================= */
+.help-icon { color: var(--text-muted); margin-left: 6px; font-size: 12px; cursor: help; opacity: 0.7; }
+.help-icon:hover { opacity: 1; color: var(--text-main); }
 
-.action-btns {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* 菜单类型 Radio Card */
+.neo-radio-group { display: flex; gap: 12px; }
+.neo-radio-card {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--content-bg);
+  cursor: pointer; transition: all 0.2s; color: var(--text-muted); font-weight: 500; font-size: 14px;
 }
+.neo-radio-card:hover { border-color: var(--apple-blue); background: var(--hover-bg); }
+.neo-radio-card.is-active { border-color: var(--apple-blue); background: color-mix(in srgb, var(--apple-blue) 8%, transparent); color: var(--text-main); box-shadow: 0 0 0 1px var(--apple-blue); }
+.hidden-radio { display: none; }
+.text-blue { color: var(--apple-blue); }
+.text-green { color: #34C759; }
+.text-orange { color: #FF9F0A; }
 
-.help-icon {
-  margin-left: 4px;
-  color: #999;
-  font-size: 14px;
-  cursor: help;
-}
+/* 状态 Switch 美化 */
+.neo-switch-wrapper { display: flex; align-items: center; gap: 10px; height: 42px; }
+.switch-label { font-size: 13px; font-weight: 500; color: var(--text-muted); transition: color 0.3s; }
+.switch-label.active { color: #34C759; }
+.switch-label.inactive { color: var(--text-muted); }
+:deep(.apple-native-switch.ant-switch-checked) { background: #34C759 !important; }
 
-.icon-tip {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
+/* 树选择器兼容 */
+:deep(.neo-tree-select .ant-select-selector) { border-radius: 10px !important; }
 
-.text-placeholder {
-  color: rgba(0, 0, 0, 0.25);
-}
+/* 渐显动画 */
+.fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
