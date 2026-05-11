@@ -1,0 +1,803 @@
+/**
+ * Neo Table & Button 全局样式系统
+ * ================================
+ * 统一的表格、按钮、卡片、分页器等组件样式
+ * 适配亮色/暗黑模式，基于 CSS 变量驱动
+ */
+
+/* ================================================================
+   1. 页面容器与头部按钮
+   ================================================================ */
+
+.neo-page-container {
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
+.neo-page-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 4px;
+  margin-bottom: 24px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.neo-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: var(--content-bg, #ffffff);
+  color: var(--text-main, #333);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px var(--shadow-color, rgba(0,0,0,0.04)),
+              0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
+}
+
+.neo-icon-btn:hover {
+  background: var(--hover-bg, #f5f5f7);
+  transform: scale(0.95);
+}
+
+.neo-btn-flat,
+.neo-btn-solid {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.neo-btn-flat {
+  background: var(--content-bg, #ffffff);
+  color: var(--text-main, #333);
+  box-shadow: 0 2px 6px var(--shadow-color, rgba(0,0,0,0.04)),
+              0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
+}
+
+.neo-btn-flat:hover {
+  background: var(--hover-bg, #f5f5f7);
+}
+
+.neo-btn-solid.primary {
+  background: var(--apple-blue, #0A84FF);
+  color: #ffffff;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--apple-blue) 30%, transparent);
+}
+
+.neo-btn-solid.primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* ================================================================
+   2. 卡片与表格核心样式
+   ================================================================ */
+
+.neo-card {
+  background: var(--content-bg, #ffffff);
+  border-radius: 20px;
+  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04));
+  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+  overflow: visible;
+}
+
+.table-card {
+  padding: 12px 24px;
+}
+
+/* Ant Design Table 深度定制 */
+.neo-table .ant-table {
+  background: transparent !important;
+}
+
+/* 表头样式 */
+.neo-table .ant-table-thead > tr > th {
+  background: transparent !important;
+  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08)) !important;
+  border-right: 1px solid var(--border-color, rgba(0,0,0,0.06)) !important;
+  color: var(--text-muted, #86868b) !important;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 14px 16px;
+}
+
+.neo-table .ant-table-thead > tr > th:last-child {
+  border-right: none !important;
+}
+
+.neo-table .ant-table-thead > tr > th::before {
+  display: none !important;
+}
+
+/* 表格内容 */
+.neo-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.04)) !important;
+  border-right: 1px solid var(--border-color, rgba(0,0,0,0.03)) !important;
+  padding: 14px 16px;
+  background: transparent !important;
+  transition: background 0.2s;
+}
+
+.neo-table .ant-table-tbody > tr > td:last-child {
+  border-right: none !important;
+}
+
+.neo-table .ant-table-tbody > tr:hover > td {
+  background: var(--hover-bg, rgba(0,0,0,0.02)) !important;
+  transition: background 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 悬浮行左侧指示条 */
+.neo-table .ant-table-tbody > tr:hover > td:first-child {
+  box-shadow: inset 3px 0 0 0 color-mix(in srgb, var(--apple-blue) 50%, transparent);
+}
+
+/* 选中行样式 */
+.neo-table .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: color-mix(in srgb, var(--apple-blue) 6%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--apple-blue) 12%, transparent) !important;
+}
+
+.neo-table .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background: color-mix(in srgb, var(--apple-blue) 10%, transparent) !important;
+}
+
+/* 选中行左侧指示条 */
+.neo-table .ant-table-tbody > tr.ant-table-row-selected > td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--apple-blue);
+}
+
+/* 复选框样式 - 圆润精致版 */
+.neo-table .ant-checkbox-inner {
+  width: 18px !important;
+  height: 18px !important;
+  border: 1.5px solid var(--border-color, rgba(0, 0, 0, 0.15)) !important;
+  background-color: transparent !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+.neo-table .ant-checkbox:hover .ant-checkbox-inner {
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 10%, transparent) !important;
+}
+
+.neo-table .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--apple-blue) !important;
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 30%, transparent) !important;
+}
+
+.neo-table .ant-checkbox-checked .ant-checkbox-inner::after {
+  border-color: #fff !important;
+  border-width: 2px !important;
+  transform: rotate(45deg) scale(1) translate(-50%, -50%) !important;
+  top: 45% !important;
+  left: 25% !important;
+  width: 5px !important;
+  height: 9px !important;
+}
+
+/* 半选状态（全选表头的减号状态） */
+.neo-table .ant-checkbox-indeterminate .ant-checkbox-inner {
+  border-color: var(--apple-blue) !important;
+  background-color: transparent !important;
+}
+
+.neo-table .ant-checkbox-indeterminate .ant-checkbox-inner::after {
+  background-color: var(--apple-blue) !important;
+  border-radius: 2px !important;
+  width: 10px !important;
+  height: 10px !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(0.7) !important;
+}
+
+/* 禁用状态 */
+.neo-table .ant-checkbox-disabled .ant-checkbox-inner {
+  background-color: var(--hover-bg, rgba(0, 0, 0, 0.04)) !important;
+  border-color: var(--border-color) !important;
+  opacity: 0.5 !important;
+}
+
+/* 选择列隐藏右侧分割线 */
+.neo-table .ant-table-thead > tr > th.ant-table-selection-column,
+.neo-table .ant-table-tbody > tr > td.ant-table-selection-column {
+  border-right: none !important;
+}
+
+/* 选择列宽度收窄，让复选框不占太多空间 */
+.neo-table .ant-table-selection-column {
+  padding-left: 16px !important;
+  padding-right: 8px !important;
+}
+
+/* 表头全选复选框居中 */
+.neo-table .ant-table-thead .ant-table-selection-column .ant-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 展开图标 */
+.neo-table .ant-table-row-expand-icon {
+  border: 1px solid var(--border-color);
+  background: var(--content-bg);
+  color: var(--text-muted);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.neo-table .ant-table-row-expand-icon:hover {
+  border-color: var(--apple-blue);
+  color: var(--apple-blue);
+}
+
+/* ================================================================
+   3. 单元格组件样式
+   ================================================================ */
+
+.cell-primary-text {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.text-placeholder {
+  opacity: 0.3;
+}
+
+.icon-cell-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--hover-bg, rgba(0,0,0,0.04));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+/* 高定徽标 Badge */
+.mono-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--text-main);
+  background: var(--hover-bg, rgba(120, 120, 128, 0.06));
+  border: 1px solid var(--border-color, rgba(120, 120, 128, 0.15));
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  cursor: default;
+}
+
+.mono-badge:hover {
+  color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue) 8%, transparent);
+  border-color: color-mix(in srgb, var(--apple-blue) 30%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 15%, transparent);
+}
+
+.dark .mono-badge {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dark .mono-badge:hover {
+  color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue) 15%, transparent);
+  border-color: color-mix(in srgb, var(--apple-blue) 40%, transparent);
+}
+
+/* 高级药丸标签 */
+.neo-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.type-dir {
+  background: color-mix(in srgb, var(--apple-blue) 12%, transparent);
+  color: var(--apple-blue);
+}
+
+.type-menu {
+  background: rgba(52, 199, 89, 0.12);
+  color: #248A3D;
+  border: 1px solid rgba(52, 199, 89, 0.1);
+}
+
+.type-btn {
+  background: rgba(255, 159, 10, 0.12);
+  color: #CC7A00;
+  border: 1px solid rgba(255, 159, 10, 0.1);
+}
+
+.dark .type-menu {
+  color: #34C759;
+}
+
+.dark .type-btn {
+  color: #FF9F0A;
+}
+
+.sort-badge {
+  background: var(--hover-bg, rgba(0,0,0,0.05));
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* 状态光晕点 */
+.status-indicator-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-indicator-wrap.is-active {
+  color: var(--text-main);
+}
+
+.status-indicator-wrap.is-active .status-dot {
+  background: #34C759;
+  box-shadow: 0 0 6px rgba(52,199,89,0.5);
+}
+
+.status-indicator-wrap.is-inactive {
+  color: var(--text-muted);
+}
+
+.status-indicator-wrap.is-inactive .status-dot {
+  background: #FF453A;
+  box-shadow: 0 0 6px rgba(255,69,58,0.5);
+}
+
+/* ================================================================
+   4. 操作按钮样式
+   ================================================================ */
+
+.action-btn-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border-color);
+}
+
+.text-action-btn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.text-action-btn.safe {
+  color: var(--text-muted);
+}
+
+.text-action-btn.safe:hover {
+  color: var(--text-main);
+  background: var(--hover-bg);
+}
+
+.text-action-btn.primary {
+  color: var(--apple-blue);
+}
+
+.text-action-btn.primary:hover {
+  background: color-mix(in srgb, var(--apple-blue) 10%, transparent);
+}
+
+.text-action-btn.danger {
+  color: #FF453A;
+}
+
+.text-action-btn.danger:hover {
+  background: rgba(255, 69, 58, 0.1);
+}
+
+/* ================================================================
+   5. 分页器定制
+   ================================================================ */
+
+.neo-table .ant-pagination {
+  margin: auto 0 0 0 !important;
+  padding: 16px 32px;
+  border-top: 1px solid var(--border-color);
+  background: var(--content-bg);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  z-index: 10;
+}
+
+.neo-table .ant-pagination-total-text {
+  color: var(--text-muted);
+  margin-right: auto;
+  font-size: 13px;
+}
+
+.neo-table .ant-pagination-item {
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.neo-table .ant-pagination-item a {
+  color: var(--text-main);
+}
+
+.neo-table .ant-pagination-item:hover {
+  background: var(--hover-bg);
+}
+
+.neo-table .ant-pagination-item-active {
+  background: var(--apple-blue) !important;
+  border-color: var(--apple-blue) !important;
+}
+
+.neo-table .ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+.neo-table .ant-pagination-prev .ant-pagination-item-link,
+.neo-table .ant-pagination-next .ant-pagination-item-link {
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neo-table .ant-pagination-prev:hover .ant-pagination-item-link,
+.neo-table .ant-pagination-next:hover .ant-pagination-item-link {
+  background: var(--hover-bg);
+}
+
+.neo-table .ant-pagination-disabled .ant-pagination-item-link {
+  color: var(--text-muted) !important;
+  opacity: 0.5;
+  background: transparent !important;
+}
+
+/* 分页条数选择器 - 触发器 */
+.neo-table .ant-pagination-options-size-changer.ant-select {
+  margin-left: 16px;
+}
+
+.neo-table .ant-pagination-options-size-changer .ant-select-selector {
+  background: var(--pill-bg, rgba(255, 255, 255, 0.04)) !important;
+  border: 1px solid var(--pill-border, rgba(255, 255, 255, 0.08)) !important;
+  border-radius: 18px !important;
+  color: var(--text-muted) !important;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+}
+
+.neo-table .ant-pagination-options-size-changer .ant-select-selection-item {
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+  line-height: 26px !important;
+  padding-right: 16px !important;
+  transition: color 0.2s !important;
+}
+
+.neo-table .ant-pagination-options-size-changer:hover .ant-select-selector {
+  background: var(--hover-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.neo-table .ant-pagination-options-size-changer:hover .ant-select-selection-item {
+  color: var(--text-main) !important;
+}
+
+/* 聚焦/展开态 */
+.neo-table .ant-pagination-options-size-changer.ant-select-open .ant-select-selector,
+.neo-table .ant-pagination-options-size-changer.ant-select-focused .ant-select-selector {
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 12%, transparent) !important;
+  background: transparent !important;
+}
+
+.neo-table .ant-pagination-options-size-changer.ant-select-open .ant-select-selection-item {
+  color: var(--apple-blue) !important;
+}
+
+.neo-table .ant-select-arrow {
+  color: var(--text-muted);
+  font-size: 10px;
+  transition: transform 0.25s, color 0.2s;
+}
+
+.neo-table .ant-pagination-options-size-changer.ant-select-open .ant-select-arrow {
+  color: var(--apple-blue);
+  transform: rotate(180deg);
+}
+
+/* ================================================================
+   6. 表格弹性布局（可选类）
+   ================================================================ */
+
+.neo-table-flex-container .neo-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.neo-table-flex-container .neo-table .ant-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: transparent;
+}
+
+.neo-table-flex-container .neo-table .ant-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* 弹性布局下表头吸顶 */
+.neo-table-flex-container .neo-table .ant-table-thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--content-bg) !important;
+}
+
+/* ================================================================
+   7. 通用动画
+   ================================================================ */
+
+.fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================================================
+   8. 全局 Select 组件美化
+   ================================================================ */
+
+/* --- 8.1 Select 触发器（选择框） --- */
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  border-radius: 10px !important;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1)) !important;
+  background: var(--content-bg, #ffffff) !important;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  color: var(--text-main) !important;
+}
+
+.ant-select:not(.ant-select-customize-input):hover .ant-select-selector {
+  border-color: color-mix(in srgb, var(--apple-blue) 50%, transparent) !important;
+}
+
+.ant-select-focused:not(.ant-select-customize-input) .ant-select-selector {
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 12%, transparent) !important;
+}
+
+.ant-select .ant-select-selection-placeholder {
+  color: var(--text-muted, #a1a1aa) !important;
+}
+
+.ant-select .ant-select-arrow {
+  color: var(--text-muted) !important;
+  transition: transform 0.25s, color 0.2s !important;
+}
+
+.ant-select-open .ant-select-arrow {
+  color: var(--apple-blue) !important;
+  transform: rotate(180deg) !important;
+}
+
+/* 清除按钮 */
+.ant-select .ant-select-clear {
+  background: var(--content-bg, #fff) !important;
+  color: var(--text-muted) !important;
+  border-radius: 50% !important;
+  transition: color 0.2s !important;
+}
+
+.ant-select .ant-select-clear:hover {
+  color: var(--text-main) !important;
+}
+
+/* --- 8.2 下拉面板 --- */
+.ant-select-dropdown {
+  border-radius: 12px !important;
+  padding: 6px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06)) !important;
+  background: var(--popup-bg, rgba(255, 255, 255, 0.95)) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  overflow: hidden !important;
+}
+
+.ant-select-dropdown .ant-select-item {
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  color: var(--text-main, #1d1d1f) !important;
+  transition: all 0.15s ease !important;
+  margin: 2px 0 !important;
+  min-height: 34px !important;
+  line-height: 1.4 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-selected) {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04)) !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, transparent) !important;
+  color: var(--apple-blue, #0A84FF) !important;
+  font-weight: 600 !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected .ant-select-item-option-state {
+  color: var(--apple-blue, #0A84FF) !important;
+}
+
+/* 空状态 */
+.ant-select-dropdown .ant-select-item-empty {
+  color: var(--text-muted) !important;
+  font-size: 12px !important;
+}
+
+/* --- 8.3 暗黑模式适配 --- */
+.dark .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background: var(--content-bg, #1c1c1e) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .ant-select:not(.ant-select-customize-input):hover .ant-select-selector {
+  border-color: color-mix(in srgb, var(--apple-blue) 60%, transparent) !important;
+}
+
+.dark .ant-select .ant-select-clear {
+  background: var(--content-bg, #1c1c1e) !important;
+}
+
+/* 胶囊搜索栏内的 Select 应透明融入背景 */
+.capsule-search .ant-select:not(.ant-select-customize-input) .ant-select-selector,
+.dark .capsule-search .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.capsule-search .ant-select:not(.ant-select-customize-input):hover .ant-select-selector,
+.dark .capsule-search .ant-select:not(.ant-select-customize-input):hover .ant-select-selector {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.dark .ant-select-dropdown {
+  background: rgba(30, 30, 32, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .ant-select-dropdown .ant-select-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark .ant-select-dropdown .ant-select-item-option-active:not(.ant-select-item-option-selected) {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .ant-select-dropdown .ant-select-item-option-selected {
+  background: color-mix(in srgb, var(--apple-blue) 18%, transparent) !important;
+  color: var(--apple-blue) !important;
+}
+
+/* ================================================================
+   9. 暗黑模式 - 页面背景与卡片层级协调
+   ================================================================ */
+
+/*
+ * 暗黑模式下 .apple-content-inner 和 .neo-card 都使用 --content-bg，
+ * 导致「卡中卡」效果突兀。通过微妙的背景抬升和柔化边框，
+ * 让卡片在页面容器上形成自然的视觉层级。
+ */
+.dark .neo-card {
+  background: var(--sidebar-bg, #151516);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 分页区域背景透明，跟随卡片背景 */
+.dark .neo-table .ant-pagination {
+  background: transparent;
+}
+
+/* 弹性布局吸顶表头需要不透明背景覆盖滚动内容 */
+.dark .neo-table-flex-container .neo-table .ant-table-thead > tr > th {
+  background: var(--sidebar-bg, #151516) !important;
+}

@@ -200,7 +200,7 @@
         </div>
 
         <!-- 表格主体包裹层：负责撑满剩余空间，骨架级重构 -->
-        <div class="data-table-wrapper">
+        <div class="data-table-wrapper neo-table-flex-container">
           <a-spin :spinning="dataLoading" wrapperClassName="data-spin-wrap">
             <!-- 数据为空时，隐藏整个表格，显示全新现代插画空状态 -->
             <div v-if="dataList.length === 0" class="data-empty-container fade-in">
@@ -249,7 +249,7 @@
                   </div>
                 </template>
                 <template v-if="column.key === 'action'">
-                  <button class="text-action-btn" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
+                  <button class="text-action-btn primary" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
                 </template>
               </template>
             </a-table>
@@ -373,10 +373,10 @@ const commonStatusDict = ref<DictData[]>([])
 
 const fetchCommonStatus = async () => {
   try {
-    const res = await getDictDataByDictCode('common_status')
+    const res = await getDictDataByDictCode('sys_common_status')
     commonStatusDict.value = res.data || []
   } catch (error) {
-    console.warn('获取 common_status 字典失败', error)
+    console.warn('获取 sys_common_status 字典失败', error)
   }
 }
 
@@ -1268,66 +1268,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-:deep(.neo-table) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-:deep(.neo-table .ant-table) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: transparent;
-}
-:deep(.neo-table .ant-table-container) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto; /* 在这里进行表体的自适应滚动 */
-  scrollbar-width: thin;
-  padding: 0 24px; /* 将原本外层的 padding 移到滚动区域内部 */
-}
-
-/* 彻底重构 Antd 表格样式，添加吸顶表头 */
-:deep(.neo-table .ant-table-thead > tr > th) {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--content-bg) !important; /* 吸顶时遮挡下方滚动内容 */
-  border-bottom: 1px solid var(--border-color) !important;
-  color: var(--text-muted) !important;
-  font-weight: 500; font-size: 13px; padding: 14px 16px;
-}
-:deep(.neo-table .ant-table-thead > tr > th::before) { display: none !important; }
-
-:deep(.neo-table .ant-table-tbody > tr > td) {
-  border-bottom: 1px solid var(--border-color) !important;
-  padding: 16px;
-  transition: background 0.2s;
-  background: transparent !important;
-}
-
-/* 极简、克制的选中与悬浮状态（无刺眼颜色混合） */
-:deep(.neo-table .ant-table-tbody > tr:hover > td) {
-  background: var(--hover-bg) !important;
-}
-:deep(.neo-table .ant-table-tbody > tr.ant-table-row-selected > td) {
-  background: var(--active-bg) !important;
-}
-
-/* 修复复选框在暗黑模式下的显示 */
-:deep(.neo-table .ant-checkbox-inner) {
-  border-color: var(--text-muted);
-  background-color: transparent;
-  border-radius: 4px;
-}
-:deep(.neo-table .ant-checkbox-checked .ant-checkbox-inner) {
-  background-color: var(--apple-blue) !important;
-  border-color: var(--apple-blue) !important;
-}
-
 /* 单元格定制 */
 .cell-label { font-weight: 600; font-size: 14px; color: var(--text-main); }
 .cell-value { font-family: monospace; color: var(--text-muted); font-size: 13px; background: var(--hover-bg, #f5f5f7); padding: 2px 8px; border-radius: 6px; }
@@ -1379,84 +1319,5 @@ onMounted(() => {
 /* 暗黑模式适配 */
 :global(.dark) .cell-status.active { color: #34C759; }
 :global(.dark) .cell-status.inactive { color: #FF453A; }
-
-.text-action-btn { background: transparent; border: none; color: var(--apple-blue, #0A84FF); font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-.text-action-btn:hover { opacity: 0.7; }
-
-
-/* ================= 深度定制右侧 Ant Design 高级分页器 (绝对底部常驻) ================= */
-:deep(.neo-table .ant-pagination) {
-  margin: auto 0 0 0 !important; /* 强制推至容器绝对最底部 */
-  padding: 16px 32px; /* 与表格外部对齐 */
-  border-top: 1px solid var(--border-color);
-  background: var(--content-bg);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-  z-index: 10;
-}
-:deep(.neo-table .ant-pagination-total-text) {
-  color: var(--text-muted);
-  margin-right: auto; /* 将分页统计推至最左侧，实现完美两端对齐 */
-  font-size: 13px;
-}
-:deep(.neo-table .ant-pagination-item) {
-  border-radius: 8px;
-  background: transparent;
-  border: 1px solid transparent;
-  transition: all 0.2s;
-}
-:deep(.neo-table .ant-pagination-item a) {
-  color: var(--text-main);
-}
-:deep(.neo-table .ant-pagination-item:hover) {
-  background: var(--hover-bg);
-}
-:deep(.neo-table .ant-pagination-item-active) {
-  background: var(--apple-blue) !important;
-  border-color: var(--apple-blue) !important;
-}
-:deep(.neo-table .ant-pagination-item-active a) {
-  color: #fff !important;
-}
-:deep(.neo-table .ant-pagination-prev .ant-pagination-item-link),
-:deep(.neo-table .ant-pagination-next .ant-pagination-item-link) {
-  border-radius: 8px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-main);
-  display: flex; align-items: center; justify-content: center;
-}
-:deep(.neo-table .ant-pagination-prev:hover .ant-pagination-item-link),
-:deep(.neo-table .ant-pagination-next:hover .ant-pagination-item-link) {
-  background: var(--hover-bg);
-}
-:deep(.neo-table .ant-pagination-disabled .ant-pagination-item-link) {
-  color: var(--text-muted) !important;
-  opacity: 0.5;
-  background: transparent !important;
-}
-
-/* 自定义分页条数下拉选择器 */
-:deep(.neo-table .ant-pagination-options-size-changer.ant-select) {
-  margin-left: 16px;
-}
-:deep(.neo-table .ant-pagination-options-size-changer .ant-select-selector) {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-main);
-  transition: all 0.2s;
-  height: 32px !important;
-  display: flex;
-  align-items: center;
-}
-:deep(.neo-table .ant-pagination-options-size-changer:hover .ant-select-selector) {
-  border-color: var(--apple-blue);
-}
-:deep(.neo-table .ant-select-arrow) {
-  color: var(--text-muted);
-}
 
 </style>

@@ -426,185 +426,10 @@ onMounted(() => fetchData())
 </script>
 
 <style scoped>
-/* ================= 全局容器规划 ================= */
-.neo-page-container {
-  padding: 8px 0;
-  box-sizing: border-box;
-}
-
-/* ================= 页面头部 ================= */
-.neo-page-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 0 4px;
-  margin-bottom: 24px;
-}
-
-/* 顶部按钮组 */
-.header-actions { display: flex; gap: 12px; align-items: center; }
-
-.neo-icon-btn {
-  width: 36px; height: 36px; border-radius: 10px; border: none;
-  background: var(--content-bg, #ffffff); color: var(--text-main, #333);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s;
-  box-shadow: 0 2px 6px var(--shadow-color, rgba(0,0,0,0.04)), 0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
-}
-.neo-icon-btn:hover { background: var(--hover-bg, #f5f5f7); transform: scale(0.95); }
-
-.neo-btn-flat, .neo-btn-solid {
-  height: 36px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
-  border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
-}
-.neo-btn-flat {
-  background: var(--content-bg, #ffffff); color: var(--text-main, #333);
-  box-shadow: 0 2px 6px var(--shadow-color, rgba(0,0,0,0.04)), 0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
-}
-.neo-btn-flat:hover { background: var(--hover-bg, #f5f5f7); }
-
-.neo-btn-solid.primary {
-  background: var(--apple-blue, #0A84FF); color: #ffffff;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--apple-blue) 30%, transparent);
-}
-.neo-btn-solid.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-/* ================= 核心卡片与表格覆盖 ================= */
-.neo-card {
-  background: var(--content-bg, #ffffff);
-  border-radius: 20px;
-  box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04));
-  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
-  overflow: visible;
-}
-
-.table-card { padding: 12px 24px; }
-
-/* 深度定制 Antd Table 结构 */
-:deep(.neo-table .ant-table) { background: transparent !important; }
-
-/* 表头加入右侧柔和边线 */
-:deep(.neo-table .ant-table-thead > tr > th) {
-  background: transparent !important;
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08)) !important;
-  border-right: 1px solid var(--border-color, rgba(0,0,0,0.06)) !important;
-  color: var(--text-muted, #86868b) !important;
-  font-weight: 500; font-size: 13px; padding: 14px 16px;
-}
-:deep(.neo-table .ant-table-thead > tr > th:last-child) { border-right: none !important; }
-:deep(.neo-table .ant-table-thead > tr > th::before) { display: none !important; }
-
 /* 修复树形表格第一列表头与底层节点内容缩位错位的问题 */
-:deep(.neo-table .ant-table-thead > tr > th:first-child) {
-  padding-left: 42px !important; /* 补偿展开图标(icon+margin)的宽度 */
+:deep(.neo-table.menu-table .ant-table-thead > tr > th:first-child) {
+  padding-left: 42px !important;
 }
-
-/* 表格内容加入右侧柔和边线 */
-:deep(.neo-table .ant-table-tbody > tr > td) {
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.04)) !important;
-  border-right: 1px solid var(--border-color, rgba(0,0,0,0.03)) !important;
-  padding: 14px 16px; background: transparent !important; transition: background 0.2s;
-}
-:deep(.neo-table .ant-table-tbody > tr > td:last-child) { border-right: none !important; }
-:deep(.neo-table .ant-table-tbody > tr:hover > td) { background: var(--hover-bg, rgba(0,0,0,0.02)) !important; }
-
-/* 修正展开图标样式 */
-:deep(.neo-table .ant-table-row-expand-icon) {
-  border: 1px solid var(--border-color); background: var(--content-bg); color: var(--text-muted);
-  border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;
-  transition: all 0.2s;
-}
-:deep(.neo-table .ant-table-row-expand-icon:hover) { border-color: var(--apple-blue); color: var(--apple-blue); }
-
-/* ================= 单元格定制 ================= */
-.cell-primary-text { font-weight: 600; font-size: 14px; color: var(--text-main); }
-.text-placeholder { opacity: 0.3; }
-
-.icon-cell-box {
-  width: 32px; height: 32px; border-radius: 8px; background: var(--hover-bg, rgba(0,0,0,0.04));
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 14px; color: var(--text-main);
-}
-
-/* 高定徽标 Badge (针对路由和权限列优化) */
-.mono-badge {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12.5px;
-  color: var(--text-main);
-  background: var(--hover-bg, rgba(120, 120, 128, 0.06));
-  border: 1px solid var(--border-color, rgba(120, 120, 128, 0.15));
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  vertical-align: middle;
-  line-height: 1.4;
-  letter-spacing: 0.3px;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-  cursor: default;
-}
-.mono-badge:hover {
-  color: var(--apple-blue, #0A84FF);
-  background: color-mix(in srgb, var(--apple-blue) 8%, transparent);
-  border-color: color-mix(in srgb, var(--apple-blue) 30%, transparent);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--apple-blue) 15%, transparent);
-}
-:global(.dark) .mono-badge {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
-}
-:global(.dark) .mono-badge:hover {
-  color: var(--apple-blue, #0A84FF);
-  background: color-mix(in srgb, var(--apple-blue) 15%, transparent);
-  border-color: color-mix(in srgb, var(--apple-blue) 40%, transparent);
-}
-
-/* 高级药丸标签 (Type Pill) */
-.neo-pill {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
-}
-.type-dir { background: color-mix(in srgb, var(--apple-blue) 12%, transparent); color: var(--apple-blue); }
-.type-menu { background: rgba(52, 199, 89, 0.12); color: #248A3D; border: 1px solid rgba(52, 199, 89, 0.1); }
-.type-btn { background: rgba(255, 159, 10, 0.12); color: #CC7A00; border: 1px solid rgba(255, 159, 10, 0.1); }
-:global(.dark) .type-menu { color: #34C759; }
-:global(.dark) .type-btn { color: #FF9F0A; }
-
-.sort-badge {
-  background: var(--hover-bg, rgba(0,0,0,0.05)); color: var(--text-muted);
-  font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
-}
-
-/* 状态光晕点 */
-.status-indicator-wrap {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 13px; font-weight: 500;
-}
-.status-dot { width: 8px; height: 8px; border-radius: 50%; }
-.status-indicator-wrap.is-active { color: var(--text-main); }
-.status-indicator-wrap.is-active .status-dot { background: #34C759; box-shadow: 0 0 6px rgba(52,199,89,0.5); }
-.status-indicator-wrap.is-inactive { color: var(--text-muted); }
-.status-indicator-wrap.is-inactive .status-dot { background: #FF453A; box-shadow: 0 0 6px rgba(255,69,58,0.5); }
-
-/* 操作按钮 */
-.action-btn-group { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.action-divider { width: 1px; height: 12px; background: var(--border-color); }
-.text-action-btn {
-  background: transparent; border: none; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s; padding: 4px 8px; border-radius: 6px;
-}
-.text-action-btn.safe { color: var(--text-muted); }
-.text-action-btn.safe:hover { color: var(--text-main); background: var(--hover-bg); }
-.text-action-btn.primary { color: var(--apple-blue); }
-.text-action-btn.primary:hover { background: color-mix(in srgb, var(--apple-blue) 10%, transparent); }
-.text-action-btn.danger { color: #FF453A; }
-.text-action-btn.danger:hover { background: rgba(255, 69, 58, 0.1); }
 
 /* ================= 模态框表单细节 ================= */
 .help-icon { color: var(--text-muted); margin-left: 6px; font-size: 12px; cursor: help; opacity: 0.7; }
@@ -613,12 +438,58 @@ onMounted(() => fetchData())
 /* 菜单类型 Radio Card */
 .neo-radio-group { display: flex; gap: 12px; }
 .neo-radio-card {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
-  height: 44px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--content-bg);
-  cursor: pointer; transition: all 0.2s; color: var(--text-muted); font-weight: 500; font-size: 14px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--content-bg);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 14px;
+  position: relative;
+  user-select: none;
 }
-.neo-radio-card:hover { border-color: var(--apple-blue); background: var(--hover-bg); }
-.neo-radio-card.is-active { border-color: var(--apple-blue); background: color-mix(in srgb, var(--apple-blue) 8%, transparent); color: var(--text-main); box-shadow: 0 0 0 1px var(--apple-blue); }
+.neo-radio-card:hover {
+  border-color: var(--apple-blue);
+  background: var(--hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.neo-radio-card:active {
+  transform: scale(0.97);
+  transition-duration: 0.1s;
+}
+.neo-radio-card.is-active {
+  border-color: var(--apple-blue);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue) 6%, transparent), color-mix(in srgb, var(--apple-blue) 14%, transparent));
+  color: var(--text-main);
+  font-weight: 600;
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1.5px var(--apple-blue),
+    0 0 0 4px color-mix(in srgb, var(--apple-blue) 12%, transparent),
+    0 4px 16px color-mix(in srgb, var(--apple-blue) 15%, transparent);
+}
+.neo-radio-card.is-active:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1.5px var(--apple-blue),
+    0 0 0 4px color-mix(in srgb, var(--apple-blue) 15%, transparent),
+    0 6px 20px color-mix(in srgb, var(--apple-blue) 20%, transparent);
+}
+.radio-icon {
+  font-size: 16px;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.neo-radio-card.is-active .radio-icon {
+  transform: scale(1.15);
+}
 .hidden-radio { display: none; }
 .text-blue { color: var(--apple-blue); }
 .text-green { color: #34C759; }
@@ -633,8 +504,4 @@ onMounted(() => fetchData())
 
 /* 树选择器兼容 */
 :deep(.neo-tree-select .ant-select-selector) { border-radius: 10px !important; }
-
-/* 渐显动画 */
-.fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

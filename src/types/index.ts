@@ -136,3 +136,18 @@ export interface DictData {
   remark: string
   createTime: string
 }
+
+// 批量删除结果
+export interface BatchDeleteResult {
+  allSuccess: boolean
+  successCount: number
+  failedCount: number
+  details: DeleteDetail[]
+}
+
+export interface DeleteDetail {
+  userId: string
+  username: string
+  success: boolean
+  reason: string | null
+}

@@ -1408,25 +1408,6 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 }
 
 .apple-layout-root {
-  --bg-base: #0b0c0e;
-  --text-main: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --sidebar-bg: #151516;
-  --header-bg: rgba(11, 12, 14, 0.6);
-  --content-bg: #131316;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --hover-bg: rgba(255, 255, 255, 0.08);
-  --active-bg: rgba(255, 255, 255, 0.12);
-  --popup-bg: rgba(30, 30, 30, 0.85);
-  --modal-bg: #1c1c1e;
-  --modal-card-bg: #28282b;
-  --shadow-color: rgba(0, 0, 0, 0.6);
-  --pill-bg: rgba(255, 255, 255, 0.04);
-  --pill-border: rgba(255, 255, 255, 0.08);
-  --logo-text: #ffffff;
-  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
-  --scrollbar-hover: rgba(255, 255, 255, 0.3);
-
   display: flex;
   height: 100vh;
   width: 100vw;
@@ -1435,27 +1416,6 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   overflow: hidden;
   transition: background-color 0.4s ease, color 0.4s ease;
-}
-
-.apple-layout-root.theme-light {
-  --bg-base: #f5f5f7;
-  --text-main: #1d1d1f;
-  --text-muted: rgba(0, 0, 0, 0.55);
-  --sidebar-bg: #ffffff;
-  --header-bg: rgba(255, 255, 255, 0.75);
-  --content-bg: #ffffff;
-  --border-color: rgba(0, 0, 0, 0.08);
-  --hover-bg: rgba(0, 0, 0, 0.05);
-  --active-bg: rgba(0, 0, 0, 0.08);
-  --popup-bg: rgba(255, 255, 255, 0.85);
-  --modal-bg: #ffffff;
-  --modal-card-bg: #ffffff; /* 亮色模式下卡片颜色 */
-  --shadow-color: rgba(0, 0, 0, 0.12);
-  --pill-bg: rgba(255, 255, 255, 1);
-  --pill-border: rgba(0, 0, 0, 0.1);
-  --logo-text: #1d1d1f;
-  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
-  --scrollbar-hover: rgba(0, 0, 0, 0.35);
 }
 
 /* 全局动画禁用支持 */
@@ -1611,7 +1571,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .apple-dropdown-enter-from, .apple-dropdown-leave-to { opacity: 0; transform: scale(0.96) translateY(-8px); }
 
 /* ================= 滚动区域 ================= */
-.apple-content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 24px; scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
+.apple-content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 24px; background: var(--content-bg); scrollbar-width: thin; scrollbar-color: var(--border-color) transparent; }
 .apple-content-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .apple-content-scroll::-webkit-scrollbar-track { background: transparent; }
 .apple-content-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
@@ -1896,4 +1856,49 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .dialog-actions { display: flex; gap: 12px; margin-top: 8px; }
 .send-code-btn { flex: 0 0 110px; padding: 0 8px; font-size: 14px; font-weight: 500; height: 44px; white-space: nowrap; border-radius: 10px; }
 
+</style>
+
+<style>
+/* CSS 变量定义 - 非 scoped，确保子组件可继承 */
+.apple-layout-root {
+  --bg-base: #0b0c0e;
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --sidebar-bg: #151516;
+  --header-bg: rgba(11, 12, 14, 0.6);
+  --content-bg: #0a0a0b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --hover-bg: rgba(255, 255, 255, 0.08);
+  --active-bg: rgba(255, 255, 255, 0.12);
+  --popup-bg: rgba(30, 30, 30, 0.85);
+  --modal-bg: #1c1c1e;
+  --modal-card-bg: #28282b;
+  --shadow-color: rgba(0, 0, 0, 0.6);
+  --pill-bg: rgba(255, 255, 255, 0.04);
+  --pill-border: rgba(255, 255, 255, 0.08);
+  --logo-text: #ffffff;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-hover: rgba(255, 255, 255, 0.3);
+}
+
+.apple-layout-root.theme-light {
+  --bg-base: #f5f5f7;
+  --text-main: #1d1d1f;
+  --text-muted: rgba(0, 0, 0, 0.55);
+  --sidebar-bg: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.75);
+  --content-bg: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --hover-bg: rgba(0, 0, 0, 0.05);
+  --active-bg: rgba(0, 0, 0, 0.08);
+  --popup-bg: rgba(255, 255, 255, 0.85);
+  --modal-bg: #ffffff;
+  --modal-card-bg: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.12);
+  --pill-bg: rgba(255, 255, 255, 1);
+  --pill-border: rgba(0, 0, 0, 0.1);
+  --logo-text: #1d1d1f;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+  --scrollbar-hover: rgba(0, 0, 0, 0.35);
+}
 </style>

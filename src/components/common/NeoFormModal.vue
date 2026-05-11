@@ -115,9 +115,7 @@ const handleConfirm = () => {
   position: relative; background: var(--content-bg, #ffffff); border-radius: 20px; overflow: hidden;
   box-shadow: 0 20px 60px var(--shadow-color, rgba(0,0,0,0.15)), 0 0 0 1px var(--border-color, rgba(0,0,0,0.06));
 }
-:global(.dark) .neo-modal-content-wrap {
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); background: #1c1c1e;
-}
+/* dark mode for .neo-modal-content-wrap: see non-scoped <style> block below */
 
 .neo-modal-close {
   position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 8px; border: none;
@@ -136,7 +134,11 @@ const handleConfirm = () => {
 .neo-modal-header { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; padding: 32px 32px 24px; }
 .header-icon-box {
   width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px;
-  background: var(--content-bg, #ffffff); box-shadow: 0 4px 12px var(--shadow-color, rgba(0,0,0,0.08)), inset 0 0 0 1px var(--border-color, rgba(0,0,0,0.05));
+  background: var(--content-bg, #ffffff);
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0,0,0,0.08)),
+              inset 0 0 0 1px var(--border-color, rgba(0,0,0,0.05)),
+              0 0 20px color-mix(in srgb, var(--apple-blue) 25%, transparent),
+              0 0 40px color-mix(in srgb, var(--apple-blue) 12%, transparent);
 }
 .header-icon-box.primary-icon { color: var(--apple-blue, #0A84FF); }
 .header-icon-box.success-icon { color: #34C759; }
@@ -255,12 +257,89 @@ const handleConfirm = () => {
 .neo-btn-solid.warning { background: #FF9F0A; color: #ffffff; box-shadow: 0 2px 8px rgba(255, 159, 10, 0.2); }
 .neo-btn-solid.warning:hover { background: #E88B00; box-shadow: 0 4px 12px rgba(255, 159, 10, 0.3); }
 
-/* 暗黑模式弹窗适配 */
-:global(.dark .neo-form .ant-input), :global(.dark .neo-form .ant-input-number-input), :global(.dark .neo-form .ant-select-selector) {
-  background: rgba(255, 255, 255, 0.04) !important; border-color: rgba(255,255,255,0.1) !important;
+/* dark mode styles moved to non-scoped <style> block below */
+</style>
+
+<style>
+/* ================== 暗黑模式完整适配 (非scoped，确保teleported modal正确匹配) ================== */
+html.dark .neo-modal-content-wrap {
+  background: #1c1c1e !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 }
-:global(.dark .header-icon-box) { background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
-:global(.dark .neo-modal-footer) { background: rgba(0,0,0, 0.1); border-color: rgba(255,255,255,0.08); }
-:global(.dark .neo-btn-flat) { border-color: rgba(255,255,255,0.15); color: #ffffff; }
-:global(.dark .neo-btn-flat:hover) { background: rgba(255, 255, 255, 0.08); }
+
+html.dark .neo-modal-close {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+}
+html.dark .neo-modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+html.dark .neo-modal-content-wrap .custom-title {
+  color: #ffffff !important;
+}
+html.dark .neo-modal-content-wrap .custom-subtitle {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+html.dark .neo-modal-content-wrap .header-icon-box {
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+              0 0 24px color-mix(in srgb, var(--apple-blue) 35%, transparent),
+              0 0 48px color-mix(in srgb, var(--apple-blue) 18%, transparent) !important;
+}
+
+html.dark .neo-modal-footer {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .neo-btn-flat {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+html.dark .neo-btn-flat:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .neo-form .ant-input,
+html.dark .neo-form .ant-input-number-input,
+html.dark .neo-form .ant-select-selector {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+html.dark .neo-form .ant-form-item-label > label {
+  color: #ffffff !important;
+}
+
+html.dark .neo-form .ant-input::placeholder,
+html.dark .neo-form .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+html.dark .neo-form .ant-input:focus,
+html.dark .neo-form .ant-input-focused,
+html.dark .neo-form .ant-input-number:focus-within,
+html.dark .neo-form .ant-select-focused .ant-select-selector {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: #0A84FF !important;
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25) !important;
+}
+
+html.dark .neo-form .ant-input[disabled],
+html.dark .neo-form .ant-input-number-input[disabled],
+html.dark .neo-form .ant-select-disabled .ant-select-selector,
+html.dark .neo-form textarea.ant-input[disabled] {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  border-color: transparent !important;
+}
+
+html.dark .neo-form .ant-select-arrow {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
 </style>
