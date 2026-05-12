@@ -33,7 +33,7 @@
             @click="confirmBatchStatus(1)"
         >
           <font-awesome-icon :icon="['fas', 'check-circle']" />
-          启用 ({{ selectedRowKeys.length }})
+          启用
         </button>
 
         <button
@@ -43,7 +43,7 @@
             @click="confirmBatchStatus(0)"
         >
           <font-awesome-icon :icon="['fas', 'ban']" />
-          禁用 ({{ selectedRowKeys.length }})
+          禁用
         </button>
 
         <button
@@ -53,7 +53,7 @@
             @click="confirmBatchDelete"
         >
           <font-awesome-icon :icon="['fas', 'trash']" />
-          删除 ({{ selectedRowKeys.length }})
+          删除
         </button>
       </div>
     </header>
@@ -137,8 +137,6 @@
             <div class="action-btn-group">
               <button class="text-action-btn danger" v-permission="'system:user:delete'" @click="confirmDelete(record.id)">删除</button>
               <span class="action-divider"></span>
-              <button class="text-action-btn safe" v-permission="'system:user:edit'" @click="confirmResetPwd(record.id)">重置密码</button>
-              <span class="action-divider"></span>
               <button class="text-action-btn primary" v-permission="'system:user:edit'" @click="handleAssignRole(record)">分配角色</button>
             </div>
           </template>
@@ -155,17 +153,6 @@
         confirmText="确认删除"
         :loading="deleteConfirmLoading"
         @confirm="executeDelete"
-    />
-
-    <!-- ================= 重置密码确认弹窗 ================= -->
-    <AppleConfirmModal
-        v-model:visible="resetPwdConfirmVisible"
-        type="warning"
-        title="重置密码"
-        desc="确定要将该用户的密码重置为默认密码（123456）吗？"
-        confirmText="确认重置"
-        :loading="resetPwdLoading"
-        @confirm="executeResetPwd"
     />
 
     <!-- ================= 启禁用确认弹窗 ================= -->
@@ -265,7 +252,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { getUserPage, deleteUserBatch, resetPassword, batchUpdateStatus, assignUserRoles } from '@/api/user.ts'
+import { getUserPage, deleteUserBatch, batchUpdateStatus, assignUserRoles } from '@/api/user.ts'
 import { getRoleList } from '@/api/role.ts'
 import { getDictDataByDictCode } from '@/api/dict'
 import type { SysUser, SysRole, DictData, BatchDeleteResult } from '@/types'
@@ -433,30 +420,6 @@ const executeBatchStatus = async () => {
   }
 }
 
-// --- 重置密码确认逻辑 (AppleConfirmModal) ---
-const resetPwdConfirmVisible = ref(false)
-const resetPwdLoading = ref(false)
-const resetPwdTargetId = ref<string | null>(null)
-
-const confirmResetPwd = (id: string) => {
-  resetPwdTargetId.value = id
-  resetPwdConfirmVisible.value = true
-}
-
-const executeResetPwd = async () => {
-  if (!resetPwdTargetId.value) return
-  resetPwdLoading.value = true
-  try {
-    await resetPassword(resetPwdTargetId.value, '123456')
-    AppleAlert.success('重置成功', '密码已重置为 123456')
-  } catch (error: any) {
-    AppleAlert.error('重置失败', error.message || '操作未完成')
-  } finally {
-    resetPwdLoading.value = false
-    resetPwdConfirmVisible.value = false
-  }
-}
-
 // --- 搜索与重置 ---
 const handleSearch = () => {
   searchForm.pageNum = 1
@@ -470,6 +433,7 @@ const handleReset = () => {
   searchForm.status = undefined
   searchForm.pageNum = 1
   pagination.current = 1
+  selectedRowKeys.value = []
   fetchData()
 }
 
@@ -788,43 +752,18 @@ onMounted(() => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(245, 208, 96, 0.15);
 }
 
-.neo-btn-flat.danger {
-  background: #FF3B30;
-  color: #fff;
-  border-radius: 10px;
-  padding: 6px 14px;
-  font-weight: 500;
-}
-.neo-btn-flat.danger:hover {
-  background: #E0332B;
-  color: #fff;
-  filter: brightness(0.95);
-  transform: scale(0.97);
-}
-
-.neo-btn-flat.enable {
-  background: #34C759;
-  color: #fff;
-  border-radius: 10px;
-  padding: 6px 14px;
-  font-weight: 500;
-}
-.neo-btn-flat.enable:hover {
-  background: #2DB84E;
-  color: #fff;
-  transform: scale(0.97);
-}
-
+/* 批量操作按钮额外圆角和内距微调（核心背景色已在 neo-table.css 全局定义） */
+.neo-btn-flat.danger,
+.neo-btn-flat.enable,
 .neo-btn-flat.disable {
-  background: #FF9500;
-  color: #fff;
   border-radius: 10px;
   padding: 6px 14px;
   font-weight: 500;
 }
+.neo-btn-flat.danger:hover,
+.neo-btn-flat.enable:hover,
 .neo-btn-flat.disable:hover {
-  background: #E68600;
-  color: #fff;
+  filter: brightness(0.95);
   transform: scale(0.97);
 }
 
@@ -841,10 +780,18 @@ onMounted(() => {
 }
 
 .role-checkbox-item {
-  padding: 10px 14px;
+  padding: 0;
   border-radius: 12px;
   border: 1px solid var(--border-color, #e5e5ea);
   transition: all 0.2s;
+}
+
+.role-checkbox-item :deep(.ant-checkbox-wrapper) {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  padding: 10px 14px;
+  margin: 0;
 }
 
 .role-checkbox-item:hover {

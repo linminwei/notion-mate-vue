@@ -11,11 +11,6 @@ export const deleteUserBatch = (ids: string[]) => {
   return request.delete<BatchDeleteResult>('/system/user/batch', { data: ids })
 }
 
-// 重置密码
-export const resetPassword = (id: string, newPassword: string) => {
-  return request.put(`/system/user/${id}/password`, null, { params: { newPassword } })
-}
-
 // 批量修改用户状态
 export const batchUpdateStatus = (userIds: string[], status: number) => {
   return request.put<BatchDeleteResult>('/system/user/batch/status', { userIds, status })

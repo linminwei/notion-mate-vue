@@ -86,6 +86,59 @@
   transform: translateY(-1px);
 }
 
+/* 彩色变体按钮 - 确保暗黑模式不被全局覆盖 */
+.neo-btn-flat.enable {
+  background: #34C759 !important;
+  color: #fff !important;
+}
+.neo-btn-flat.enable:hover {
+  background: #2DB84E !important;
+}
+
+.neo-btn-flat.disable {
+  background: #FF9500 !important;
+  color: #fff !important;
+}
+.neo-btn-flat.disable:hover {
+  background: #E68600 !important;
+}
+
+.neo-btn-flat.danger {
+  background: #FF3B30 !important;
+  color: #fff !important;
+}
+.neo-btn-flat.danger:hover {
+  background: #E0332B !important;
+}
+
+/* 暗黑模式下适当降低饱和度 */
+.dark .neo-btn-flat.enable {
+  background: rgba(52, 199, 89, 0.85) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(52, 199, 89, 0.3);
+}
+.dark .neo-btn-flat.enable:hover {
+  background: rgba(52, 199, 89, 0.95) !important;
+}
+
+.dark .neo-btn-flat.disable {
+  background: rgba(255, 149, 0, 0.85) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(255, 149, 0, 0.3);
+}
+.dark .neo-btn-flat.disable:hover {
+  background: rgba(255, 149, 0, 0.95) !important;
+}
+
+.dark .neo-btn-flat.danger {
+  background: rgba(255, 59, 48, 0.85) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3);
+}
+.dark .neo-btn-flat.danger:hover {
+  background: rgba(255, 59, 48, 0.95) !important;
+}
+
 /* ================================================================
    2. 卡片与表格核心样式
    ================================================================ */
