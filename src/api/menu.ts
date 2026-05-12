@@ -21,3 +21,6 @@ export const updateMenu = (data: any) => {
 export const deleteMenu = (id: string) => {
   return request.delete(`/system/menu/${id}`)
 }
+
+export const batchSortMenu = (items: { id: string; sort: number }[]) =>
+  request.put('/system/menu/batch-sort', { items })

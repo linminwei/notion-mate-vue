@@ -31,6 +31,7 @@
           row-key="id"
           :expanded-row-keys="expandedRowKeys"
           @expandedRowsChange="handleExpandedRowsChange"
+          :custom-row="customRow"
       >
         <template #bodyCell="{ column, record }">
 
@@ -42,8 +43,11 @@
           <!-- 图标列 -->
           <template v-if="column.key === 'icon'">
             <div class="icon-cell-box">
+              <!-- SVG 图标 -->
+              <span v-if="isSvgIcon(record.icon)" class="icon-cell-svg" v-html="record.icon"></span>
+              <!-- FontAwesome 图标 -->
               <font-awesome-icon
-                  v-if="record.icon"
+                  v-else-if="record.icon && formatFaIcon(record.icon)"
                   :icon="formatFaIcon(record.icon)"
                   class="menu-fa-icon"
               />
@@ -66,7 +70,10 @@
 
           <!-- 排序权重 -->
           <template v-if="column.key === 'sort'">
-            <span class="sort-badge">{{ record.sort }}</span>
+            <span class="sort-badge drag-handle" title="拖拽排序">
+              <font-awesome-icon :icon="['fas', 'grip-vertical']" class="drag-icon" />
+              {{ record.sort }}
+            </span>
           </template>
 
           <!-- 状态列 (带光晕的指示器) -->
@@ -120,7 +127,7 @@
         :rules="rules"
         :title="modalTitle"
         subtitle="配置菜单的路由与显示权限属性"
-        :width="640"
+        :width="700"
         :icon="['fas', 'layer-group']"
         theme="primary"
         confirmText="保存配置"
@@ -138,7 +145,22 @@
             tree-default-expand-all
             tree-node-filter-prop="menuName"
             class="neo-tree-select"
-        />
+            popupClassName="neo-tree-select-dropdown"
+        >
+          <template #title="node">
+            <span class="tree-node-content">
+              <span class="tree-node-icon" v-if="node.icon">
+                <span v-if="isSvgIcon(node.icon)" v-html="node.icon" class="svg-icon-inline"></span>
+                <font-awesome-icon v-else-if="formatFaIcon(node.icon)" :icon="formatFaIcon(node.icon)" />
+                <font-awesome-icon v-else :icon="['fas', 'folder']" class="default-icon" />
+              </span>
+              <span v-else class="tree-node-icon">
+                <font-awesome-icon :icon="['fas', 'folder']" class="default-icon" />
+              </span>
+              <span class="tree-node-label">{{ node.menuName }}</span>
+            </span>
+          </template>
+        </a-tree-select>
       </a-form-item>
 
       <a-form-item label="菜单类型" name="menuType">
@@ -175,20 +197,8 @@
           </template>
           <a-input v-model:value="formState.path" placeholder="如：user" />
         </a-form-item>
-      </div>
 
-      <div class="form-grid">
-        <a-form-item v-if="formState.menuType === 2" name="component">
-          <template #label>
-            组件路径
-            <a-tooltip title="访问的视图组件路径，如：`system/user/index`">
-              <font-awesome-icon :icon="['fas', 'info-circle']" class="help-icon" />
-            </a-tooltip>
-          </template>
-          <a-input v-model:value="formState.component" placeholder="如：system/user/index" />
-        </a-form-item>
-
-        <a-form-item v-if="formState.menuType === 3" name="permission">
+        <a-form-item v-if="formState.menuType === 3" name="permission" :rules="[{ required: true, message: '请输入权限标识', trigger: 'blur' }]">
           <template #label>
             权限标识
             <a-tooltip title="权限控制字符，如：`system:user:add`">
@@ -197,39 +207,23 @@
           </template>
           <a-input v-model:value="formState.permission" placeholder="如：system:user:add" />
         </a-form-item>
+      </div>
 
-        <a-form-item v-if="formState.menuType !== 3" label="菜单图标" name="icon">
-          <a-input v-model:value="formState.icon" placeholder="如：fa-solid fa-user">
-            <template #prefix>
-              <font-awesome-icon
-                  v-if="formState.icon"
-                  :icon="formatFaIcon(formState.icon)"
-                  style="color: var(--apple-blue); font-size: 14px; margin-right: 4px;"
-              />
-              <font-awesome-icon v-else :icon="['fas', 'icons']" class="text-placeholder" style="margin-right: 4px;" />
-            </template>
-          </a-input>
+      <div class="form-grid" v-if="formState.menuType === 2">
+        <a-form-item name="component" :rules="[{ required: true, message: '请输入组件路径', trigger: 'blur' }]">
+          <template #label>
+            组件路径
+            <a-tooltip title="访问的视图组件路径，如：`system/user/index`">
+              <font-awesome-icon :icon="['fas', 'info-circle']" class="help-icon" />
+            </a-tooltip>
+          </template>
+          <a-input v-model:value="formState.component" placeholder="如：system/user/index" />
         </a-form-item>
       </div>
 
-      <div class="form-grid">
-        <a-form-item label="显示排序" name="sort">
-          <a-input-number v-model:value="formState.sort" :min="0" :max="9999" style="width: 100%" placeholder="数值越小越靠前" />
-        </a-form-item>
-
-        <a-form-item label="菜单状态" name="status">
-          <div class="neo-switch-wrapper">
-            <span class="switch-label" :class="{ 'active': formState.status === 1 }">启用</span>
-            <a-switch
-                v-model:checked="formState.status"
-                :checked-value="1"
-                :un-checked-value="0"
-                class="apple-native-switch"
-            />
-            <span class="switch-label" :class="{ 'inactive': formState.status === 0 }">停用</span>
-          </div>
-        </a-form-item>
-      </div>
+      <a-form-item v-if="formState.menuType !== 3" label="菜单图标" name="icon" class="icon-picker-form-item">
+        <IconPicker v-model:value="formState.icon" placeholder="搜索图标..." />
+      </a-form-item>
     </NeoFormModal>
 
     <!-- ================= 苹果风确认弹窗 ================= -->
@@ -247,13 +241,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { getMenuList, addMenu, updateMenu, deleteMenu } from '@/api/menu.ts'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
+import { getMenuList, addMenu, updateMenu, deleteMenu, batchSortMenu } from '@/api/menu.ts'
 import type { SysMenu } from '@/types'
 import type { FormInstance, Rule } from 'ant-design-vue/es/form'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
+import IconPicker from '@/components/common/IconPicker.vue'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
+import Sortable from 'sortablejs'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 // --- 表格列定义 ---
 const columns = [
@@ -297,10 +296,21 @@ const formatFaIcon = (iconStr: string) => {
   return iconName ? [prefix, iconName] : '';
 }
 
+const isSvgIcon = (icon: string) => icon && icon.trim().startsWith('<svg')
+
 // --- 状态与数据 ---
 const loading = ref(false)
 const tableData = ref<SysMenu[]>([])
-const menuTreeOptions = computed(() => [{ id: '0', menuName: '顶级菜单', children: tableData.value }])
+// 递归过滤掉按钮类型节点（menuType === 3），按钮不能作为上级菜单
+const filterButtonMenus = (menus: SysMenu[]): SysMenu[] => {
+  return menus
+    .filter(menu => menu.menuType !== 3)
+    .map(menu => ({
+      ...menu,
+      children: menu.children ? filterButtonMenus(menu.children) : undefined
+    }))
+}
+const menuTreeOptions = computed(() => [{ id: '0', menuName: '顶级菜单', children: filterButtonMenus(tableData.value) }])
 
 // --- 树形展开逻辑 ---
 const isExpandedAll = ref(false)
@@ -362,7 +372,8 @@ const executeDelete = async () => {
   try {
     await deleteMenu(deleteTargetId.value)
     AppleAlert.success('删除成功', '菜单项及其子项已移除')
-    fetchData()
+    await fetchData()
+    await userStore.fetchUserInfo()
   } catch (error: any) {
     AppleAlert.error('删除失败', error.message || '操作未完成')
   } finally {
@@ -414,7 +425,8 @@ const handleSubmit = async () => {
       AppleAlert.success('创建成功', '新菜单已添加到系统')
     }
     modalVisible.value = false
-    fetchData()
+    await fetchData()
+    await userStore.fetchUserInfo()
   } catch (error: any) {
     // 验证失败不处理，子组件已有提示
   } finally {
@@ -422,7 +434,116 @@ const handleSubmit = async () => {
   }
 }
 
-onMounted(() => fetchData())
+// --- 拖拽排序 ---
+const customRow = (record: SysMenu) => ({
+  'data-parent-id': record.parentId || '0',
+  'data-row-id': record.id
+})
+
+let sortableInstance: Sortable | null = null
+
+const initSortable = () => {
+  nextTick(() => {
+    const tableEl = document.querySelector('.menu-table .ant-table-tbody') as HTMLElement
+    if (!tableEl) return
+
+    if (sortableInstance) {
+      sortableInstance.destroy()
+    }
+
+    sortableInstance = Sortable.create(tableEl, {
+      animation: 200,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      handle: '.drag-handle',
+      onEnd: async (evt) => {
+        const { oldIndex, newIndex, item } = evt
+        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
+
+        // 1. 先收集信息（此时 DOM 已被 Sortable 移动到新位置）
+        const sourceParentId = item.getAttribute('data-parent-id') || '0'
+        const sourceId = item.getAttribute('data-row-id')
+        const tbody = item.parentElement
+        if (!tbody) return
+
+        // 跨级检测：检查新位置的相邻行
+        let isCrossLevel = false
+        const allParentRows = Array.from(tbody.querySelectorAll('tr[data-parent-id]'))
+        const currentIndex = allParentRows.indexOf(item)
+        if (currentIndex !== -1) {
+          let neighborParentId: string | null = null
+          if (currentIndex > 0) {
+            const prevRow = allParentRows[currentIndex - 1] as HTMLElement
+            if (prevRow.getAttribute('data-row-id') !== sourceId) {
+              neighborParentId = prevRow.getAttribute('data-parent-id')
+            }
+          }
+          if (!neighborParentId && currentIndex < allParentRows.length - 1) {
+            const nextRow = allParentRows[currentIndex + 1] as HTMLElement
+            if (nextRow.getAttribute('data-row-id') !== sourceId) {
+              neighborParentId = nextRow.getAttribute('data-parent-id')
+            }
+          }
+          if (neighborParentId && neighborParentId !== sourceParentId) {
+            isCrossLevel = true
+          }
+        }
+
+        // 收集同 parentId 的行的 ID 顺序（当前 DOM 中的新顺序）
+        const siblingRows = Array.from(tbody.querySelectorAll(`tr[data-parent-id="${sourceParentId}"]`))
+        const siblingIds = siblingRows
+            .map(row => (row as HTMLElement).getAttribute('data-row-id') || '')
+            .filter(id => id !== '')
+
+        // 2. 立即回滚 DOM（把行放回原位），让 Vue 维持对 DOM 的控制
+        tbody.removeChild(item)
+        const remainingRows = tbody.querySelectorAll('tr')
+        if (oldIndex >= remainingRows.length) {
+          tbody.appendChild(item)
+        } else {
+          tbody.insertBefore(item, remainingRows[oldIndex])
+        }
+
+        // 跨级拖拽：提示并返回（DOM 已回滚）
+        if (isCrossLevel) {
+          AppleAlert.warning('不允许跨级拖拽', '只能在同级菜单之间拖拽排序')
+          return
+        }
+
+        // 3. 构建排序数据并调用 API
+        const sortItems = siblingIds.map((id, index) => ({
+          id,
+          sort: index + 1
+        }))
+
+        if (sortItems.length === 0) return
+
+        try {
+          await batchSortMenu(sortItems)
+          AppleAlert.success('排序成功', '菜单排序已更新')
+          // 4. 通过数据驱动刷新（Vue 正确渲染）
+          await fetchData()
+          // 5. 同步更新侧边栏菜单顺序
+          await userStore.fetchUserInfo()
+        } catch (error: any) {
+          AppleAlert.error('排序失败', error.message || '操作未完成')
+          await fetchData()
+        }
+      }
+    })
+  })
+}
+
+onMounted(() => {
+  fetchData().then(() => initSortable())
+})
+
+onBeforeUnmount(() => {
+  if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
+})
 </script>
 
 <style scoped>
@@ -445,8 +566,8 @@ onMounted(() => fetchData())
   gap: 8px;
   height: 44px;
   border-radius: 12px;
-  border: 1px solid var(--border-color);
-  background: var(--content-bg);
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  background: var(--content-bg, #fff);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   color: var(--text-muted);
@@ -454,6 +575,11 @@ onMounted(() => fetchData())
   font-size: 14px;
   position: relative;
   user-select: none;
+}
+:root[data-theme='dark'] .neo-radio-card,
+.dark .neo-radio-card {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
 }
 .neo-radio-card:hover {
   border-color: var(--apple-blue);
@@ -466,21 +592,28 @@ onMounted(() => fetchData())
   transition-duration: 0.1s;
 }
 .neo-radio-card.is-active {
+  border-width: 2px;
   border-color: var(--apple-blue);
   background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue) 6%, transparent), color-mix(in srgb, var(--apple-blue) 14%, transparent));
   color: var(--text-main);
   font-weight: 600;
   transform: translateY(-1px);
   box-shadow:
-    0 0 0 1.5px var(--apple-blue),
-    0 0 0 4px color-mix(in srgb, var(--apple-blue) 12%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--apple-blue) 12%, transparent),
     0 4px 16px color-mix(in srgb, var(--apple-blue) 15%, transparent);
+}
+:root[data-theme='dark'] .neo-radio-card.is-active,
+.dark .neo-radio-card.is-active {
+  border-color: var(--apple-blue);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue) 10%, transparent), color-mix(in srgb, var(--apple-blue) 18%, transparent));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--apple-blue) 18%, transparent),
+    0 4px 16px color-mix(in srgb, var(--apple-blue) 20%, transparent);
 }
 .neo-radio-card.is-active:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 0 0 1.5px var(--apple-blue),
-    0 0 0 4px color-mix(in srgb, var(--apple-blue) 15%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--apple-blue) 15%, transparent),
     0 6px 20px color-mix(in srgb, var(--apple-blue) 20%, transparent);
 }
 .radio-icon {
@@ -502,6 +635,274 @@ onMounted(() => fetchData())
 .switch-label.inactive { color: var(--text-muted); }
 :deep(.apple-native-switch.ant-switch-checked) { background: #34C759 !important; }
 
-/* 树选择器兼容 */
-:deep(.neo-tree-select .ant-select-selector) { border-radius: 10px !important; }
+/* ================= TreeSelect 树选择器样式 ================= */
+:deep(.neo-tree-select .ant-select-selector) {
+  border-radius: 10px !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+:root[data-theme='dark'] :deep(.neo-tree-select .ant-select-selector),
+.dark :deep(.neo-tree-select .ant-select-selector) {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+:deep(.neo-tree-select.ant-select-focused .ant-select-selector),
+:deep(.neo-tree-select:hover .ant-select-selector) {
+  border-color: var(--apple-blue) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 12%, transparent) !important;
+}
+
+/* TreeSelect 节点内容布局 */
+.tree-node-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+}
+.tree-node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+  flex-shrink: 0;
+  color: var(--apple-blue);
+  opacity: 0.85;
+}
+.tree-node-icon .default-icon {
+  color: var(--text-muted, #8e8e93);
+  font-size: 13px;
+  opacity: 0.6;
+}
+.tree-node-icon .svg-icon-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+.tree-node-icon .svg-icon-inline :deep(svg) {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+.tree-node-icon .svg-icon-inline :deep(svg),
+.tree-node-icon .svg-icon-inline :deep(svg path) {
+  fill: currentColor !important;
+}
+
+.tree-node-label {
+  font-size: 14px;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 图标选择器表单项 - 独占整行 */
+.icon-picker-form-item {
+  margin-top: 4px;
+}
+.icon-picker-form-item :deep(.ant-form-item-label) {
+  font-weight: 500;
+}
+.icon-picker-form-item :deep(.icon-picker) {
+  margin-top: 2px;
+}
+
+/* ================= 表格图标列 SVG 渲染 ================= */
+.icon-cell-svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+.icon-cell-svg :deep(svg) {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+.icon-cell-svg :deep(svg path) {
+  fill: currentColor;
+}
+
+/* ================= 拖拽排序样式 ================= */
+.drag-handle {
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+  transition: all 0.2s;
+}
+.drag-handle:hover {
+  color: var(--apple-blue);
+  transform: scale(1.05);
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+.drag-icon {
+  font-size: 11px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.drag-handle:hover .drag-icon {
+  opacity: 1;
+}
+
+/* 拖拽中的行 (ghost) */
+:deep(.sortable-ghost) {
+  opacity: 0.4;
+  background: color-mix(in srgb, var(--apple-blue, #FF9500) 12%, transparent) !important;
+}
+:deep(.sortable-ghost > td) {
+  background: color-mix(in srgb, var(--apple-blue, #FF9500) 12%, transparent) !important;
+}
+
+/* 拖拽选中的行 */
+:deep(.sortable-chosen) {
+  background: rgba(255, 149, 0, 0.05) !important;
+}
+:deep(.sortable-chosen > td) {
+  background: rgba(255, 149, 0, 0.05) !important;
+}
+</style>
+
+<!-- TreeSelect 下拉弹出层样式（非 scoped，因为 popup 渲染在 body 下） -->
+<style>
+.neo-tree-select-dropdown {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden;
+  padding: 4px !important;
+}
+:root[data-theme='dark'] .neo-tree-select-dropdown,
+.dark .neo-tree-select-dropdown {
+  background: var(--content-bg, #1c1c1e) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 树节点基础样式 */
+.neo-tree-select-dropdown .ant-select-tree-treenode {
+  border-radius: 8px;
+  padding: 4px 8px !important;
+  margin: 1px 0;
+  transition: background 0.2s ease;
+}
+
+/* Hover 态 - 柔和 */
+.neo-tree-select-dropdown .ant-select-tree-node-content-wrapper:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-radius: 6px;
+}
+:root[data-theme='dark'] .neo-tree-select-dropdown .ant-select-tree-node-content-wrapper:hover,
+.dark .neo-tree-select-dropdown .ant-select-tree-node-content-wrapper:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 选中态 - 左侧色条 + 文字加粗 + 微妙背景 */
+.neo-tree-select-dropdown .ant-select-tree-treenode-selected {
+  position: relative;
+  background: transparent !important;
+}
+.neo-tree-select-dropdown .ant-select-tree-treenode-selected .ant-select-tree-node-content-wrapper {
+  background: rgba(var(--apple-blue-rgb, 255, 149, 0), 0.06) !important;
+  font-weight: 600;
+  color: var(--apple-blue) !important;
+  border-radius: 6px;
+}
+/* 左侧强调色条 */
+.neo-tree-select-dropdown .ant-select-tree-treenode-selected::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--apple-blue);
+  border-radius: 2px;
+}
+
+/* 暗黑模式选中态 */
+:root[data-theme='dark'] .neo-tree-select-dropdown .ant-select-tree-treenode-selected .ant-select-tree-node-content-wrapper,
+.dark .neo-tree-select-dropdown .ant-select-tree-treenode-selected .ant-select-tree-node-content-wrapper {
+  background: rgba(255, 149, 0, 0.1) !important;
+  color: var(--apple-blue) !important;
+}
+
+/* 节点内容包装器 */
+.neo-tree-select-dropdown .ant-select-tree-node-content-wrapper {
+  border-radius: 6px !important;
+  padding: 2px 4px !important;
+  transition: all 0.2s ease;
+}
+
+/* 展开图标美化 */
+.neo-tree-select-dropdown .ant-select-tree-switcher {
+  color: var(--text-muted, #8e8e93);
+  transition: color 0.2s;
+}
+.neo-tree-select-dropdown .ant-select-tree-switcher:hover {
+  color: var(--apple-blue);
+}
+
+/* 节点图标在 popup 中的样式 */
+.neo-tree-select-dropdown .tree-node-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.neo-tree-select-dropdown .tree-node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+  flex-shrink: 0;
+  color: var(--apple-blue);
+  opacity: 0.85;
+}
+.neo-tree-select-dropdown .tree-node-icon .default-icon {
+  color: var(--text-muted, #8e8e93);
+  font-size: 13px;
+  opacity: 0.6;
+}
+.neo-tree-select-dropdown .tree-node-icon .svg-icon-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+.neo-tree-select-dropdown .tree-node-icon .svg-icon-inline svg {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+.neo-tree-select-dropdown .tree-node-icon .svg-icon-inline svg,
+.neo-tree-select-dropdown .tree-node-icon .svg-icon-inline svg path {
+  fill: currentColor !important;
+}
+.neo-tree-select-dropdown .tree-node-label {
+  font-size: 14px;
+  color: var(--text-main);
+}
+:root[data-theme='dark'] .neo-tree-select-dropdown .tree-node-label,
+.dark .neo-tree-select-dropdown .tree-node-label {
+  color: var(--text-main, #f5f5f7);
+}
+
+/* 选中节点中的图标颜色增强 */
+.neo-tree-select-dropdown .ant-select-tree-treenode-selected .tree-node-icon {
+  opacity: 1;
+  color: var(--apple-blue);
+}
+.neo-tree-select-dropdown .ant-select-tree-treenode-selected .tree-node-label {
+  color: var(--apple-blue) !important;
+}
 </style>

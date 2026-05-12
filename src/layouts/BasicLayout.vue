@@ -33,7 +33,8 @@
               >
                 <div class="title-left">
                   <div class="menu-icon-wrap">
-                    <font-awesome-icon :icon="getFaIcon(menu.icon)" />
+                    <span v-if="isSvgIcon(menu.icon)" class="svg-menu-icon" v-html="sanitizeSvgColor(menu.icon)"></span>
+                    <font-awesome-icon v-else :icon="getFaIcon(menu.icon)" />
                   </div>
                   <span class="menu-text" v-show="!collapsed">{{ menu.menuName }}</span>
                 </div>
@@ -58,7 +59,8 @@
                       @click.stop="navigateToMenu(child)"
                   >
                     <div class="menu-icon-wrap sub">
-                      <font-awesome-icon :icon="getFaIcon(child.icon)" />
+                      <span v-if="isSvgIcon(child.icon)" class="svg-menu-icon" v-html="sanitizeSvgColor(child.icon)"></span>
+                      <font-awesome-icon v-else :icon="getFaIcon(child.icon)" />
                     </div>
                     <span class="menu-text">{{ child.menuName }}</span>
                   </li>
@@ -76,7 +78,8 @@
                       @click.stop="navigateToMenu(child)"
                   >
                     <div class="menu-icon-wrap sub">
-                      <font-awesome-icon :icon="getFaIcon(child.icon)" />
+                      <span v-if="isSvgIcon(child.icon)" class="svg-menu-icon" v-html="sanitizeSvgColor(child.icon)"></span>
+                      <font-awesome-icon v-else :icon="getFaIcon(child.icon)" />
                     </div>
                     <span class="menu-text">{{ child.menuName }}</span>
                   </li>
@@ -94,7 +97,8 @@
               >
                 <div class="title-left">
                   <div class="menu-icon-wrap">
-                    <font-awesome-icon :icon="getFaIcon(menu.icon)" />
+                    <span v-if="isSvgIcon(menu.icon)" class="svg-menu-icon" v-html="sanitizeSvgColor(menu.icon)"></span>
+                    <font-awesome-icon v-else :icon="getFaIcon(menu.icon)" />
                   </div>
                   <span class="menu-text" v-show="!collapsed">{{ menu.menuName }}</span>
                 </div>
@@ -133,7 +137,8 @@
                         @click.stop="toggleBreadcrumb(index, crumb)"
                     >
                       <div class="crumb-icon-raw">
-                        <font-awesome-icon v-if="crumb.icon" :icon="getFaIcon(crumb.icon)" />
+                        <span v-if="isSvgIcon(crumb.icon)" class="svg-crumb-icon" v-html="sanitizeSvgColor(crumb.icon)"></span>
+                        <font-awesome-icon v-else-if="crumb.icon" :icon="getFaIcon(crumb.icon)" />
                       </div>
                       <span class="crumb-text">{{ crumb.name }}</span>
                     </div>
@@ -149,7 +154,8 @@
                             @click="navigateToMenu(sibling)"
                         >
                           <div class="crumb-dropdown-icon">
-                            <font-awesome-icon :icon="getFaIcon(sibling.icon)" />
+                            <span v-if="isSvgIcon(sibling.icon)" class="svg-crumb-icon" v-html="sanitizeSvgColor(sibling.icon)"></span>
+                            <font-awesome-icon v-else :icon="getFaIcon(sibling.icon)" />
                           </div>
                           <span class="dropdown-item-text">{{ sibling.menuName }}</span>
                         </div>
@@ -1380,6 +1386,27 @@ const breadcrumbs = computed(() => {
   return crumbs
 })
 
+const isSvgIcon = (icon: string) => icon && icon.trim().startsWith('<svg')
+
+const sanitizeSvgColor = (svgStr: string) => {
+  if (!svgStr) return ''
+  let result = svgStr
+  // 移除 SVG 内部的 <style> 块
+  result = result.replace(/<style[\s\S]*?<\/style>/gi, '')
+  // 移除所有 class 属性（避免外部样式干扰）
+  result = result.replace(/\s+class="[^"]*"/gi, '')
+  // 移除所有 style 内联属性
+  result = result.replace(/\s+style="[^"]*"/gi, '')
+  // 移除 SVG 根元素的 width 和 height
+  result = result.replace(/(<svg[^>]*?)\s+width="[^"]*"/gi, '$1')
+  result = result.replace(/(<svg[^>]*?)\s+height="[^"]*"/gi, '$1')
+  // 将所有 fill 替换为 currentColor（保留 fill="none"）
+  result = result.replace(/fill="(?!none)[^"]*"/gi, 'fill="currentColor"')
+  // 将所有 stroke 替换为 currentColor（保留 stroke="none"）
+  result = result.replace(/stroke="(?!none)[^"]*"/gi, 'stroke="currentColor"')
+  return result
+}
+
 const getFaIcon = (iconStr: string) => {
   if (!iconStr) return ['fas', 'circle']
   let name = iconStr.trim()
@@ -1462,6 +1489,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .apple-sidebar.is-collapsed .apple-menu-title { width: 44px; height: 44px; margin: 8px 14px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 12px; outline: none; }
 .apple-sidebar.is-collapsed .title-left { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; }
 .apple-sidebar.is-collapsed .menu-icon-wrap { width: auto; height: auto; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+
 /* ✅ 优化：折叠侧边栏时激活项的阴影全面使用 color-mix 跟随全局强调色，并移除导致白边的 inset shadow */
 .apple-sidebar.is-collapsed .apple-menu-title.parent-is-selected,
 .apple-sidebar.is-collapsed .apple-menu-title.single-item.is-selected { background: var(--apple-blue); color: #fff; box-shadow: 0 4px 14px color-mix(in srgb, var(--apple-blue) 40%, transparent); }
@@ -1484,6 +1512,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 .apple-sub-item.is-selected { background: var(--apple-blue); color: #fff; font-weight: 600; }
 .menu-icon-wrap.sub { width: 16px !important; height: 16px !important; font-size: 14px !important; opacity: 0.6; display: flex !important; align-items: center !important; justify-content: center !important; padding: 0 !important; margin: 0 !important; }
 .menu-icon-wrap.sub :deep(svg) { display: block !important; margin: 0 !important; padding: 0 !important; }
+
 
 .apple-collapsed-popup { position: absolute; top: 4px; left: calc(90% + 12px); background: rgba(30, 30, 30, 0.65); backdrop-filter: blur(50px) saturate(220%); -webkit-backdrop-filter: blur(50px) saturate(220%); border-radius: 14px; padding: 6px; min-width: 130px; box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.15), 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.15); opacity: 0; visibility: hidden; transform: translateX(-8px) scale(0.96); transform-origin: left center; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; z-index: 1000; }
 .apple-layout-root.theme-light .apple-collapsed-popup { background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 24px 48px -12px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.8); }
@@ -1900,5 +1929,63 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   --logo-text: #1d1d1f;
   --scrollbar-thumb: rgba(0, 0, 0, 0.2);
   --scrollbar-hover: rgba(0, 0, 0, 0.35);
+}
+
+/* 侧边栏 SVG 图标 - 与 FontAwesome 使用相同的 em 单位 */
+.apple-layout-root .svg-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.apple-layout-root .svg-menu-icon svg {
+  width: 1.15em !important;
+  height: 1.15em !important;
+  max-width: 1.15em !important;
+  max-height: 1.15em !important;
+  display: block;
+  fill: currentColor !important;
+}
+
+.apple-layout-root .svg-menu-icon svg path,
+.apple-layout-root .svg-menu-icon svg circle,
+.apple-layout-root .svg-menu-icon svg rect,
+.apple-layout-root .svg-menu-icon svg polygon,
+.apple-layout-root .svg-menu-icon svg g {
+  fill: currentColor !important;
+}
+
+.apple-layout-root .svg-menu-icon svg [stroke]:not([stroke="none"]) {
+  stroke: currentColor !important;
+}
+
+/* 面包屑 SVG 图标 */
+.apple-layout-root .svg-crumb-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.apple-layout-root .svg-crumb-icon svg {
+  width: 1.15em !important;
+  height: 1.15em !important;
+  max-width: 1.15em !important;
+  max-height: 1.15em !important;
+  display: block;
+  fill: currentColor !important;
+}
+
+.apple-layout-root .svg-crumb-icon svg path,
+.apple-layout-root .svg-crumb-icon svg circle,
+.apple-layout-root .svg-crumb-icon svg rect,
+.apple-layout-root .svg-crumb-icon svg polygon,
+.apple-layout-root .svg-crumb-icon svg g {
+  fill: currentColor !important;
+}
+
+.apple-layout-root .svg-crumb-icon svg [stroke]:not([stroke="none"]) {
+  stroke: currentColor !important;
 }
 </style>
