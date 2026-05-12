@@ -135,6 +135,20 @@
           <!-- 操作列 -->
           <template v-if="column.key === 'action'">
             <div class="action-btn-group">
+              <button
+                  v-if="record.status === 1"
+                  class="text-action-btn warning"
+                  v-permission="'system:user:edit'"
+                  :disabled="isSuperAdmin(record)"
+                  @click="handleToggleStatus(record)"
+              >禁用</button>
+              <button
+                  v-if="record.status === 0"
+                  class="text-action-btn safe"
+                  v-permission="'system:user:edit'"
+                  @click="handleToggleStatus(record)"
+              >启用</button>
+              <span class="action-divider"></span>
               <button class="text-action-btn danger" v-permission="'system:user:delete'" @click="confirmDelete(record.id)">删除</button>
               <span class="action-divider"></span>
               <button class="text-action-btn primary" v-permission="'system:user:edit'" @click="handleAssignRole(record)">分配角色</button>
@@ -377,22 +391,41 @@ const executeDelete = async () => {
 const statusConfirmVisible = ref(false)
 const statusConfirmLoading = ref(false)
 const statusTargetValue = ref<number>(1)
+const statusToggleUserId = ref<string | null>(null)
+const statusToggleUsername = ref<string>('')
 
-const statusConfirmDesc = computed(() =>
-  statusTargetValue.value === 1
-    ? `确定要启用选中的 ${selectedRowKeys.value.length} 个用户吗？`
-    : `确定要禁用选中的 ${selectedRowKeys.value.length} 个用户吗？`
-)
+// 判断用户是否为超级管理员
+const isSuperAdmin = (record: SysUser) => {
+  return record.roles?.some(r => r.roleCode === 'SUPER_ADMIN') ?? false
+}
+
+const statusConfirmDesc = computed(() => {
+  const actionText = statusTargetValue.value === 1 ? '启用' : '禁用'
+  if (statusToggleUserId.value) {
+    return `确定要${actionText}用户「${statusToggleUsername.value}」吗？`
+  }
+  return `确定要${actionText}选中的 ${selectedRowKeys.value.length} 个用户吗？`
+})
 
 const confirmBatchStatus = (status: number) => {
+  statusToggleUserId.value = null
+  statusToggleUsername.value = ''
   statusTargetValue.value = status
+  statusConfirmVisible.value = true
+}
+
+const handleToggleStatus = (record: SysUser) => {
+  statusToggleUserId.value = record.id
+  statusToggleUsername.value = record.username || record.nickname || ''
+  statusTargetValue.value = record.status === 1 ? 0 : 1
   statusConfirmVisible.value = true
 }
 
 const executeBatchStatus = async () => {
   statusConfirmLoading.value = true
   try {
-    const res = await batchUpdateStatus(selectedRowKeys.value, statusTargetValue.value)
+    const ids = statusToggleUserId.value ? [statusToggleUserId.value] : selectedRowKeys.value
+    const res = await batchUpdateStatus(ids, statusTargetValue.value)
     const result = res.data
 
     const actionText = statusTargetValue.value === 1 ? '启用' : '禁用'
@@ -410,7 +443,11 @@ const executeBatchStatus = async () => {
     }
     deleteResultVisible.value = true
 
-    selectedRowKeys.value = []
+    if (!statusToggleUserId.value) {
+      selectedRowKeys.value = []
+    }
+    statusToggleUserId.value = null
+    statusToggleUsername.value = ''
     fetchData()
   } catch (error: any) {
     AppleAlert.error('操作失败', error.message || '操作未完成')

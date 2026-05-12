@@ -483,12 +483,19 @@
 }
 
 .text-action-btn.safe {
-  color: var(--text-muted);
+  color: #34C759;
 }
 
 .text-action-btn.safe:hover {
-  color: var(--text-main);
-  background: var(--hover-bg);
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.text-action-btn.warning {
+  color: #FF9500;
+}
+
+.text-action-btn.warning:hover {
+  background: rgba(255, 149, 0, 0.1);
 }
 
 .text-action-btn.primary {
@@ -505,6 +512,12 @@
 
 .text-action-btn.danger:hover {
   background: rgba(255, 69, 58, 0.1);
+}
+
+.text-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ================================================================
