@@ -247,7 +247,7 @@ const handleConfirm = () => {
   top: -1px;
 }
 
-:global(.neo-form .ant-input),
+:global(.neo-form .ant-input:not(textarea)),
 :global(.neo-form .ant-input-number-input),
 :global(.neo-form .ant-select-selector) {
   border-radius: 10px !important;
@@ -268,7 +268,7 @@ const handleConfirm = () => {
 :global(.neo-form .ant-select-selection-item) { line-height: 38px !important; }
 :global(.neo-form .ant-input-number) { width: 100% !important; border: none !important; box-shadow: none !important; }
 :global(.neo-form .ant-input-number-handler-wrap) { display: none !important; }
-:global(.neo-form textarea.ant-input) { height: auto !important; padding: 12px !important; min-height: 80px !important; line-height: 1.5 !important; }
+:global(.neo-form textarea.ant-input) { padding: 12px !important; min-height: 0; line-height: 1.5 !important; overflow: hidden; border-radius: 10px !important; background: var(--content-bg, #ffffff) !important; border: 1px solid rgba(0, 0, 0, 0.08) !important; color: var(--text-main, #1d1d1f) !important; font-size: 14px !important; }
 
 /* 聚焦态 - 主题色跟随（默认 primary） */
 :global(.neo-form .ant-input:focus),
@@ -519,7 +519,7 @@ html.dark .neo-btn-solid.warning:hover {
   box-shadow: 0 4px 20px rgba(255, 159, 10, 0.45) !important;
 }
 
-html.dark .neo-form .ant-input,
+html.dark .neo-form .ant-input:not(textarea),
 html.dark .neo-form .ant-input-number-input,
 html.dark .neo-form .ant-select-selector {
   background: rgba(255, 255, 255, 0.05) !important;
@@ -553,6 +553,12 @@ html.dark .neo-form textarea.ant-input[disabled] {
   color: rgba(255, 255, 255, 0.25) !important;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4) !important;
   border-color: transparent !important;
+}
+
+html.dark .neo-form textarea.ant-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
 }
 
 html.dark .neo-form .ant-select-arrow {

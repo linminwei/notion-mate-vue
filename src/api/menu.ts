@@ -24,3 +24,14 @@ export const deleteMenu = (id: string) => {
 
 export const batchSortMenu = (items: { id: string; sort: number }[]) =>
   request.put('/system/menu/batch-sort', { items })
+
+export const assignMenu = (data: { roleId: string; menuIds: string[] }) =>
+  request.post('/system/menu/assign', data)
+
+export const getRoleMenuTree = (roleId: string) => {
+  return request.get<any[]>('/system/menu/role/' + roleId)
+}
+
+export const getMenuAssignedRoles = (menuId: string) => {
+  return request.get<any[]>('/system/menu/' + menuId + '/assigned-roles')
+}

@@ -244,8 +244,19 @@
                   <span class="cell-sort">{{ record.sort }}</span>
                 </template>
                 <template v-if="column.key === 'status'">
-                  <div class="cell-status" :class="record.status === 1 ? 'active' : 'inactive'">
-                    {{ getStatusLabel(record.status) }}
+                  <div v-if="!canEditDataStatus" class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
+                    <div class="status-dot"></div>
+                    <span>{{ getStatusLabel(record.status) }}</span>
+                  </div>
+                  <div
+                    v-else
+                    class="status-segmented-toggle"
+                    :class="record.status === 1 ? 'is-active' : 'is-inactive'"
+                    @click="handleToggleDataStatus(record)"
+                  >
+                    <div class="seg-thumb"></div>
+                    <span class="seg-label seg-on" :class="{ current: record.status === 1 }">启用</span>
+                    <span class="seg-label seg-off" :class="{ current: record.status === 0 }">禁用</span>
                   </div>
                 </template>
                 <template v-if="column.key === 'action'">
@@ -282,7 +293,7 @@
         <a-input v-model:value="typeFormState.dictCode" placeholder="如：sys_user_sex" :disabled="!!typeFormState.id" />
       </a-form-item>
       <a-form-item label="备注说明" name="remark">
-        <a-textarea v-model:value="typeFormState.remark" placeholder="补充详细的用途说明..." :rows="3" />
+        <a-textarea v-model:value="typeFormState.remark" placeholder="补充详细的用途说明..." :auto-size="{ minRows: 1 }" />
       </a-form-item>
     </NeoFormModal>
 
@@ -317,7 +328,7 @@
         <a-input-number v-model:value="dataFormState.sort" :min="0" placeholder="数值越小越靠前" />
       </a-form-item>
       <a-form-item label="备注说明" name="remark">
-        <a-textarea v-model:value="dataFormState.remark" placeholder="补充说明..." :rows="2" />
+        <a-textarea v-model:value="dataFormState.remark" placeholder="补充说明..." :auto-size="{ minRows: 1 }" />
       </a-form-item>
     </NeoFormModal>
 
@@ -331,6 +342,17 @@
         :loading="deleteConfirmLoading"
         @confirm="executeDelete"
     />
+
+    <!-- 数据状态切换确认弹窗 -->
+    <AppleConfirmModal
+        v-model:visible="dataStatusConfirmVisible"
+        :type="dataStatusTargetValue === 1 ? 'warning' : 'danger'"
+        :title="dataStatusTargetValue === 1 ? '启用字典数据' : '禁用字典数据'"
+        :desc="dataStatusConfirmDesc"
+        :confirmText="dataStatusTargetValue === 1 ? '确认启用' : '确认禁用'"
+        :loading="dataStatusConfirmLoading"
+        @confirm="executeDataStatusToggle"
+    />
   </div>
 </template>
 
@@ -343,6 +365,10 @@ import {
 import type { DictType, DictData } from '@/types'
 import type { Rule } from 'ant-design-vue/es/form'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const canEditDataStatus = computed(() => userStore.hasPermission('system:dict:edit'))
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
 
@@ -384,6 +410,44 @@ const getStatusLabel = (statusValue: number) => {
   if (!commonStatusDict.value.length) return statusValue === 1 ? '启用' : '禁用'
   const dict = commonStatusDict.value.find(d => Number(d.dictValue) === statusValue)
   return dict ? dict.dictLabel : (statusValue === 1 ? '启用' : '禁用')
+}
+
+// ==================== 数据状态切换逻辑 ====================
+const dataStatusConfirmVisible = ref(false)
+const dataStatusConfirmLoading = ref(false)
+const dataStatusTargetValue = ref<number>(1)
+const dataStatusTargetItem = ref<DictData | null>(null)
+
+const dataStatusConfirmDesc = computed(() => {
+  const actionText = dataStatusTargetValue.value === 1 ? '启用' : '禁用'
+  if (dataStatusTargetItem.value) {
+    return `确定要${actionText}字典数据「${dataStatusTargetItem.value.dictLabel}」吗？`
+  }
+  return ''
+})
+
+const handleToggleDataStatus = (record: DictData) => {
+  dataStatusTargetItem.value = record
+  dataStatusTargetValue.value = record.status === 1 ? 0 : 1
+  dataStatusConfirmVisible.value = true
+}
+
+const executeDataStatusToggle = async () => {
+  if (!dataStatusTargetItem.value) return
+  dataStatusConfirmLoading.value = true
+  try {
+    await updateDictData({ ...dataStatusTargetItem.value, status: dataStatusTargetValue.value })
+    AppleAlert.success(
+      dataStatusTargetValue.value === 1 ? '已启用' : '已禁用',
+      `字典数据「${dataStatusTargetItem.value.dictLabel}」状态已更新`
+    )
+    await fetchDictDataList(currentType.value?.dictTypeId || '')
+  } catch (error: any) {
+    AppleAlert.error('操作失败', error.message || '状态切换未完成')
+  } finally {
+    dataStatusConfirmLoading.value = false
+    dataStatusConfirmVisible.value = false
+  }
 }
 
 // ==================== 自定义确认删除逻辑 ====================
@@ -524,7 +588,7 @@ const dataColumns = [
   { title: '标签名称', dataIndex: 'dictLabel', key: 'dictLabel' },
   { title: '存储键值', dataIndex: 'dictValue', key: 'dictValue' },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 80, align: 'center' as const },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 100, align: 'center' as const },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 120, align: 'center' as const },
   { title: '操作', key: 'action', width: 100, align: 'right' as const }
 ]
 
@@ -1273,51 +1337,6 @@ onMounted(() => {
 .cell-value { font-family: monospace; color: var(--text-muted); font-size: 13px; background: var(--hover-bg, #f5f5f7); padding: 2px 8px; border-radius: 6px; }
 .cell-sort { background: rgba(0,0,0,0.04); color: var(--text-muted); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
 
-/* ================= 右侧表格：语义化高级状态标签 ================= */
-.cell-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.cell-status::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-right: 6px;
-}
-
-/* 启用态 */
-.cell-status.active {
-  color: #248A3D;
-  background: rgba(52, 199, 89, 0.12);
-  border: 1px solid rgba(52, 199, 89, 0.2);
-}
-.cell-status.active::before {
-  background-color: #34C759;
-  box-shadow: 0 0 4px rgba(52, 199, 89, 0.6);
-}
-
-/* 禁用态 */
-.cell-status.inactive {
-  color: #D70015;
-  background: rgba(255, 69, 58, 0.12);
-  border: 1px solid rgba(255, 69, 58, 0.2);
-}
-.cell-status.inactive::before {
-  background-color: #FF453A;
-  box-shadow: 0 0 4px rgba(255, 69, 58, 0.6);
-}
-
-/* 暗黑模式适配 */
-:global(.dark) .cell-status.active { color: #34C759; }
-:global(.dark) .cell-status.inactive { color: #FF453A; }
+/* ================= 右侧表格：状态列（使用全局 .status-indicator-wrap） ================= */
 
 </style>

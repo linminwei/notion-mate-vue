@@ -119,11 +119,21 @@
             </div>
           </template>
 
-          <!-- 状态列 -->
+          <!-- 状态列 (分段开关，无权限仅展示，超级管理员禁用态) -->
           <template v-if="column.key === 'status'">
-            <div class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
+            <div v-if="!canEditStatus" class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
               <div class="status-dot"></div>
               <span>{{ record.status === 1 ? '启用' : '禁用' }}</span>
+            </div>
+            <div
+              v-else
+              class="status-segmented-toggle"
+              :class="[record.status === 1 ? 'is-active' : 'is-inactive', { disabled: isSuperAdmin(record) }]"
+              @click="!isSuperAdmin(record) && handleToggleStatus(record)"
+            >
+              <div class="seg-thumb"></div>
+              <span class="seg-label seg-on" :class="{ current: record.status === 1 }">启用</span>
+              <span class="seg-label seg-off" :class="{ current: record.status === 0 }">禁用</span>
             </div>
           </template>
 
@@ -135,20 +145,6 @@
           <!-- 操作列 -->
           <template v-if="column.key === 'action'">
             <div class="action-btn-group">
-              <button
-                  v-if="record.status === 1"
-                  class="text-action-btn warning"
-                  v-permission="'system:user:edit'"
-                  :disabled="isSuperAdmin(record)"
-                  @click="handleToggleStatus(record)"
-              >禁用</button>
-              <button
-                  v-if="record.status === 0"
-                  class="text-action-btn safe"
-                  v-permission="'system:user:edit'"
-                  @click="handleToggleStatus(record)"
-              >启用</button>
-              <span class="action-divider"></span>
               <button class="text-action-btn danger" v-permission="'system:user:delete'" @click="confirmDelete(record.id)">删除</button>
               <span class="action-divider"></span>
               <button class="text-action-btn primary" v-permission="'system:user:edit'" @click="handleAssignRole(record)">分配角色</button>
@@ -274,9 +270,13 @@ import type { TablePaginationConfig } from 'ant-design-vue'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
+import { useUserStore } from '@/stores/user'
 
 // --- 表格列定义 ---
 // --- 头像处理 ---
+const userStore = useUserStore()
+const canEditStatus = computed(() => userStore.hasPermission('system:user:edit'))
+
 const getAvatarUrl = (avatar: string) => {
   if (!avatar) return ''
   // 如果已经是 URL（http/https 或 data:image），直接返回
@@ -289,9 +289,9 @@ const columns = [
   { title: '用户信息', key: 'userInfo', width: 240 },
   { title: '联系方式', key: 'contact', width: 280 },
   { title: '角色', key: 'roles', width: 180 },
-  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 100 },
+  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 120 },
   { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
-  { title: '操作', key: 'action', align: 'center', width: 300 }
+  { title: '操作', key: 'action', align: 'center', width: 200 }
 ]
 
 // --- 时间格式化 ---
@@ -962,7 +962,7 @@ onMounted(() => {
 
 /* 结果列表 */
 .result-list {
-  padding: 4px 16px 16px;
+  padding: 4px 24px 16px;
   overflow-y: auto;
   max-height: 280px;
   display: flex;
@@ -974,8 +974,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
   transition: background 0.2s;
 }
 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="neo-page-container">
 
     <!-- ================= 页面头部与工具栏 ================= -->
@@ -70,17 +70,27 @@
 
           <!-- 排序权重 -->
           <template v-if="column.key === 'sort'">
-            <span class="sort-badge drag-handle" title="拖拽排序">
-              <font-awesome-icon :icon="['fas', 'grip-vertical']" class="drag-icon" />
+            <span :class="['sort-badge', { 'drag-handle': canSort }]" :title="canSort ? '拖拽排序' : ''">
+              <font-awesome-icon v-if="canSort" :icon="['fas', 'grip-vertical']" class="drag-icon" />
               {{ record.sort }}
             </span>
           </template>
 
-          <!-- 状态列 (带光晕的指示器) -->
+          <!-- 状态列 (分段开关，点击切换) -->
           <template v-if="column.key === 'status'">
-            <div class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
+            <div v-if="!canEditStatus" class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
               <div class="status-dot"></div>
               <span>{{ record.status === 1 ? '启用' : '禁用' }}</span>
+            </div>
+            <div
+              v-else
+              class="status-segmented-toggle"
+              :class="record.status === 1 ? 'is-active' : 'is-inactive'"
+              @click="handleToggleStatus(record)"
+            >
+              <div class="seg-thumb"></div>
+              <span class="seg-label seg-on" :class="{ current: record.status === 1 }">启用</span>
+              <span class="seg-label seg-off" :class="{ current: record.status === 0 }">禁用</span>
             </div>
           </template>
 
@@ -88,10 +98,10 @@
           <template v-if="column.key === 'action'">
             <div class="action-btn-group">
               <button
-                  class="text-action-btn safe"
+                  class="text-action-btn primary"
                   v-permission="'system:menu:add'"
                   v-if="record.menuType !== 3"
-                  @click="handleAdd(record.id)"
+                  @click="handleAdd(record.id, record.menuType)"
               >
                 新增下级
               </button>
@@ -141,9 +151,7 @@
             :field-names="{ label: 'menuName', value: 'id' }"
             placeholder="请选择上级菜单 (默认顶级)"
             allow-clear
-            show-search
             tree-default-expand-all
-            tree-node-filter-prop="menuName"
             class="neo-tree-select"
             popupClassName="neo-tree-select-dropdown"
         >
@@ -165,19 +173,19 @@
 
       <a-form-item label="菜单类型" name="menuType">
         <div class="neo-radio-group">
-          <label class="neo-radio-card" :class="{ 'is-active': formState.menuType === 1 }">
+          <label class="neo-radio-card type-dir" :class="{ 'is-active': formState.menuType === 1 }">
             <input type="radio" v-model="formState.menuType" :value="1" class="hidden-radio" />
-            <div class="radio-icon text-blue"><font-awesome-icon :icon="['fas', 'folder']" /></div>
+            <div class="radio-icon text-gold"><font-awesome-icon :icon="['fas', 'folder']" /></div>
             <span>目录</span>
           </label>
-          <label class="neo-radio-card" :class="{ 'is-active': formState.menuType === 2 }">
+          <label class="neo-radio-card type-menu" :class="{ 'is-active': formState.menuType === 2 }">
             <input type="radio" v-model="formState.menuType" :value="2" class="hidden-radio" />
             <div class="radio-icon text-green"><font-awesome-icon :icon="['fas', 'file-alt']" /></div>
             <span>菜单</span>
           </label>
-          <label class="neo-radio-card" :class="{ 'is-active': formState.menuType === 3 }">
+          <label class="neo-radio-card type-btn" :class="{ 'is-active': formState.menuType === 3 }">
             <input type="radio" v-model="formState.menuType" :value="3" class="hidden-radio" />
-            <div class="radio-icon text-orange"><font-awesome-icon :icon="['fas', 'hand-pointer']" /></div>
+            <div class="radio-icon text-red"><font-awesome-icon :icon="['fas', 'hand-pointer']" /></div>
             <span>按钮</span>
           </label>
         </div>
@@ -237,12 +245,66 @@
         @confirm="executeDelete"
     />
 
+    <!-- ================= 状态切换确认弹窗 ================= -->
+    <AppleConfirmModal
+        v-model:visible="statusConfirmVisible"
+        :type="statusTargetValue === 1 ? 'warning' : 'danger'"
+        :title="statusTargetValue === 1 ? '启用菜单' : '禁用菜单'"
+        :desc="statusConfirmDesc"
+        :confirmText="statusTargetValue === 1 ? '确认启用' : '确认禁用'"
+        :loading="statusConfirmLoading"
+        @confirm="executeStatusToggle"
+    />
+
+    <!-- ================= 菜单删除 - 已分配角色结果弹窗 ================= -->
+    <Teleport to="body">
+      <Transition name="result-modal">
+        <div v-if="menuDeleteResultVisible" class="delete-result-overlay" @click.self="menuDeleteResultVisible = false">
+          <div class="delete-result-modal">
+            <!-- 头部 -->
+            <div class="result-header error">
+              <div class="result-icon-wrap">
+                <font-awesome-icon :icon="['fas', 'times-circle']" />
+              </div>
+              <div class="result-header-text">
+                <h3 class="result-title">无法删除</h3>
+                <p class="result-subtitle">
+                  该菜单已分配给以下角色，无法删除
+                </p>
+              </div>
+            </div>
+
+            <!-- 已分配角色列表 -->
+            <div class="result-list" v-if="menuDeleteAssignedRoles.length">
+              <div
+                v-for="role in menuDeleteAssignedRoles"
+                :key="role.id"
+                class="result-item item-fail"
+              >
+                <div class="item-status-icon">
+                  <font-awesome-icon :icon="['fas', 'user-shield']" />
+                </div>
+                <div class="item-info">
+                  <span class="item-username">{{ role.roleName }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="result-footer">
+              <button class="alert-btn cancel" @click="menuDeleteResultVisible = false">我知道了</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
-import { getMenuList, addMenu, updateMenu, deleteMenu, batchSortMenu } from '@/api/menu.ts'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
+import { getMenuList, addMenu, updateMenu, deleteMenu, batchSortMenu, getMenuAssignedRoles } from '@/api/menu.ts'
 import type { SysMenu } from '@/types'
 import type { FormInstance, Rule } from 'ant-design-vue/es/form'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
@@ -262,8 +324,8 @@ const columns = [
   { title: '路由/组件路径', dataIndex: 'path', key: 'path', ellipsis: true },
   { title: '权限标识', dataIndex: 'permission', key: 'permission', ellipsis: true },
   { title: '排序', dataIndex: 'sort', key: 'sort', align: 'center', width: 80 },
-  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 100 },
-  { title: '操作', key: 'action', align: 'center', width: 220 } // 设置操作列表头居中
+  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 120 },
+  { title: '操作', key: 'action', align: 'center', width: 240 } // 设置操作列表头居中
 ]
 
 // --- 字典数据 ---
@@ -348,6 +410,8 @@ const formState = reactive<Partial<SysMenu>>({
   id: undefined, parentId: '0', menuName: '', menuType: 1,
   path: '', component: '', permission: '', icon: '', sort: 0, status: 1
 })
+const canSort = computed(() => userStore.hasPermission('system:menu:edit'))
+const canEditStatus = computed(() => userStore.hasPermission('system:menu:edit'))
 const modalTitle = computed(() => formState.id ? '编辑菜单配置' : '新增菜单/按钮')
 
 const rules: Record<string, Rule[]> = {
@@ -361,8 +425,32 @@ const deleteConfirmVisible = ref(false)
 const deleteConfirmLoading = ref(false)
 const deleteTargetId = ref<string | null>(null)
 
-const confirmDelete = (id: string) => {
+// --- 菜单删除已分配角色结果弹窗
+const menuDeleteResultVisible = ref(false)
+const menuDeleteAssignedRoles = ref<any[]>([])
+
+// 公共：检查菜单已分配角色，有则展示结果弹窗，返回是否已展示弹窗
+const checkAssignedAndShowModal = async (menuId: string): Promise<boolean> => {
+  try {
+    const res = await getMenuAssignedRoles(menuId)
+    const roles = res.data || []
+    if (roles.length > 0) {
+      menuDeleteAssignedRoles.value = roles
+      menuDeleteResultVisible.value = true
+      return true
+    }
+    return false
+  } catch (error: any) {
+    AppleAlert.error('检查失败', error.message || '无法检查菜单分配状态')
+    return true // 阻断后续操作
+  }
+}
+
+const confirmDelete = async (id: string) => {
   deleteTargetId.value = id
+  const blocked = await checkAssignedAndShowModal(id)
+  if (blocked) return
+  // 无已分配角色，展示删除确认弹窗
   deleteConfirmVisible.value = true
 }
 
@@ -375,10 +463,54 @@ const executeDelete = async () => {
     await fetchData()
     await userStore.fetchUserInfo()
   } catch (error: any) {
-    AppleAlert.error('删除失败', error.message || '操作未完成')
+    const msg = error.message || ''
+    if (msg.includes('已分配给角色')) {
+      AppleAlert.error('无法删除', msg)
+    } else {
+      AppleAlert.error('删除失败', msg || '操作未完成')
+    }
   } finally {
     deleteConfirmLoading.value = false
     deleteConfirmVisible.value = false
+  }
+}
+
+// --- 状态切换逻辑 ---
+const statusConfirmVisible = ref(false)
+const statusConfirmLoading = ref(false)
+const statusTargetValue = ref<number>(1)
+const statusTargetMenu = ref<SysMenu | null>(null)
+
+const statusConfirmDesc = computed(() => {
+  const actionText = statusTargetValue.value === 1 ? '启用' : '禁用'
+  if (statusTargetMenu.value) {
+    return `确定要${actionText}菜单「${statusTargetMenu.value.menuName}」吗？`
+  }
+  return ''
+})
+
+const handleToggleStatus = (record: SysMenu) => {
+  statusTargetMenu.value = record
+  statusTargetValue.value = record.status === 1 ? 0 : 1
+  statusConfirmVisible.value = true
+}
+
+const executeStatusToggle = async () => {
+  if (!statusTargetMenu.value) return
+  statusConfirmLoading.value = true
+  try {
+    await updateMenu({ ...statusTargetMenu.value, status: statusTargetValue.value })
+    AppleAlert.success(
+      statusTargetValue.value === 1 ? '已启用' : '已禁用',
+      `菜单「${statusTargetMenu.value.menuName}」状态已更新`
+    )
+    await fetchData()
+    await userStore.fetchUserInfo()
+  } catch (error: any) {
+    AppleAlert.error('操作失败', error.message || '状态切换未完成')
+  } finally {
+    statusConfirmLoading.value = false
+    statusConfirmVisible.value = false
   }
 }
 
@@ -399,9 +531,9 @@ const fetchData = async () => {
   }
 }
 
-const handleAdd = (parentId = '0') => {
+const handleAdd = (parentId = '0', parentMenuType = 0) => {
   Object.assign(formState, {
-    id: undefined, parentId, menuName: '', menuType: 1,
+    id: undefined, parentId, menuName: '', menuType: parentMenuType + 1,
     path: '', component: '', permission: '', icon: '', sort: 0, status: 1
   })
   modalVisible.value = true
@@ -443,6 +575,7 @@ const customRow = (record: SysMenu) => ({
 let sortableInstance: Sortable | null = null
 
 const initSortable = () => {
+  if (!userStore.hasPermission('system:menu:edit')) return
   nextTick(() => {
     const tableEl = document.querySelector('.menu-table .ant-table-tbody') as HTMLElement
     if (!tableEl) return
@@ -457,6 +590,7 @@ const initSortable = () => {
       chosenClass: 'sortable-chosen',
       handle: '.drag-handle',
       onEnd: async (evt) => {
+        if (!canSort.value) return
         const { oldIndex, newIndex, item } = evt
         if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
 
@@ -535,7 +669,18 @@ const initSortable = () => {
 }
 
 onMounted(() => {
-  fetchData().then(() => initSortable())
+  fetchData().then(() => {
+    if (canSort.value) initSortable()
+  })
+})
+
+watch(canSort, (val) => {
+  if (val) {
+    initSortable()
+  } else if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
 })
 
 onBeforeUnmount(() => {
@@ -593,28 +738,82 @@ onBeforeUnmount(() => {
 }
 .neo-radio-card.is-active {
   border-width: 2px;
-  border-color: var(--apple-blue);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue) 6%, transparent), color-mix(in srgb, var(--apple-blue) 14%, transparent));
   color: var(--text-main);
   font-weight: 600;
   transform: translateY(-1px);
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--apple-blue) 12%, transparent),
-    0 4px 16px color-mix(in srgb, var(--apple-blue) 15%, transparent);
 }
-:root[data-theme='dark'] .neo-radio-card.is-active,
-.dark .neo-radio-card.is-active {
-  border-color: var(--apple-blue);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue) 10%, transparent), color-mix(in srgb, var(--apple-blue) 18%, transparent));
+
+.neo-radio-card.type-dir.is-active {
+  border-color: #FFD60A;
+  background: linear-gradient(135deg, rgba(255, 214, 10, 0.06), rgba(255, 214, 10, 0.14));
   box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--apple-blue) 18%, transparent),
-    0 4px 16px color-mix(in srgb, var(--apple-blue) 20%, transparent);
+    0 0 0 3px rgba(255, 214, 10, 0.12),
+    0 4px 16px rgba(255, 214, 10, 0.15);
 }
+
+.neo-radio-card.type-menu.is-active {
+  border-color: #34C759;
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.06), rgba(52, 199, 89, 0.14));
+  box-shadow:
+    0 0 0 3px rgba(52, 199, 89, 0.12),
+    0 4px 16px rgba(52, 199, 89, 0.15);
+}
+
+.neo-radio-card.type-btn.is-active {
+  border-color: #FF453A;
+  background: linear-gradient(135deg, rgba(255, 69, 58, 0.06), rgba(255, 69, 58, 0.14));
+  box-shadow:
+    0 0 0 3px rgba(255, 69, 58, 0.12),
+    0 4px 16px rgba(255, 69, 58, 0.15);
+}
+
+:root[data-theme='dark'] .neo-radio-card.type-dir.is-active,
+.dark .neo-radio-card.type-dir.is-active {
+  border-color: #FFD60A;
+  background: linear-gradient(135deg, rgba(255, 214, 10, 0.10), rgba(255, 214, 10, 0.18));
+  box-shadow:
+    0 0 0 3px rgba(255, 214, 10, 0.18),
+    0 4px 16px rgba(255, 214, 10, 0.20);
+}
+
+:root[data-theme='dark'] .neo-radio-card.type-menu.is-active,
+.dark .neo-radio-card.type-menu.is-active {
+  border-color: #34C759;
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.10), rgba(52, 199, 89, 0.18));
+  box-shadow:
+    0 0 0 3px rgba(52, 199, 89, 0.18),
+    0 4px 16px rgba(52, 199, 89, 0.20);
+}
+
+:root[data-theme='dark'] .neo-radio-card.type-btn.is-active,
+.dark .neo-radio-card.type-btn.is-active {
+  border-color: #FF453A;
+  background: linear-gradient(135deg, rgba(255, 69, 58, 0.10), rgba(255, 69, 58, 0.18));
+  box-shadow:
+    0 0 0 3px rgba(255, 69, 58, 0.18),
+    0 4px 16px rgba(255, 69, 58, 0.20);
+}
+
 .neo-radio-card.is-active:hover {
   transform: translateY(-2px);
+}
+
+.neo-radio-card.type-dir.is-active:hover {
   box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--apple-blue) 15%, transparent),
-    0 6px 20px color-mix(in srgb, var(--apple-blue) 20%, transparent);
+    0 0 0 3px rgba(255, 214, 10, 0.15),
+    0 6px 20px rgba(255, 214, 10, 0.20);
+}
+
+.neo-radio-card.type-menu.is-active:hover {
+  box-shadow:
+    0 0 0 3px rgba(52, 199, 89, 0.15),
+    0 6px 20px rgba(52, 199, 89, 0.20);
+}
+
+.neo-radio-card.type-btn.is-active:hover {
+  box-shadow:
+    0 0 0 3px rgba(255, 69, 58, 0.15),
+    0 6px 20px rgba(255, 69, 58, 0.20);
 }
 .radio-icon {
   font-size: 16px;
@@ -624,9 +823,9 @@ onBeforeUnmount(() => {
   transform: scale(1.15);
 }
 .hidden-radio { display: none; }
-.text-blue { color: var(--apple-blue); }
+.text-gold { color: #FFD60A; }
 .text-green { color: #34C759; }
-.text-orange { color: #FF9F0A; }
+.text-red { color: #FF453A; }
 
 /* 状态 Switch 美化 */
 .neo-switch-wrapper { display: flex; align-items: center; gap: 10px; height: 42px; }
@@ -639,17 +838,30 @@ onBeforeUnmount(() => {
 :deep(.neo-tree-select .ant-select-selector) {
   border-radius: 10px !important;
   border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
+  background: var(--input-bg, #fff) !important;
+  padding: 4px 12px !important;
+  height: auto !important;
+  min-height: 40px;
+  font-size: 14px;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 :root[data-theme='dark'] :deep(.neo-tree-select .ant-select-selector),
 .dark :deep(.neo-tree-select .ant-select-selector) {
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 :deep(.neo-tree-select.ant-select-focused .ant-select-selector),
 :deep(.neo-tree-select:hover .ant-select-selector) {
   border-color: var(--apple-blue) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 12%, transparent) !important;
+}
+:deep(.neo-tree-select .ant-select-selection-placeholder) {
+  color: var(--text-muted, #8e8e93);
+  font-size: 14px;
+}
+:deep(.neo-tree-select .ant-select-selection-item) {
+  font-size: 14px;
+  color: var(--text-main);
 }
 
 /* TreeSelect 节点内容布局 */
@@ -727,46 +939,110 @@ onBeforeUnmount(() => {
   fill: currentColor;
 }
 
-/* ================= 拖拽排序样式 ================= */
+/* ================= 拖拽排序样式 — Apple 设计语言 ================= */
+
+/*
+  设计理念：
+  - 握柄是「空气」—— 无容器、无背景、无描边，仅凭颜色叙事
+  - 静默 → 现身 → 蓝色 三段渐进，蓝色 = 交互进行中（Apple 系统蓝）
+  - 数字使用 SF 字体特征：等宽数字、微紧缩字距
+  - 唯一的形变留给最重要的时刻：拖拽中微压缩
+*/
+
+/* 排序数字 */
+.sort-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+  color: rgba(60, 60, 67, 0.50);
+}
+
+.dark .sort-badge {
+  color: rgba(235, 235, 245, 0.42);
+}
+
+/* 握柄 — 无形容器，图标即本体 */
 .drag-handle {
   cursor: grab;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   user-select: none;
-  transition: all 0.2s;
 }
-.drag-handle:hover {
-  color: var(--apple-blue);
-  transform: scale(1.05);
-}
+
 .drag-handle:active {
   cursor: grabbing;
 }
+
+/* 握柄图标 — 纯颜色驱动三段叙事 */
 .drag-icon {
-  font-size: 11px;
-  opacity: 0.5;
-  transition: opacity 0.2s;
-}
-.drag-handle:hover .drag-icon {
-  opacity: 1;
+  display: block;
+  font-size: 12px;
+  color: rgba(60, 60, 67, 0.22);
+  transition: color 0.15s ease, transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
-/* 拖拽中的行 (ghost) */
+/* 第一段：行 hover — 图标轻现身 */
+:deep(.ant-table-row):hover .drag-icon {
+  color: rgba(60, 60, 67, 0.40);
+}
+
+/* 第二段：握柄 hover — 明确可交互 */
+.drag-handle:hover .drag-icon {
+  color: rgba(60, 60, 67, 0.65);
+}
+
+/* 第三段：拖拽中 — Apple 系统蓝 + 微压缩反馈 */
+.drag-handle:active .drag-icon {
+  color: #007AFF;
+  transform: scale(0.88);
+}
+
+/* ── 暗黑模式 ── */
+.dark .drag-icon {
+  color: rgba(235, 235, 245, 0.18);
+}
+
+.dark :deep(.ant-table-row):hover .drag-icon {
+  color: rgba(235, 235, 245, 0.36);
+}
+
+.dark .drag-handle:hover .drag-icon {
+  color: rgba(235, 235, 245, 0.60);
+}
+
+.dark .drag-handle:active .drag-icon {
+  color: #0A84FF;
+}
+
+/* 拖拽 ghost 行 — 褪色不染色 */
 :deep(.sortable-ghost) {
-  opacity: 0.4;
-  background: color-mix(in srgb, var(--apple-blue, #FF9500) 12%, transparent) !important;
+  opacity: 0.28;
+  background: transparent !important;
 }
 :deep(.sortable-ghost > td) {
-  background: color-mix(in srgb, var(--apple-blue, #FF9500) 12%, transparent) !important;
+  background: transparent !important;
 }
 
-/* 拖拽选中的行 */
+/* 拖拽选中行 — 卡片浮起 */
 :deep(.sortable-chosen) {
-  background: rgba(255, 149, 0, 0.05) !important;
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.015) !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 :deep(.sortable-chosen > td) {
-  background: rgba(255, 149, 0, 0.05) !important;
+  background: rgba(0, 0, 0, 0.015) !important;
+}
+
+.dark :deep(.sortable-chosen) {
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.30);
+}
+.dark :deep(.sortable-chosen > td) {
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 </style>
 
@@ -777,40 +1053,68 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
   overflow: hidden;
-  padding: 4px !important;
+  padding: 6px !important;
 }
 :root[data-theme='dark'] .neo-tree-select-dropdown,
 .dark .neo-tree-select-dropdown {
   background: var(--content-bg, #1c1c1e) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 下拉滚动条 */
+.neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar {
+  width: 5px;
+}
+.neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+.neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+.neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+:root[data-theme='dark'] .neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-thumb,
+.dark .neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+:root[data-theme='dark'] .neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-thumb:hover,
+.dark .neo-tree-select-dropdown .ant-select-tree-list-holder::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* 树节点基础样式 */
 .neo-tree-select-dropdown .ant-select-tree-treenode {
   border-radius: 8px;
-  padding: 4px 8px !important;
+  padding: 3px 6px !important;
   margin: 1px 0;
-  transition: background 0.2s ease;
+  transition: all 0.15s ease;
 }
 
-/* Hover 态 - 柔和 */
+/* Hover 态 */
+.neo-tree-select-dropdown .ant-select-tree-node-content-wrapper {
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  transition: all 0.15s ease;
+}
 .neo-tree-select-dropdown .ant-select-tree-node-content-wrapper:hover {
   background: rgba(0, 0, 0, 0.04) !important;
-  border-radius: 6px;
 }
 :root[data-theme='dark'] .neo-tree-select-dropdown .ant-select-tree-node-content-wrapper:hover,
 .dark .neo-tree-select-dropdown .ant-select-tree-node-content-wrapper:hover {
   background: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* 选中态 - 左侧色条 + 文字加粗 + 微妙背景 */
+/* 选中态 */
 .neo-tree-select-dropdown .ant-select-tree-treenode-selected {
   position: relative;
   background: transparent !important;
 }
 .neo-tree-select-dropdown .ant-select-tree-treenode-selected .ant-select-tree-node-content-wrapper {
-  background: rgba(var(--apple-blue-rgb, 255, 149, 0), 0.06) !important;
+  background: color-mix(in srgb, var(--apple-blue) 8%, transparent) !important;
   font-weight: 600;
   color: var(--apple-blue) !important;
   border-radius: 6px;
@@ -819,27 +1123,26 @@ onBeforeUnmount(() => {
 .neo-tree-select-dropdown .ant-select-tree-treenode-selected::before {
   content: '';
   position: absolute;
-  left: 4px;
+  left: 2px;
   top: 50%;
   transform: translateY(-50%);
   width: 3px;
-  height: 60%;
+  height: 55%;
   background: var(--apple-blue);
   border-radius: 2px;
+  opacity: 0;
+  animation: accentSlideIn 0.2s ease forwards;
+}
+@keyframes accentSlideIn {
+  from { opacity: 0; height: 0; }
+  to { opacity: 1; height: 55%; }
 }
 
 /* 暗黑模式选中态 */
 :root[data-theme='dark'] .neo-tree-select-dropdown .ant-select-tree-treenode-selected .ant-select-tree-node-content-wrapper,
 .dark .neo-tree-select-dropdown .ant-select-tree-treenode-selected .ant-select-tree-node-content-wrapper {
-  background: rgba(255, 149, 0, 0.1) !important;
+  background: color-mix(in srgb, var(--apple-blue) 14%, transparent) !important;
   color: var(--apple-blue) !important;
-}
-
-/* 节点内容包装器 */
-.neo-tree-select-dropdown .ant-select-tree-node-content-wrapper {
-  border-radius: 6px !important;
-  padding: 2px 4px !important;
-  transition: all 0.2s ease;
 }
 
 /* 展开图标美化 */
@@ -904,5 +1207,275 @@ onBeforeUnmount(() => {
 }
 .neo-tree-select-dropdown .ant-select-tree-treenode-selected .tree-node-label {
   color: var(--apple-blue) !important;
+}
+</style>
+
+<!-- Teleport 弹窗样式 (非 scoped) -->
+<style>
+/* 删除结果弹窗 */
+.delete-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.delete-result-modal {
+  width: 420px;
+  max-height: 70vh;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px -12px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+@keyframes modal-spring {
+  0% { transform: scale(0.92) translateY(10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 24px 16px;
+}
+
+.result-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.result-header.error .result-icon-wrap {
+  background: linear-gradient(135deg, rgba(255, 59, 48, 0.12), rgba(255, 59, 48, 0.22));
+  color: #FF3B30;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.15);
+}
+
+.result-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main, #1d1d1f);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.result-subtitle {
+  font-size: 13px;
+  color: var(--text-muted, #86868b);
+  margin: 3px 0 0;
+  line-height: 1.3;
+}
+
+.result-list {
+  padding: 4px 24px 16px;
+  overflow-y: auto;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.result-item.item-fail {
+  background: rgba(255, 59, 48, 0.06);
+}
+
+.item-status-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.item-fail .item-status-icon {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+.item-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.item-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main, #1d1d1f);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-reason {
+  font-size: 12px;
+  color: var(--text-muted, #86868b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  max-width: 180px;
+}
+
+.item-fail .item-reason {
+  color: #FF3B30;
+}
+
+.result-footer {
+  padding: 12px 24px 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* AppleConfirmModal 风格按钮 */
+.alert-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-btn.danger {
+  background: #FF453A;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
+}
+
+.alert-btn.danger:hover {
+  background: #FF3B30;
+  transform: translateY(-1px);
+}
+
+.alert-btn.cancel {
+  background: var(--hover-bg, #f5f5f7);
+  color: var(--text-main, #333);
+}
+
+.alert-btn.cancel:hover {
+  filter: brightness(0.9);
+}
+
+.alert-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 行内小号按钮 */
+.alert-btn.sm {
+  flex: none;
+  height: 32px;
+  font-size: 13px;
+  padding: 0 16px;
+  border-radius: 10px;
+}
+
+/* 过渡动画 */
+.result-modal-enter-active {
+  transition: opacity 0.3s ease;
+}
+.result-modal-enter-active .delete-result-modal {
+  animation: modal-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+.result-modal-leave-active {
+  transition: opacity 0.25s ease;
+}
+.result-modal-leave-active .delete-result-modal {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  transform: scale(0.95);
+  opacity: 0;
+}
+.result-modal-enter-from,
+.result-modal-leave-to {
+  opacity: 0;
+}
+
+/* 暗黑模式 */
+.dark .delete-result-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dark .delete-result-modal {
+  background: rgba(28, 28, 30, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 80px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dark .result-title {
+  color: #f5f5f7;
+}
+
+.dark .result-subtitle {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.dark .item-username {
+  color: #f5f5f7;
+}
+
+.dark .item-reason {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.dark .result-item.item-fail .item-reason {
+  color: #FF6961;
+}
+
+.dark .result-item.item-fail {
+  background: rgba(255, 59, 48, 0.1);
+}
+
+.dark .alert-btn.cancel {
+  background: #2a2a2e;
+  color: #e0e0e0;
 }
 </style>

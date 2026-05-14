@@ -48,22 +48,36 @@
       >
         <template #bodyCell="{ column, record }">
 
-          <!-- 排序列 -->
-          <template v-if="column.key === 'sort'">
-            <span class="sort-badge">{{ record.sort }}</span>
-          </template>
-
-          <!-- 状态列 -->
+          <!-- 状态列 (分段开关，无权限仅展示，SUPER_ADMIN禁用态) -->
           <template v-if="column.key === 'status'">
-            <div class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
+            <div v-if="!canEditStatus" class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
               <div class="status-dot"></div>
               <span>{{ record.status === 1 ? '启用' : '禁用' }}</span>
+            </div>
+            <div
+              v-else
+              class="status-segmented-toggle"
+              :class="[record.status === 1 ? 'is-active' : 'is-inactive', { disabled: record.roleCode === 'SUPER_ADMIN' }]"
+              @click="record.roleCode !== 'SUPER_ADMIN' && handleToggleStatus(record)"
+            >
+              <div class="seg-thumb"></div>
+              <span class="seg-label seg-on" :class="{ current: record.status === 1 }">启用</span>
+              <span class="seg-label seg-off" :class="{ current: record.status === 0 }">禁用</span>
             </div>
           </template>
 
           <!-- 操作列 -->
           <template v-if="column.key === 'action'">
             <div class="action-btn-group">
+              <button
+                  class="text-action-btn safe"
+                  v-permission="'system:menu:list'"
+                  @click="handleAssignMenu(record)"
+              >
+                分配菜单
+              </button>
+              <span class="action-divider"></span>
+
               <button
                   class="text-action-btn primary"
                   v-permission="'system:role:edit'"
@@ -102,29 +116,48 @@
     >
       <div class="form-grid">
         <a-form-item label="角色编码" name="roleCode">
-          <a-input v-model:value="formState.roleCode" placeholder="请输入角色编码" />
+          <a-input v-model:value="formState.roleCode" placeholder="请输入角色编码" :disabled="!!formState.id" />
         </a-form-item>
         <a-form-item label="角色名称" name="roleName">
           <a-input v-model:value="formState.roleName" placeholder="请输入角色名称" />
         </a-form-item>
       </div>
-      <div class="form-grid">
-        <a-form-item label="排序" name="sort">
-          <a-input-number v-model:value="formState.sort" :min="0" style="width: 100%" placeholder="数值越小越靠前" />
-        </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-radio-group v-model:value="formState.status">
-            <a-radio :value="1">启用</a-radio>
-            <a-radio :value="0">禁用</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </div>
-      <a-form-item label="菜单权限" name="menuIds">
-        <a-tree v-model:checkedKeys="formState.menuIds" :tree-data="menuTreeData" checkable :field-names="{ title: 'menuName', key: 'id' }" />
-      </a-form-item>
       <a-form-item label="备注" name="remark">
-        <a-textarea v-model:value="formState.remark" placeholder="请输入备注" :rows="3" />
+        <a-textarea v-model:value="formState.remark" placeholder="请输入备注" :auto-size="{ minRows: 1 }" />
       </a-form-item>
+    </NeoFormModal>
+
+    <!-- ================= 菜单分配弹窗 ================= -->
+    <NeoFormModal
+        v-model:open="menuAssignVisible"
+        :title="'分配菜单 — ' + (currentRole?.roleName || '')"
+        subtitle="勾选需要分配给该角色的菜单项"
+        :width="520"
+        :icon="['fas', 'check-square']"
+        theme="primary"
+        confirmText="保存分配"
+        :confirmLoading="menuAssignLoading"
+        @ok="handleMenuAssignSubmit"
+    >
+      <div class="menu-tree-wrap">
+        <a-tree
+            v-model:checkedKeys="checkedMenuIds"
+            :tree-data="menuTreeData"
+            checkable
+            default-expand-all
+            :field-names="{ title: 'menuName', key: 'id', children: 'children' }"
+        >
+          <template #title="node">
+            <span class="tree-node-row">
+              <span class="tree-node-icon" v-if="node.icon">
+                <span v-if="node.icon.trim().startsWith('<svg')" v-html="node.icon" class="svg-icon-inline"></span>
+                <font-awesome-icon v-else :icon="formatFaIcon(node.icon) || ['fas', 'folder']" />
+              </span>
+              <span class="tree-node-name">{{ node.menuName }}</span>
+            </span>
+          </template>
+        </a-tree>
+      </div>
     </NeoFormModal>
 
     <!-- ================= 苹果风确认弹窗 ================= -->
@@ -138,33 +171,71 @@
         @confirm="executeDelete"
     />
 
+    <!-- ================= 状态切换确认弹窗 ================= -->
+    <AppleConfirmModal
+        v-model:visible="statusConfirmVisible"
+        :type="statusTargetValue === 1 ? 'warning' : 'danger'"
+        :title="statusTargetValue === 1 ? '启用角色' : '禁用角色'"
+        :desc="statusConfirmDesc"
+        :confirmText="statusTargetValue === 1 ? '确认启用' : '确认禁用'"
+        :loading="statusConfirmLoading"
+        @confirm="executeStatusToggle"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { getRolePage, addRole, updateRole, deleteRole } from '@/api/role.ts'
-import { getMenuList } from '@/api/menu.ts'
+import { getMenuList, assignMenu, getRoleMenuTree } from '@/api/menu.ts'
 import { getDictDataByDictCode } from '@/api/dict'
-import type { SysRole, SysMenu, DictData } from '@/types'
+import type { SysRole, DictData } from '@/types'
 import type { Rule } from 'ant-design-vue/es/form'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const canEditStatus = computed(() => userStore.hasPermission('system:role:edit'))
 
 // --- 表格列定义 ---
 const columns = [
   { title: '角色编码', dataIndex: 'roleCode', key: 'roleCode' },
   { title: '角色名称', dataIndex: 'roleName', key: 'roleName' },
-  { title: '排序', dataIndex: 'sort', key: 'sort', align: 'center', width: 80 },
-  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 100 },
-  { title: '操作', key: 'action', align: 'center', width: 180 }
+  { title: '描述', dataIndex: 'remark', key: 'remark', ellipsis: true },
+  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 120 },
+  { title: '操作', key: 'action', align: 'center', width: 240 }
 ]
+
+// --- 工具方法 ---
+const formatFaIcon = (iconStr: string) => {
+  if (!iconStr) return ''
+  const parts = iconStr.split(' ')
+  let prefix = 'fas'
+  let iconName = ''
+  parts.forEach(p => {
+    if (p === 'fa-solid' || p === 'fas') prefix = 'fas'
+    else if (p === 'fa-regular' || p === 'far') prefix = 'far'
+    else if (p === 'fa-brands' || p === 'fab') prefix = 'fab'
+    else if (p.startsWith('fa-')) iconName = p.replace('fa-', '')
+  })
+  return iconName ? [prefix, iconName] : ''
+}
+
+// 递归扁平化菜单树，提取所有菜单ID
+const flattenMenuIds = (nodes: any[]): string[] => {
+  return nodes.reduce<string[]>((ids, node) => {
+    ids.push(node.id)
+    if (node.children?.length) ids.push(...flattenMenuIds(node.children))
+    return ids
+  }, [])
+}
 
 // --- 状态与数据 ---
 const loading = ref(false)
 const tableData = ref<SysRole[]>([])
-const menuTreeData = ref<SysMenu[]>([])
 const commonStatusDict = ref<DictData[]>([])
 
 const searchForm = reactive({ roleName: '', status: undefined as number | undefined, pageNum: 1, pageSize: 10 })
@@ -174,7 +245,7 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: (to
 const modalVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref<InstanceType<typeof NeoFormModal>>()
-const formState = reactive<Partial<SysRole>>({ id: undefined, roleCode: '', roleName: '', sort: 0, status: 1, menuIds: [], remark: '' })
+const formState = reactive<Partial<SysRole>>({ id: undefined, roleCode: '', roleName: '', remark: '' })
 const modalTitle = computed(() => formState.id ? '编辑角色配置' : '新增角色')
 
 const rules: Record<string, Rule[]> = {
@@ -207,9 +278,83 @@ const executeDelete = async () => {
   }
 }
 
-// --- 工具方法 ---
-const buildMenuTree = (menus: SysMenu[], parentId = '0'): SysMenu[] => {
-  return menus.filter(m => m.parentId === parentId).map(m => ({ ...m, children: buildMenuTree(menus, m.id) }))
+// --- 状态切换逻辑 ---
+const statusConfirmVisible = ref(false)
+const statusConfirmLoading = ref(false)
+const statusTargetValue = ref<number>(1)
+const statusTargetRole = ref<SysRole | null>(null)
+
+const statusConfirmDesc = computed(() => {
+  const actionText = statusTargetValue.value === 1 ? '启用' : '禁用'
+  if (statusTargetRole.value) {
+    return `确定要${actionText}角色「${statusTargetRole.value.roleName}」吗？`
+  }
+  return ''
+})
+
+const handleToggleStatus = (record: SysRole) => {
+  statusTargetRole.value = record
+  statusTargetValue.value = record.status === 1 ? 0 : 1
+  statusConfirmVisible.value = true
+}
+
+const executeStatusToggle = async () => {
+  if (!statusTargetRole.value) return
+  statusConfirmLoading.value = true
+  try {
+    await updateRole({ ...statusTargetRole.value, status: statusTargetValue.value })
+    AppleAlert.success(
+      statusTargetValue.value === 1 ? '已启用' : '已禁用',
+      `角色「${statusTargetRole.value.roleName}」状态已更新`
+    )
+    fetchData()
+  } catch (error: any) {
+    AppleAlert.error('操作失败', error.message || '状态切换未完成')
+  } finally {
+    statusConfirmLoading.value = false
+    statusConfirmVisible.value = false
+  }
+}
+
+// --- 菜单分配逻辑 ---
+const menuAssignVisible = ref(false)
+const menuAssignLoading = ref(false)
+const currentRole = ref<SysRole | null>(null)
+const checkedMenuIds = ref<string[]>([])
+const menuTreeData = ref<any[]>([])
+
+const handleAssignMenu = async (record: SysRole) => {
+  currentRole.value = record
+  try {
+    const [menuRes, roleTreeRes] = await Promise.all([
+      getMenuList(),
+      getRoleMenuTree(record.id)
+    ])
+    menuTreeData.value = menuRes.data || []
+    checkedMenuIds.value = flattenMenuIds(roleTreeRes.data || [])
+  } catch {
+    AppleAlert.error('加载失败', '无法获取菜单列表')
+    return
+  }
+  menuAssignVisible.value = true
+}
+
+const handleMenuAssignSubmit = async () => {
+  if (!currentRole.value) return
+  menuAssignLoading.value = true
+  try {
+    await assignMenu({
+      roleId: currentRole.value.id,
+      menuIds: checkedMenuIds.value
+    })
+    AppleAlert.success('分配成功', '菜单权限已更新')
+    menuAssignVisible.value = false
+    fetchData()
+  } catch (error: any) {
+    AppleAlert.error('分配失败', error.message || '操作未完成')
+  } finally {
+    menuAssignLoading.value = false
+  }
 }
 
 // --- API 方法 ---
@@ -224,15 +369,6 @@ const fetchData = async () => {
     AppleAlert.error('数据加载失败', error.message || '无法获取角色列表')
   } finally {
     loading.value = false
-  }
-}
-
-const fetchMenus = async () => {
-  try {
-    const res = await getMenuList()
-    menuTreeData.value = buildMenuTree(res.data)
-  } catch (error: any) {
-    AppleAlert.error('菜单加载失败', error.message || '无法获取菜单数据')
   }
 }
 
@@ -268,21 +404,28 @@ const handleTableChange = (pag: any) => {
 }
 
 const handleAdd = () => {
-  Object.assign(formState, { id: undefined, roleCode: '', roleName: '', sort: 0, status: 1, menuIds: [], remark: '' })
+  Object.assign(formState, { id: undefined, roleCode: '', roleName: '', remark: '' })
   modalVisible.value = true
 }
 
 const handleEdit = (record: SysRole) => {
-  Object.assign(formState, JSON.parse(JSON.stringify(record)))
+  const { id, roleCode, roleName, remark } = record
+  Object.assign(formState, { id, roleCode, roleName, remark })
   modalVisible.value = true
 }
 
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate()
-    submitLoading.value = true
+  } catch {
+    return // 验证失败，表单已有错误提示
+  }
+
+  submitLoading.value = true
+  try {
     if (formState.id) {
-      await updateRole(formState)
+      const { roleCode, ...updateData } = formState
+      await updateRole(updateData)
       AppleAlert.success('保存成功', '角色配置已更新')
     } else {
       await addRole(formState)
@@ -291,16 +434,78 @@ const handleSubmit = async () => {
     modalVisible.value = false
     fetchData()
   } catch (error: any) {
-    // 验证失败不处理，子组件已有提示
+    AppleAlert.error('操作失败', error.message || '操作未完成')
   } finally {
     submitLoading.value = false
   }
 }
 
-onMounted(() => { fetchData(); fetchMenus(); fetchCommonStatus() })
+onMounted(() => { fetchData(); fetchCommonStatus() })
 </script>
 
 <style scoped>
+/* ================= 菜单分配树样式 ================= */
+.menu-tree-wrap {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.menu-tree-wrap::-webkit-scrollbar { width: 5px; }
+.menu-tree-wrap::-webkit-scrollbar-track { background: transparent; }
+.menu-tree-wrap::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15); border-radius: 3px;
+}
+.menu-tree-wrap::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.25); }
+
+.menu-tree-wrap :deep(.ant-tree-node-content-wrapper) {
+  background: transparent !important;
+}
+.menu-tree-wrap :deep(.ant-tree-node-content-wrapper:hover) {
+  background: transparent !important;
+}
+.menu-tree-wrap :deep(.ant-tree-treenode-selected .ant-tree-node-content-wrapper) {
+  background: transparent !important;
+}
+.menu-tree-wrap :deep(.ant-tree-checkbox) {
+  margin-right: 8px;
+}
+
+.tree-node-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.tree-node-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 14px;
+  color: var(--apple-blue, #0A84FF);
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.tree-node-icon .svg-icon-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+.tree-node-icon .svg-icon-inline :deep(svg) {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+.tree-node-icon .svg-icon-inline :deep(svg path) {
+  fill: currentColor;
+}
+.tree-node-name {
+  font-size: 14px;
+  color: var(--text-main);
+}
+
 /* 覆盖全局的 .neo-page-header 以适应搜索栏并排 */
 .neo-page-header {
   display: flex;

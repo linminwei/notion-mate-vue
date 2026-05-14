@@ -388,8 +388,9 @@
 }
 
 .type-dir {
-  background: color-mix(in srgb, var(--apple-blue) 12%, transparent);
-  color: var(--apple-blue);
+  background: rgba(255, 214, 10, 0.12);
+  color: #B88600;
+  border: 1px solid rgba(255, 214, 10, 0.1);
 }
 
 .type-menu {
@@ -399,9 +400,13 @@
 }
 
 .type-btn {
-  background: rgba(255, 159, 10, 0.12);
-  color: #CC7A00;
-  border: 1px solid rgba(255, 159, 10, 0.1);
+  background: rgba(255, 69, 58, 0.12);
+  color: #D32F2F;
+  border: 1px solid rgba(255, 69, 58, 0.1);
+}
+
+.dark .type-dir {
+  color: #FFD60A;
 }
 
 .dark .type-menu {
@@ -409,7 +414,7 @@
 }
 
 .dark .type-btn {
-  color: #FF9F0A;
+  color: #FF453A;
 }
 
 .sort-badge {
@@ -421,37 +426,186 @@
   border-radius: 10px;
 }
 
-/* 状态光晕点 */
+/* ================================================================
+   状态指示器 — 只读态（无权限时展示）
+   Apple 设计语言：微药丸容器做锚点，圆点透镜承载色彩，文字中性退后
+   ================================================================ */
+
 .status-indicator-wrap {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  /* 微药丸 — 几乎不可见的容器，仅提供视觉锚点 */
+  padding: 2px 8px 2px 7px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.028);
+  font-size: 12px;
+  font-weight: 510;
+  letter-spacing: -0.01em;
+  color: rgba(60, 60, 67, 0.52);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s ease;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6.5px;
+  height: 6.5px;
   border-radius: 50%;
+  flex-shrink: 0;
+  /* 发丝环 — 给圆点透镜般的边缘定义 */
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
 
-.status-indicator-wrap.is-active {
-  color: var(--text-main);
-}
-
+/* 启用 — 系统绿透镜 */
 .status-indicator-wrap.is-active .status-dot {
   background: #34C759;
-  box-shadow: 0 0 6px rgba(52,199,89,0.5);
 }
 
-.status-indicator-wrap.is-inactive {
-  color: var(--text-muted);
-}
-
+/* 禁用 — 系统红透镜 */
 .status-indicator-wrap.is-inactive .status-dot {
-  background: #FF453A;
-  box-shadow: 0 0 6px rgba(255,69,58,0.5);
+  background: #FF3B30;
+}
+
+/* 暗黑模式 */
+.dark .status-indicator-wrap {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(235, 235, 245, 0.46);
+}
+
+.dark .status-dot {
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+
+/* ================================================================
+   3.5 分段式状态开关 — Apple 风格
+   ================================================================ */
+
+.status-segmented-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 8.5px;
+  /* iOS Segmented Control 轨道色 */
+  background: rgba(118, 118, 128, 0.12);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.12s ease;
+}
+
+.status-segmented-toggle:active {
+  transform: scale(0.965);
+}
+
+/* 暗黑模式轨道 */
+.dark .status-segmented-toggle {
+  background: rgba(118, 118, 128, 0.26);
+}
+
+/* ================================================================
+   选中滑块
+   ================================================================ */
+
+.seg-thumb {
+  position: absolute;
+  top: 2px;
+  width: calc(50% - 2px);
+  height: calc(100% - 4px);
+  border-radius: 6.5px;
+  transition: left 0.27s cubic-bezier(0.25, 0.1, 0.25, 1),
+              background 0.25s ease,
+              box-shadow 0.25s ease;
+  z-index: 0;
+}
+
+/* 启用态 — 系统绿 */
+.status-segmented-toggle.is-active .seg-thumb {
+  left: 2px;
+  background: #34C759;
+  /* 极淡投影：0.5px 描边 + 柔和浮起 */
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .status-segmented-toggle.is-active .seg-thumb {
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 禁用态 — 系统红 */
+.status-segmented-toggle.is-inactive .seg-thumb {
+  left: calc(50% + 1px);
+  background: #FF3B30;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .status-segmented-toggle.is-inactive .seg-thumb {
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ================================================================
+   分段标签
+   ================================================================ */
+
+.seg-label {
+  position: relative;
+  z-index: 1;
+  padding: 2.5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.08px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: color 0.2s ease;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+/* 当前激活的标签 */
+.seg-label.current {
+  color: #fff;
+  font-weight: 590; /* Apple 的 semibold */
+}
+
+/* 非当前标签 — iOS 标准灰文字 */
+.seg-label:not(.current) {
+  color: rgba(60, 60, 67, 0.6);
+}
+
+/* hover 时非当前标签变深 */
+.status-segmented-toggle:hover .seg-label:not(.current) {
+  color: rgba(60, 60, 67, 0.8);
+}
+
+/* 暗黑模式 */
+.dark .seg-label:not(.current) {
+  color: rgba(235, 235, 245, 0.55);
+}
+
+.dark .status-segmented-toggle:hover .seg-label:not(.current) {
+  color: rgba(235, 235, 245, 0.72);
+}
+
+/* ================================================================
+   禁用态
+   ================================================================ */
+
+.status-segmented-toggle.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 /* ================================================================
