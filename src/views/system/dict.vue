@@ -5,7 +5,7 @@
     <aside class="neo-sidebar">
       <div class="sidebar-header">
         <h2 class="sidebar-title">
-          字典目录
+          字典类型
         </h2>
         <div class="sidebar-actions">
           <button class="icon-btn" v-permission="'system:dict:add'" @click="handleAddType">
@@ -79,7 +79,7 @@
                   </div>
                 </div>
                 <div class="modern-empty-content">
-                  <h4 class="modern-empty-title">暂无字典目录</h4>
+                  <h4 class="modern-empty-title">暂无字典类型</h4>
                   <p class="modern-empty-desc">未找到匹配数据</p>
                   <button class="modern-empty-btn mini-btn" v-permission="'system:dict:add'" @click="handleAddType">
                     <font-awesome-icon :icon="['fas', 'plus']" /> 快捷新增
@@ -137,13 +137,13 @@
             </template>
             <template v-else>
               <h3 class="modern-empty-title">字典数据中心</h3>
-              <p class="modern-empty-desc">请在左侧选择一个字典目录，<br/>以查看和管理其详细数据配置。</p>
+              <p class="modern-empty-desc">请在左侧选择一个字典类型，<br/>以查看和管理其详细数据配置。</p>
             </template>
           </div>
         </div>
       </div>
 
-      <!-- 已选择且唯一：数据明细 -->
+      <!-- 已选择且唯一：字典项 -->
       <div v-else class="neo-data-view fade-in">
         <!-- 全新设计的头部信息 -->
         <header class="data-header">
@@ -166,9 +166,9 @@
         <div class="data-toolbar">
           <div class="capsule-search data-capsule">
             <div class="search-inputs">
-              <input type="text" v-model="dataSearchForm.dictLabel" placeholder="搜索标签名称" @keyup.enter="handleDataSearch" />
+              <input type="text" v-model="dataSearchForm.dictLabel" placeholder="搜索字典项名" @keyup.enter="handleDataSearch" />
               <div class="divider"></div>
-              <input type="text" v-model="dataSearchForm.dictValue" placeholder="搜索存储键值" @keyup.enter="handleDataSearch" />
+              <input type="text" v-model="dataSearchForm.dictValue" placeholder="搜索字典项值" @keyup.enter="handleDataSearch" />
               <div class="divider"></div>
               <a-select v-model:value="dataSearchForm.status" placeholder="状态" :bordered="false" class="status-select" allowClear @change="handleDataSearch">
                 <a-select-option v-for="dict in commonStatusDict" :key="dict.dictValue" :value="Number(dict.dictValue)">
@@ -191,11 +191,12 @@
             <button class="toolbar-action-btn primary" v-permission="'system:dict:add'" @click="handleAddData" title="新增数据项">
               <font-awesome-icon :icon="['fas', 'plus']" />
             </button>
-            <transition name="fade-slide">
-              <button v-if="selectedDataKeys.length > 0" class="toolbar-action-btn danger" v-permission="'system:dict:delete'" @click="confirmDelete('data')" title="批量删除">
-                <font-awesome-icon :icon="['fas', 'trash']" />
-              </button>
-            </transition>
+            <button v-if="selectedDataKeys.length > 0" class="toolbar-action-btn warning" v-permission="'system:dict:edit'" @click="handleToggleStatusData" title="启/禁用">
+              <font-awesome-icon :icon="['fas', 'power-off']" />
+            </button>
+            <button v-if="selectedDataKeys.length > 0" class="toolbar-action-btn danger" v-permission="'system:dict:delete'" @click="confirmDelete('data')" title="批量删除">
+              <font-awesome-icon :icon="['fas', 'trash']" />
+            </button>
           </div>
         </div>
 
@@ -214,9 +215,9 @@
                 </div>
                 <div class="modern-empty-content">
                   <h3 class="modern-empty-title">该字典尚无数据</h3>
-                  <p class="modern-empty-desc">现在开始构建您的字典明细数据，<br/>点击下方按钮立即添加。</p>
+                  <p class="modern-empty-desc">现在开始构建您的字典项数据，<br/>点击下方按钮立即添加。</p>
                   <button class="modern-empty-btn" v-permission="'system:dict:add'" @click="handleAddData">
-                    <font-awesome-icon :icon="['fas', 'plus']" /> 新增数据项
+                    <font-awesome-icon :icon="['fas', 'plus']" /> 新增字典项
                   </button>
                 </div>
               </div>
@@ -230,6 +231,7 @@
                 :data-source="dataList"
                 :pagination="dataPagination"
                 :row-selection="{ selectedRowKeys: selectedDataKeys, onChange: onDataSelectChange }"
+                :custom-row="customRow"
                 row-key="id"
                 @change="handleDataTableChange"
             >
@@ -240,8 +242,14 @@
                 <template v-if="column.key === 'dictValue'">
                   <span class="cell-value">{{ record.dictValue }}</span>
                 </template>
+                <template v-if="column.key === 'remark'">
+                  <span class="cell-remark">{{ record.remark || '-' }}</span>
+                </template>
                 <template v-if="column.key === 'sort'">
-                  <span class="cell-sort">{{ record.sort }}</span>
+                  <span :class="['sort-badge', { 'drag-handle': canSort }]" :title="canSort ? '拖拽排序' : ''">
+                    <font-awesome-icon v-if="canSort" :icon="['fas', 'grip-vertical']" class="drag-icon" />
+                    {{ record.sort }}
+                  </span>
                 </template>
                 <template v-if="column.key === 'status'">
                   <div v-if="!canEditDataStatus" class="status-indicator-wrap" :class="record.status === 1 ? 'is-active' : 'is-inactive'">
@@ -260,7 +268,10 @@
                   </div>
                 </template>
                 <template v-if="column.key === 'action'">
-                  <button class="text-action-btn primary" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
+                  <div class="action-btn-group">
+                    <button class="text-action-btn primary" v-permission="'system:dict:edit'" @click="handleEditData(record)">编辑</button>
+                    <button class="text-action-btn danger" v-permission="'system:dict:delete'" @click="handleDeleteData(record)">删除</button>
+                  </div>
                 </template>
               </template>
             </a-table>
@@ -278,7 +289,7 @@
         :model="typeFormState"
         :rules="typeRules"
         :title="typeModalTitle"
-        subtitle="配置字典目录的基础标识与描述"
+        subtitle="配置字典类型的基础标识与描述"
         :width="480"
         :icon="['fas', 'book']"
         theme="primary"
@@ -286,14 +297,16 @@
         :confirmLoading="typeSubmitLoading"
         @ok="handleTypeSubmit"
     >
-      <a-form-item label="字典名称" name="dictName">
-        <a-input v-model:value="typeFormState.dictName" placeholder="例如：用户性别" />
-      </a-form-item>
-      <a-form-item label="字典编码" name="dictCode">
-        <a-input v-model:value="typeFormState.dictCode" placeholder="如：sys_user_sex" :disabled="!!typeFormState.id" />
-      </a-form-item>
-      <a-form-item label="备注说明" name="remark">
-        <a-textarea v-model:value="typeFormState.remark" placeholder="补充详细的用途说明..." :auto-size="{ minRows: 1 }" />
+      <div class="form-grid">
+        <a-form-item label="字典编码" name="dictCode">
+          <a-input v-model:value="typeFormState.dictCode" placeholder="例如：sys_user_sex" :disabled="!!typeFormState.id" />
+        </a-form-item>
+        <a-form-item label="字典名称" name="dictName">
+          <a-input v-model:value="typeFormState.dictName" placeholder="例如：用户性别" />
+        </a-form-item>
+      </div>
+      <a-form-item label="描述" name="remark">
+        <a-textarea v-model:value="typeFormState.remark" placeholder="填写描述" :auto-size="{ minRows: 1 }" />
       </a-form-item>
     </NeoFormModal>
 
@@ -306,7 +319,7 @@
         :title="dataModalTitle"
         :width="560"
         :icon="['fas', 'tag']"
-        theme="success"
+        theme="primary"
         confirmText="保存数据"
         :confirmLoading="dataSubmitLoading"
         @ok="handleDataSubmit"
@@ -316,19 +329,16 @@
       </template>
 
       <div class="form-grid">
-        <a-form-item label="字典标签 (显示用)" name="dictLabel">
-          <a-input v-model:value="dataFormState.dictLabel" placeholder="如：男" />
+        <a-form-item label="字典项名" name="dictLabel">
+          <a-input v-model:value="dataFormState.dictLabel" placeholder="例如：男" />
         </a-form-item>
-        <a-form-item label="字典键值 (存储用)" name="dictValue">
-          <a-input v-model:value="dataFormState.dictValue" placeholder="如：1" />
+        <a-form-item label="字典项值" name="dictValue">
+          <a-input v-model:value="dataFormState.dictValue" placeholder="例如：MALE" />
         </a-form-item>
       </div>
 
-      <a-form-item label="排序权重" name="sort">
-        <a-input-number v-model:value="dataFormState.sort" :min="0" placeholder="数值越小越靠前" />
-      </a-form-item>
-      <a-form-item label="备注说明" name="remark">
-        <a-textarea v-model:value="dataFormState.remark" placeholder="补充说明..." :auto-size="{ minRows: 1 }" />
+      <a-form-item label="描述" name="remark">
+        <a-textarea v-model:value="dataFormState.remark" placeholder="填写描述" :auto-size="{ minRows: 1 }" />
       </a-form-item>
     </NeoFormModal>
 
@@ -337,7 +347,7 @@
         v-model:visible="deleteConfirmVisible"
         type="danger"
         title="确认删除"
-        :desc="`您确定要删除选中的 ${deleteConfirmTarget === 'type' ? selectedTypeKeys.length : selectedDataKeys.length} 项${deleteConfirmTarget === 'type' ? '字典目录' : '数据明细'}吗？此操作无法撤销。`"
+        :desc="`您确定要删除选中的 ${deleteConfirmTarget === 'type' ? selectedTypeKeys.length : selectedDataKeys.length} 项${deleteConfirmTarget === 'type' ? '字典类型' : '字典项'}吗？此操作无法撤销。`"
         confirmText="删除"
         :loading="deleteConfirmLoading"
         @confirm="executeDelete"
@@ -357,7 +367,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
 import {
   getDictTypePage, addDictType, updateDictType, deleteDictTypeBatch,
   getDictDataPage, addDictData, updateDictData, deleteDictDataBatch, getDictDataByDictCode
@@ -366,9 +376,11 @@ import type { DictType, DictData } from '@/types'
 import type { Rule } from 'ant-design-vue/es/form'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
 import { useUserStore } from '@/stores/user'
+import Sortable from 'sortablejs'
 
 const userStore = useUserStore()
 const canEditDataStatus = computed(() => userStore.hasPermission('system:dict:edit'))
+const canSort = computed(() => userStore.hasPermission('system:dict:edit'))
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
 
@@ -441,7 +453,7 @@ const executeDataStatusToggle = async () => {
       dataStatusTargetValue.value === 1 ? '已启用' : '已禁用',
       `字典数据「${dataStatusTargetItem.value.dictLabel}」状态已更新`
     )
-    await fetchDictDataList(currentType.value?.dictTypeId || '')
+    await fetchDataList()
   } catch (error: any) {
     AppleAlert.error('操作失败', error.message || '状态切换未完成')
   } finally {
@@ -585,11 +597,12 @@ const handleTypeSubmit = async () => {
 
 // ==================== 字典数据相关 ====================
 const dataColumns = [
-  { title: '标签名称', dataIndex: 'dictLabel', key: 'dictLabel' },
-  { title: '存储键值', dataIndex: 'dictValue', key: 'dictValue' },
-  { title: '排序', dataIndex: 'sort', key: 'sort', width: 80, align: 'center' as const },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 120, align: 'center' as const },
-  { title: '操作', key: 'action', width: 100, align: 'right' as const }
+  { title: '标签名称', dataIndex: 'dictLabel', key: 'dictLabel', width: 120 },
+  { title: '存储键值', dataIndex: 'dictValue', key: 'dictValue', width: 110 },
+  { title: '描述', dataIndex: 'remark', key: 'remark' },
+  { title: '排序', dataIndex: 'sort', key: 'sort', width: 70, align: 'center' as const },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 130, align: 'center' as const },
+  { title: '操作', key: 'action', width: 160, align: 'center' as const }
 ]
 
 const dataLoading = ref(false)
@@ -611,7 +624,7 @@ const dataModalVisible = ref(false)
 const dataSubmitLoading = ref(false)
 const dataFormRef = ref<InstanceType<typeof NeoFormModal>>()
 const dataFormState = ref<Partial<DictData>>({})
-const dataModalTitle = computed(() => dataFormState.value.id ? '编辑数据明细' : '新增数据明细')
+const dataModalTitle = computed(() => dataFormState.value.id ? '编辑字典项' : '新增字典项')
 
 const dataRules: Record<string, Rule[]> = {
   dictLabel: [{ required: true, message: '请填写字典标签', trigger: 'blur' }],
@@ -630,6 +643,7 @@ const fetchDataList = async () => {
     })
     dataList.value = res.data.list
     dataPagination.value.total = res.data.total
+    if (canSort.value) initSortable()
   } finally { dataLoading.value = false }
 }
 
@@ -646,6 +660,25 @@ const handleDataTableChange = (pag: any) => {
   fetchDataList()
 }
 const onDataSelectChange = (keys: any[]) => { selectedDataKeys.value = keys }
+
+const handleToggleStatusData = async () => {
+  if (selectedDataKeys.value.length === 0) return
+  try {
+    for (const id of selectedDataKeys.value) {
+      const target = dataList.value.find(d => d.id === id)
+      if (target) {
+        await updateDictData({ ...target, status: target.status === 1 ? 0 : 1 })
+      }
+    }
+    AppleAlert.success('操作成功', '已切换选中数据项的状态')
+    await fetchDataList()
+  } catch (error: any) {}
+}
+
+const handleDeleteData = (record: DictData) => {
+  selectedDataKeys.value = [record.id]
+  confirmDelete('data')
+}
 
 const handleAddData = () => {
   dataFormState.value = { dictTypeId: currentType.value?.id, dictLabel: '', dictValue: '', sort: 0, remark: '' }
@@ -675,6 +708,79 @@ onMounted(() => {
   fetchCommonStatus()
   fetchTypeList()
 })
+
+// ==================== 拖拽排序 ====================
+const customRow = (record: DictData) => ({
+  'data-row-id': record.id
+})
+
+let sortableInstance: Sortable | null = null
+
+const initSortable = () => {
+  if (!canSort.value) return
+  nextTick(() => {
+    const tbody = document.querySelector('.neo-table .ant-table-tbody') as HTMLElement
+    if (!tbody) return
+
+    if (sortableInstance) {
+      sortableInstance.destroy()
+    }
+
+    sortableInstance = Sortable.create(tbody, {
+      animation: 200,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      handle: '.drag-handle',
+      onEnd: async (evt) => {
+        if (!canSort.value) return
+        const { oldIndex, newIndex } = evt
+        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return
+
+        const allRows = Array.from(tbody.querySelectorAll('tr[data-row-id]'))
+        const sortedIds = allRows
+          .map(row => (row as HTMLElement).getAttribute('data-row-id') || '')
+          .filter(id => id !== '')
+
+        const sortItems = sortedIds.map((id, index) => ({
+          id,
+          sort: index + 1
+        }))
+
+        if (sortItems.length === 0) return
+
+        try {
+          for (const item of sortItems) {
+            const target = dataList.value.find(d => d.id === item.id)
+            if (target) {
+              await updateDictData({ ...target, sort: item.sort })
+            }
+          }
+          AppleAlert.success('排序成功', '字典项排序已更新')
+          await fetchDataList()
+        } catch (error: any) {
+          AppleAlert.error('排序失败', error.message || '操作未完成')
+          await fetchDataList()
+        }
+      }
+    })
+  })
+}
+
+watch(canSort, (val) => {
+  if (val) {
+    initSortable()
+  } else if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
+})
+
+onBeforeUnmount(() => {
+  if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
+})
 </script>
 
 <style scoped>
@@ -683,13 +789,13 @@ onMounted(() => {
   display: flex;
   height: calc(100vh - 120px);
   min-height: 600px;
-  gap: 20px;
+  gap: 24px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* ================== 左侧导航 ================== */
 .neo-sidebar {
-  width: 340px;
+  width: 360px;
   flex-shrink: 0;
   background: var(--content-bg, #ffffff);
   border-radius: 20px;
@@ -702,8 +808,8 @@ onMounted(() => {
 }
 
 .sidebar-header {
-  height: 70px;
-  padding: 0 24px;
+  height: 64px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -734,12 +840,12 @@ onMounted(() => {
 
 /* 创新的胶囊搜索 */
 .sidebar-search-wrapper {
-  padding: 0 0 16px 20px; /* 去除右侧 padding，由内部定宽保证对齐 */
+  padding: 0 20px 16px;
   box-sizing: border-box;
 }
 .capsule-search {
   display: flex;
-  width: 300px; /* 严格与下方列表项保持同等宽度 */
+  width: 100%;
   background: var(--hover-bg, #f5f5f7);
   border-radius: 14px;
   padding: 4px;
@@ -842,17 +948,17 @@ onMounted(() => {
 /* 精美卡片列表 */
 .sidebar-list-container {
   flex: 1; overflow-y: auto; overflow-x: hidden;
-  padding: 0 0 0 20px;
+  padding: 0 20px;
 }
 .sidebar-list-container::-webkit-scrollbar { width: 4px; }
 .sidebar-list-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
 
 .neo-list-item {
-  width: 300px;
+  width: 100%;
   box-sizing: border-box;
   display: flex; align-items: center;
   padding: 14px 12px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   border-radius: 14px;
   cursor: pointer;
   border: 1px solid transparent;
@@ -864,7 +970,8 @@ onMounted(() => {
   background: var(--hover-bg, #f5f5f7);
 }
 .neo-list-item.is-active {
-  background: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue) 8%, transparent);
+  border-color: color-mix(in srgb, var(--apple-blue) 15%, transparent);
 }
 
 .neo-list-item.is-disabled .item-content { opacity: 0.45; }
@@ -896,12 +1003,12 @@ onMounted(() => {
   box-shadow: 0 0 6px rgba(255, 69, 58, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
-/* 重点保护机制：当行被选中时（背景变深色），保留原本的红/绿颜色，外加 2px 纯白保护环！这样绝不丢失状态，且极度清晰 */
+/* 选中态下状态指示器保持清晰可见 */
 .neo-list-item.is-active .status-indicator.online {
-  box-shadow: 0 0 0 2px #ffffff, 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 0 6px rgba(52, 199, 89, 0.4);
 }
 .neo-list-item.is-active .status-indicator.offline {
-  box-shadow: 0 0 0 2px #ffffff, 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 0 6px rgba(255, 69, 58, 0.4);
 }
 
 .item-content {
@@ -956,15 +1063,8 @@ onMounted(() => {
 }
 
 .neo-list-item.is-active .item-title {
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-.neo-list-item.is-active .item-subtitle {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: none;
+  color: var(--apple-blue);
+  font-weight: 700;
 }
 
 .item-tail { display: flex; align-items: center; justify-content: flex-end; width: 30px; }
@@ -980,7 +1080,7 @@ onMounted(() => {
   transition: all 0.2s;
 }
 .neo-list-item:hover .edit-hover-btn { opacity: 1; transform: translateX(0); }
-.neo-list-item.is-active .edit-hover-btn { background: rgba(255,255,255,0.2); color: #fff; }
+.neo-list-item.is-active .edit-hover-btn { background: color-mix(in srgb, var(--apple-blue) 15%, transparent); color: var(--apple-blue); }
 .neo-list-item:hover .status-indicator { opacity: 0; }
 
 /* ================= 左侧列表：空状态高级重构与快捷按钮 ================= */
@@ -1222,16 +1322,16 @@ onMounted(() => {
 
 /* ================= 右侧：全新头部信息排版 ================= */
 .data-header {
-  padding: 32px 32px 24px;
+  padding: 24px 32px 16px;
   display: flex; justify-content: space-between; align-items: flex-start;
 }
 
 .header-info { display: flex; flex-direction: column; gap: 8px; }
-.title-row { display: flex; align-items: center; gap: 16px; }
+.title-row { display: flex; align-items: center; gap: 12px; }
 .header-info h1 {
-  font-size: 26px; font-weight: 800; color: var(--text-main);
-  margin: 0; letter-spacing: -0.5px;
-  line-height: 1.1;
+  font-size: 22px; font-weight: 700; color: var(--text-main);
+  margin: 0; letter-spacing: -0.3px;
+  line-height: 1.2;
 }
 
 /* 右侧字典编码高级徽标 - 绝对垂直居中修复 */
@@ -1298,6 +1398,16 @@ onMounted(() => {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(255, 69, 58, 0.2);
 }
+.toolbar-action-btn.warning {
+  background: rgba(255, 149, 0, 0.1);
+  color: #FF9500;
+}
+.toolbar-action-btn.warning:hover:not(:disabled) {
+  background: #FF9500;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(255, 149, 0, 0.2);
+}
 
 /* 渐显渐隐动画 */
 .fade-slide-enter-active,
@@ -1320,6 +1430,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 0 32px;
 }
 
 /* 深度渗透 Ant Design 内部结构，打通 Flex 链条 */
@@ -1335,8 +1446,167 @@ onMounted(() => {
 /* 单元格定制 */
 .cell-label { font-weight: 600; font-size: 14px; color: var(--text-main); }
 .cell-value { font-family: monospace; color: var(--text-muted); font-size: 13px; background: var(--hover-bg, #f5f5f7); padding: 2px 8px; border-radius: 6px; }
-.cell-sort { background: rgba(0,0,0,0.04); color: var(--text-muted); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+.cell-sort { background: var(--hover-bg, #f5f5f7); color: var(--text-muted); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+
+/* ================= 拖拽排序样式 — Apple 设计语言 ================= */
+.sort-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+  color: rgba(60, 60, 67, 0.50);
+}
+
+:global(.dark) .sort-badge {
+  color: rgba(235, 235, 245, 0.42);
+}
+
+.drag-handle {
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-icon {
+  display: block;
+  font-size: 12px;
+  color: rgba(60, 60, 67, 0.22);
+  transition: color 0.15s ease, transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+:deep(.ant-table-row):hover .drag-icon {
+  color: rgba(60, 60, 67, 0.40);
+}
+
+.drag-handle:hover .drag-icon {
+  color: rgba(60, 60, 67, 0.65);
+}
+
+.drag-handle:active .drag-icon {
+  color: #007AFF;
+  transform: scale(0.88);
+}
+
+:global(.dark) .drag-icon {
+  color: rgba(235, 235, 245, 0.18);
+}
+
+:global(.dark) :deep(.ant-table-row):hover .drag-icon {
+  color: rgba(235, 235, 245, 0.36);
+}
+
+:global(.dark) .drag-handle:hover .drag-icon {
+  color: rgba(235, 235, 245, 0.60);
+}
+
+:global(.dark) .drag-handle:active .drag-icon {
+  color: #0A84FF;
+}
+
+:deep(.sortable-ghost) {
+  opacity: 0.28;
+  background: transparent !important;
+}
+:deep(.sortable-ghost > td) {
+  background: transparent !important;
+}
+
+:deep(.sortable-chosen) {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.015) !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+:deep(.sortable-chosen > td) {
+  background: rgba(0, 0, 0, 0.015) !important;
+}
+
+:global(.dark) :deep(.sortable-chosen) {
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.30);
+}
+:global(.dark) :deep(.sortable-chosen > td) {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+.cell-remark { font-size: 13px; color: var(--text-muted); white-space: normal; word-break: break-word; line-height: 1.5; }
+
+/* 复选框列固定宽度，防止被文本挤压 */
+:deep(.neo-table .ant-table) {
+  table-layout: fixed;
+}
+
+:deep(.neo-table .ant-table-selection-column) {
+  width: 54px !important;
+  min-width: 54px !important;
+  max-width: 54px !important;
+  overflow: visible !important;
+}
+
+:deep(.neo-table .ant-table-thead .ant-table-selection-column) {
+  padding-left: 16px !important;
+  padding-top: 18px !important;
+  padding-bottom: 15px !important;
+}
+
+:deep(.neo-table .ant-table-tbody .ant-table-selection-column) {
+  padding-left: 16px !important;
+}
 
 /* ================= 右侧表格：状态列（使用全局 .status-indicator-wrap） ================= */
+
+/* ================= 暗黑模式补全 ================= */
+:global(.dark) .sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+:global(.dark) .page-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+:global(.dark) .page-btn:disabled {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+:global(.dark) .search-trigger.reset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:global(.dark) .search-trigger.reset-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:global(.dark) .toolbar-action-btn.danger {
+  background: rgba(255, 69, 58, 0.15);
+}
+
+:global(.dark) .toolbar-action-btn.danger:hover:not(:disabled) {
+  background: #FF453A;
+}
+
+:global(.dark) .toolbar-action-btn.warning {
+  background: rgba(255, 149, 0, 0.15);
+}
+
+:global(.dark) .toolbar-action-btn.warning:hover:not(:disabled) {
+  background: #FF9500;
+}
+
+:global(.dark) .icon-btn.danger:not(:disabled) {
+  background: rgba(255, 69, 58, 0.15);
+}
+
+:global(.dark) .icon-btn.danger:not(:disabled):hover {
+  background: rgba(255, 69, 58, 0.25);
+}
 
 </style>
