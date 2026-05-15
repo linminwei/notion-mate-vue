@@ -109,9 +109,15 @@
                   v-for="role in record.roles"
                   :key="role.id"
                   class="role-tag"
-                  :class="{ 'role-super-admin': role.roleCode === 'SUPER_ADMIN' }"
+                  :class="{
+                    'role-super-admin': role.roleCode === 'SUPER_ADMIN',
+                    'role-admin': role.roleCode === 'ADMIN',
+                    'role-normal-user': role.roleCode === 'USER'
+                  }"
                 >
                   <font-awesome-icon v-if="role.roleCode === 'SUPER_ADMIN'" :icon="['fas', 'crown']" class="role-icon" />
+                  <font-awesome-icon v-else-if="role.roleCode === 'ADMIN'" :icon="['fas', 'user-gear']" class="role-icon" />
+                  <font-awesome-icon v-else-if="role.roleCode === 'USER'" :icon="['fas', 'user']" class="role-icon" />
                   {{ role.roleName }}
                 </span>
               </template>
@@ -190,14 +196,36 @@
     >
       <div class="assign-role-list">
         <a-checkbox-group v-model:value="assignRoleIds" class="role-checkbox-group">
-          <div v-for="role in roleList" :key="role.id" class="role-checkbox-item">
-            <a-checkbox :value="role.id">
+          <div
+            v-for="role in roleList"
+            :key="role.id"
+            class="role-checkbox-item"
+            :class="{
+              'is-checked': assignRoleIds.includes(role.id),
+              'is-locked': role.roleCode === 'SUPER_ADMIN' && isTargetSuperAdmin,
+              'type-super': role.roleCode === 'SUPER_ADMIN',
+              'type-admin': role.roleCode === 'ADMIN',
+              'type-user': role.roleCode === 'USER'
+            }"
+          >
+            <a-checkbox
+              :value="role.id"
+              class="role-checkbox-full"
+              :disabled="role.roleCode === 'SUPER_ADMIN' && isTargetSuperAdmin"
+            >
               <div class="role-checkbox-content">
-                <span class="role-checkbox-name" :class="{ 'is-super': role.roleCode === 'SUPER_ADMIN' }">
-                  <font-awesome-icon v-if="role.roleCode === 'SUPER_ADMIN'" :icon="['fas', 'crown']" class="role-crown-icon" />
-                  {{ role.roleName }}
-                </span>
-                <span class="role-checkbox-desc">{{ role.remark || role.roleCode }}</span>
+                <div class="role-icon-box">
+                  <font-awesome-icon v-if="role.roleCode === 'SUPER_ADMIN'" :icon="['fas', 'crown']" />
+                  <font-awesome-icon v-else-if="role.roleCode === 'ADMIN'" :icon="['fas', 'user-gear']" />
+                  <font-awesome-icon v-else-if="role.roleCode === 'USER'" :icon="['fas', 'user']" />
+                  <font-awesome-icon v-else :icon="['fas', 'shield']" />
+                </div>
+                <div class="role-text-col">
+                  <span class="role-checkbox-name" :class="{ 'is-super': role.roleCode === 'SUPER_ADMIN' }">
+                    {{ role.roleName }}
+                  </span>
+                  <span class="role-checkbox-desc">{{ role.remark || role.roleCode }}</span>
+                </div>
               </div>
             </a-checkbox>
           </div>
@@ -517,6 +545,11 @@ const assignLoading = ref(false)
 const assignTargetUser = ref<SysUser | null>(null)
 const assignRoleIds = ref<string[]>([])
 
+// 目标用户是否为超级管理员（不可取消自己的超管角色）
+const isTargetSuperAdmin = computed(() => {
+  return assignTargetUser.value?.roles?.some(r => r.roleCode === 'SUPER_ADMIN') ?? false
+})
+
 const fetchRoles = async () => {
   try {
     const res = await getRoleList()
@@ -533,6 +566,13 @@ const handleAssignRole = (record: SysUser) => {
 }
 
 const submitAssignRole = async () => {
+  // 超级管理员保护：确保超管角色 ID 不被移除
+  if (isTargetSuperAdmin.value) {
+    const superAdminRole = roleList.value.find(r => r.roleCode === 'SUPER_ADMIN')
+    if (superAdminRole && !assignRoleIds.value.includes(superAdminRole.id)) {
+      assignRoleIds.value.push(superAdminRole.id)
+    }
+  }
   if (assignRoleIds.value.length === 0) {
     AppleAlert.warning('提示', '请至少选择一个角色')
     return
@@ -554,6 +594,39 @@ onMounted(() => {
   fetchData()
   fetchCommonStatus()
   fetchRoles()
+  // 注入样式覆盖 antd CSS-in-JS 的 checked+hover 蓝色背景，确保始终排在最后
+  const injectOverride = () => {
+    const existing = document.head.querySelector('style[data-cb-override="user-vue"]')
+    if (existing) existing.remove()
+    const style = document.createElement('style')
+    style.setAttribute('data-cb-override', 'user-vue')
+    style.textContent = `
+      .role-checkbox-item .ant-checkbox-wrapper-checked:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner,
+      .role-checkbox-item .ant-checkbox-checked:not(.ant-checkbox-disabled):hover .ant-checkbox-inner {
+        border-color: var(--apple-blue, #0A84FF) !important;
+        background-color: var(--apple-blue, #0A84FF) !important;
+      }
+      .ant-table-selection-column .ant-checkbox-wrapper-checked:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner,
+      .ant-table-selection-column .ant-checkbox-checked:not(.ant-checkbox-disabled):hover .ant-checkbox-inner {
+        border-color: var(--apple-blue, #0A84FF) !important;
+        background-color: var(--apple-blue, #0A84FF) !important;
+      }
+    `
+    document.head.appendChild(style)
+  }
+  setTimeout(injectOverride, 100)
+  // 监听 antd 动态注入样式，确保我们的覆盖始终排在最后
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeName === 'STYLE' && !node.hasAttribute('data-cb-override')) {
+          injectOverride()
+          return
+        }
+      }
+    }
+  })
+  observer.observe(document.head, { childList: true })
 })
 </script>
 
@@ -772,8 +845,6 @@ onMounted(() => {
   color: #F5D060;
   border: 1px solid rgba(245, 208, 96, 0.4);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(245, 208, 96, 0.1);
-  font-weight: 600;
-  letter-spacing: 0.3px;
 }
 
 .role-tag.role-super-admin .role-icon {
@@ -782,11 +853,32 @@ onMounted(() => {
   filter: drop-shadow(0 0 2px rgba(245, 208, 96, 0.4));
 }
 
-/* 超级管理员 - 暗黑模式下稍微调亮背景 */
-:global(.dark) .role-tag.role-super-admin {
-  background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-  border-color: rgba(245, 208, 96, 0.5);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(245, 208, 96, 0.15);
+/* 普通用户 - 暖石灰风格 */
+.role-tag.role-normal-user {
+  background: linear-gradient(135deg, #636366, #8E8E93);
+  color: #E0E0E3;
+  border: 1px solid rgba(224, 224, 227, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 99, 102, 0.3), inset 0 1px 0 rgba(224, 224, 227, 0.1);
+}
+
+.role-tag.role-normal-user .role-icon {
+  font-size: 10px;
+  color: #E0E0E3;
+  filter: drop-shadow(0 0 2px rgba(224, 224, 227, 0.3));
+}
+
+/* 管理员 - 紫罗兰风格 */
+.role-tag.role-admin {
+  background: linear-gradient(135deg, #2D2058, #3C2F80);
+  color: #C9BDFF;
+  border: 1px solid rgba(201, 189, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(45, 32, 88, 0.35), inset 0 1px 0 rgba(201, 189, 255, 0.1);
+}
+
+.role-tag.role-admin .role-icon {
+  font-size: 10px;
+  color: #C9BDFF;
+  filter: drop-shadow(0 0 2px rgba(201, 189, 255, 0.4));
 }
 
 /* 批量操作按钮额外圆角和内距微调（核心背景色已在 neo-table.css 全局定义） */
@@ -804,9 +896,9 @@ onMounted(() => {
   transform: scale(0.97);
 }
 
-/* 角色分配弹窗 */
+/* ==================== 角色分配弹窗 - 卡片式 ==================== */
 .assign-role-list {
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .role-checkbox-group {
@@ -817,53 +909,164 @@ onMounted(() => {
 }
 
 .role-checkbox-item {
-  padding: 0;
-  border-radius: 12px;
-  border: 1px solid var(--border-color, #e5e5ea);
-  transition: all 0.2s;
-}
-
-.role-checkbox-item :deep(.ant-checkbox-wrapper) {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  width: 100%;
-  padding: 10px 14px;
-  margin: 0;
+  align-items: stretch;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-color, rgba(60, 60, 67, 0.12));
+  background: var(--card-bg, rgba(255, 255, 255, 0.6));
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+  cursor: pointer;
 }
 
+/* 超管锁定态：禁用 + 置灰视觉 */
+.role-checkbox-item.is-locked {
+  cursor: default;
+  opacity: 0.55;
+}
+.role-checkbox-item.is-locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 选中态：边框高亮 + 微背景 */
+.role-checkbox-item.is-checked {
+  border-color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 6%, var(--card-bg, #ffffff));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--apple-blue, #0A84FF) 18%, transparent);
+}
+
+/* 悬浮态 */
 .role-checkbox-item:hover {
+  border-color: var(--apple-blue, #0A84FF);
   background: var(--hover-bg, rgba(0, 0, 0, 0.02));
-  border-color: color-mix(in srgb, var(--apple-blue) 30%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+.role-checkbox-item.is-checked:hover {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, var(--card-bg, #ffffff));
 }
 
+/* 复选框撑满卡片 */
+.role-checkbox-full {
+  flex: 1;
+}
+.role-checkbox-item :deep(.ant-checkbox-wrapper) {
+  display: flex !important;
+  align-items: center !important;
+  width: 100%;
+  padding: 12px 14px 12px 14px;
+  margin: 0 !important;
+}
+
+/* 内容区：图标 + 文字 */
 .role-checkbox-content {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
   margin-left: 4px;
+  flex: 1;
+}
+
+/* 角色图标盒 */
+.role-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  font-size: 14px;
+  flex-shrink: 0;
+  background: var(--icon-bg, rgba(60, 60, 67, 0.06));
+  color: var(--text-muted, #8E8E93);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.role-checkbox-item.type-super .role-icon-box {
+  background: rgba(245, 208, 96, 0.12);
+  color: #D4A843;
+}
+.role-checkbox-item.type-admin .role-icon-box {
+  background: rgba(201, 189, 255, 0.12);
+  color: #8B7CF0;
+}
+.role-checkbox-item.type-user .role-icon-box {
+  background: rgba(142, 142, 147, 0.1);
+  color: #8E8E93;
+}
+
+.role-checkbox-item.is-checked .role-icon-box {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent);
+  color: var(--apple-blue, #0A84FF);
+}
+
+/* 文字列 */
+.role-text-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .role-checkbox-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  color: var(--text-main, #1d1d1f);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .role-checkbox-name.is-super {
-  color: #F5D060;
-}
-
-.role-crown-icon {
-  font-size: 12px;
-  color: #F5D060;
+  background: linear-gradient(135deg, #D4A843, #F5D060);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .role-checkbox-desc {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted, #8E8E93);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 复选框主题色覆写 */
+.role-checkbox-item :deep(.ant-checkbox-inner) {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(60, 60, 67, 0.22);
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.role-checkbox-item :deep(.ant-checkbox-wrapper:hover .ant-checkbox-inner),
+.role-checkbox-item :deep(.ant-checkbox:hover .ant-checkbox-inner) {
+  border-color: var(--apple-blue, #0A84FF) !important;
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 6%, transparent);
+}
+
+.role-checkbox-item :deep(.ant-checkbox-checked .ant-checkbox-inner) {
+  background: var(--apple-blue, #0A84FF) !important;
+  border-color: var(--apple-blue, #0A84FF) !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.role-checkbox-item :deep(.ant-checkbox-checked .ant-checkbox-inner::after) {
+  border-color: #ffffff;
+  border-width: 0 2px 2px 0;
+  width: 5px;
+  height: 9px;
+  top: 44%;
+  left: 21%;
+  transform: rotate(45deg) translate(-50%, -50%);
 }
 
 </style>
@@ -1047,27 +1250,6 @@ onMounted(() => {
   justify-content: center;
 }
 
-.result-confirm-btn {
-  padding: 10px 40px;
-  border-radius: 12px;
-  border: none;
-  background: var(--apple-blue, #0A84FF);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.result-confirm-btn:hover {
-  filter: brightness(0.92);
-  transform: scale(0.98);
-}
-
-.result-confirm-btn:active {
-  transform: scale(0.95);
-}
-
 /* 过渡动画 */
 .result-modal-enter-active {
   transition: opacity 0.3s ease;
@@ -1128,10 +1310,6 @@ onMounted(() => {
   background: rgba(255, 59, 48, 0.1);
 }
 
-.dark .result-confirm-btn {
-  background: var(--apple-blue, #0A84FF);
-}
-
 /* ===== 角色分配弹窗 - 暗黑模式 ===== */
 .dark .role-checkbox-item {
   background: rgba(255, 255, 255, 0.04);
@@ -1139,8 +1317,19 @@ onMounted(() => {
 }
 
 .dark .role-checkbox-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: color-mix(in srgb, var(--apple-blue) 40%, transparent);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.dark .role-checkbox-item.is-checked {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, rgba(30, 30, 32, 1));
+  border-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--apple-blue, #0A84FF) 25%, transparent);
+}
+
+.dark .role-checkbox-item.is-checked:hover {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 16%, rgba(30, 30, 32, 1));
 }
 
 .dark .role-checkbox-name {
@@ -1148,24 +1337,84 @@ onMounted(() => {
 }
 
 .dark .role-checkbox-desc {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .dark .role-checkbox-name.is-super {
+  background: linear-gradient(135deg, #E8C84A, #F5D060);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .role-icon-box {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.dark .role-checkbox-item.type-super .role-icon-box {
+  background: rgba(245, 208, 96, 0.15);
   color: #F5D060;
+}
+
+.dark .role-checkbox-item.type-admin .role-icon-box {
+  background: rgba(201, 189, 255, 0.12);
+  color: #B8A9FF;
+}
+
+.dark .role-checkbox-item.type-user .role-icon-box {
+  background: rgba(142, 142, 147, 0.12);
+  color: #A1A1A6;
+}
+
+.dark .role-checkbox-item.is-checked .role-icon-box {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 16%, transparent);
+  color: var(--apple-blue, #0A84FF);
 }
 
 .dark .role-checkbox-item .ant-checkbox-inner {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
+.dark .role-checkbox-item .ant-checkbox-wrapper:hover .ant-checkbox-inner,
 .dark .role-checkbox-item .ant-checkbox:hover .ant-checkbox-inner {
   border-color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent);
 }
 
 .dark .role-checkbox-item .ant-checkbox-checked .ant-checkbox-inner {
   background: var(--apple-blue, #0A84FF);
   border-color: var(--apple-blue, #0A84FF);
+}
+
+/* ===== 表格复选框 - 暗黑模式 ===== */
+.dark .ant-table-selection-column .ant-checkbox-checked .ant-checkbox-inner {
+  background: var(--apple-blue, #0A84FF);
+  border-color: var(--apple-blue, #0A84FF);
+}
+
+.dark .ant-table-selection-column .ant-checkbox-wrapper-checked:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner {
+  border-color: var(--apple-blue, #0A84FF);
+  background: var(--apple-blue, #0A84FF);
+}
+
+/* ===== 角色徽标 - 暗黑模式 ===== */
+.dark .role-tag.role-super-admin {
+  background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+  border-color: rgba(245, 208, 96, 0.5);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(245, 208, 96, 0.15);
+}
+
+.dark .role-tag.role-normal-user {
+  background: linear-gradient(135deg, #737377, #9E9EA3);
+  border-color: rgba(224, 224, 227, 0.4);
+  box-shadow: 0 2px 10px rgba(99, 99, 102, 0.35), inset 0 1px 0 rgba(224, 224, 227, 0.12);
+}
+
+.dark .role-tag.role-admin {
+  background: linear-gradient(135deg, #3D3068, #4C3F90);
+  border-color: rgba(201, 189, 255, 0.4);
+  box-shadow: 0 2px 10px rgba(45, 32, 88, 0.4), inset 0 1px 0 rgba(201, 189, 255, 0.12);
 }
 </style>

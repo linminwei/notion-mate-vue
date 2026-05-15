@@ -1021,3 +1021,80 @@
 .dark .neo-table-flex-container .neo-table .ant-table-thead > tr > th {
   background: var(--sidebar-bg, #151516) !important;
 }
+
+/* ================================================================
+   7. 操作结果弹窗统一按钮（Teleport 内容，全局生效）
+   ================================================================ */
+
+.alert-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-btn.danger {
+  background: #FF453A;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
+}
+
+.alert-btn.danger:hover {
+  background: #FF3B30;
+  transform: translateY(-1px);
+}
+
+.alert-btn.cancel {
+  background: var(--apple-blue);
+  color: #fff;
+}
+
+.alert-btn.cancel:hover {
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+}
+
+.alert-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 行内小号按钮 */
+.alert-btn.sm {
+  flex: none;
+  height: 32px;
+  font-size: 13px;
+  padding: 0 16px;
+  border-radius: 10px;
+}
+
+/* 操作结果弹窗确认按钮 */
+.result-confirm-btn {
+  padding: 10px 40px;
+  border-radius: 12px;
+  border: none;
+  background: var(--apple-blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.result-confirm-btn:hover {
+  filter: brightness(0.92);
+  transform: scale(0.98);
+}
+
+.result-confirm-btn:active {
+  transform: scale(0.95);
+}

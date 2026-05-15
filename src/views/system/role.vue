@@ -70,7 +70,7 @@
           <template v-if="column.key === 'action'">
             <div class="action-btn-group">
               <button
-                  class="text-action-btn safe"
+                  class="text-action-btn primary"
                   v-permission="'system:menu:list'"
                   @click="handleAssignMenu(record)"
               >
@@ -137,6 +137,7 @@
         theme="primary"
         confirmText="保存分配"
         :confirmLoading="menuAssignLoading"
+        destroyOnClose
         @ok="handleMenuAssignSubmit"
     >
       <div class="menu-tree-wrap">
@@ -146,6 +147,7 @@
             checkable
             default-expand-all
             :field-names="{ title: 'menuName', key: 'id', children: 'children' }"
+            @check="onMenuTreeCheck"
         >
           <template #title="node">
             <span class="tree-node-row">
@@ -181,6 +183,44 @@
         :loading="statusConfirmLoading"
         @confirm="executeStatusToggle"
     />
+
+    <!-- ================= 删除结果展示弹窗 ================= -->
+    <Teleport to="body">
+      <Transition name="result-modal">
+        <div v-if="deleteResultVisible" class="delete-result-overlay" @click.self="deleteResultVisible = false">
+          <div class="delete-result-modal">
+            <!-- 头部 -->
+            <div class="result-header" :class="deleteResultType">
+              <div class="result-icon-wrap">
+                <font-awesome-icon v-if="deleteResultType === 'success'" :icon="['fas', 'check-circle']" />
+                <font-awesome-icon v-else :icon="['fas', 'times-circle']" />
+              </div>
+              <div class="result-header-text">
+                <h3 class="result-title">{{ deleteResultTitle }}</h3>
+                <p class="result-subtitle">{{ deleteResultSubtitle }}</p>
+              </div>
+            </div>
+
+            <!-- 错误详情（仅错误时显示） -->
+            <div class="result-list" v-if="deleteResultType === 'error' && deleteErrorMessage">
+              <div class="result-item item-fail">
+                <div class="item-status-icon">
+                  <font-awesome-icon :icon="['fas', 'xmark']" />
+                </div>
+                <div class="item-info">
+                  <span class="item-reason">{{ deleteErrorMessage }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="result-footer">
+              <button class="result-confirm-btn" @click="deleteResultVisible = false">我知道了</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>
@@ -246,6 +286,7 @@ const modalVisible = ref(false)
 const submitLoading = ref(false)
 const formRef = ref<InstanceType<typeof NeoFormModal>>()
 const formState = reactive<Partial<SysRole>>({ id: undefined, roleCode: '', roleName: '', remark: '' })
+const originalRecord = ref<SysRole | null>(null)
 const modalTitle = computed(() => formState.id ? '编辑角色配置' : '新增角色')
 
 const rules: Record<string, Rule[]> = {
@@ -258,6 +299,13 @@ const deleteConfirmVisible = ref(false)
 const deleteConfirmLoading = ref(false)
 const deleteTargetId = ref<string | null>(null)
 
+// --- 删除结果展示 ---
+const deleteResultVisible = ref(false)
+const deleteResultType = ref<'success' | 'error'>('success')
+const deleteResultTitle = ref('')
+const deleteResultSubtitle = ref('')
+const deleteErrorMessage = ref('')
+
 const confirmDelete = (id: string) => {
   deleteTargetId.value = id
   deleteConfirmVisible.value = true
@@ -265,16 +313,24 @@ const confirmDelete = (id: string) => {
 
 const executeDelete = async () => {
   if (!deleteTargetId.value) return
+  const targetRole = tableData.value.find(r => r.id === deleteTargetId.value)
+  const roleName = targetRole?.roleName || '未知角色'
   deleteConfirmLoading.value = true
   try {
     await deleteRole(deleteTargetId.value)
-    AppleAlert.success('删除成功', '角色已从系统移除')
+    deleteResultType.value = 'success'
+    deleteResultTitle.value = '删除成功'
+    deleteResultSubtitle.value = `角色「${roleName}」已从系统移除`
+    deleteErrorMessage.value = ''
     fetchData()
   } catch (error: any) {
-    AppleAlert.error('删除失败', error.message || '操作未完成')
+    deleteResultType.value = 'error'
+    deleteResultTitle.value = '删除失败'
+    deleteResultSubtitle.value = error.message
   } finally {
     deleteConfirmLoading.value = false
     deleteConfirmVisible.value = false
+    deleteResultVisible.value = true
   }
 }
 
@@ -321,7 +377,20 @@ const menuAssignVisible = ref(false)
 const menuAssignLoading = ref(false)
 const currentRole = ref<SysRole | null>(null)
 const checkedMenuIds = ref<string[]>([])
+const halfCheckedMenuIds = ref<string[]>([])
 const menuTreeData = ref<any[]>([])
+
+// 仅提取叶子节点 ID（role_menu 树中无子节点的），避免父级 ID 进入 checkedKeys 导致子级被连带勾选
+const flattenLeafIds = (nodes: any[]): string[] => {
+  return nodes.reduce<string[]>((ids, node) => {
+    if (node.children?.length) {
+      ids.push(...flattenLeafIds(node.children))
+    } else {
+      ids.push(node.id)
+    }
+    return ids
+  }, [])
+}
 
 const handleAssignMenu = async (record: SysRole) => {
   currentRole.value = record
@@ -331,12 +400,16 @@ const handleAssignMenu = async (record: SysRole) => {
       getRoleMenuTree(record.id)
     ])
     menuTreeData.value = menuRes.data || []
-    checkedMenuIds.value = flattenMenuIds(roleTreeRes.data || [])
+    checkedMenuIds.value = flattenLeafIds(roleTreeRes.data || [])
   } catch {
     AppleAlert.error('加载失败', '无法获取菜单列表')
     return
   }
   menuAssignVisible.value = true
+}
+
+const onMenuTreeCheck = (_keys: string[], info: { halfCheckedKeys?: string[] }) => {
+  halfCheckedMenuIds.value = info.halfCheckedKeys || []
 }
 
 const handleMenuAssignSubmit = async () => {
@@ -345,10 +418,11 @@ const handleMenuAssignSubmit = async () => {
   try {
     await assignMenu({
       roleId: currentRole.value.id,
-      menuIds: checkedMenuIds.value
+      menuIds: [...checkedMenuIds.value, ...halfCheckedMenuIds.value]
     })
     AppleAlert.success('分配成功', '菜单权限已更新')
     menuAssignVisible.value = false
+    await userStore.fetchUserInfo()
     fetchData()
   } catch (error: any) {
     AppleAlert.error('分配失败', error.message || '操作未完成')
@@ -411,6 +485,7 @@ const handleAdd = () => {
 const handleEdit = (record: SysRole) => {
   const { id, roleCode, roleName, remark } = record
   Object.assign(formState, { id, roleCode, roleName, remark })
+  originalRecord.value = { ...record }
   modalVisible.value = true
 }
 
@@ -424,8 +499,24 @@ const handleSubmit = async () => {
   submitLoading.value = true
   try {
     if (formState.id) {
-      const { roleCode, ...updateData } = formState
-      await updateRole(updateData)
+      // 编辑模式：仅发送变更字段
+      const patch: Partial<SysRole> = { id: formState.id }
+      let hasChange = false
+      if (originalRecord.value) {
+        if (formState.roleName !== originalRecord.value.roleName) {
+          patch.roleName = formState.roleName
+          hasChange = true
+        }
+        if ((formState.remark || '') !== (originalRecord.value.remark || '')) {
+          patch.remark = formState.remark ?? ''
+          hasChange = true
+        }
+      }
+      if (!hasChange) {
+        modalVisible.value = false
+        return
+      }
+      await updateRole(patch)
       AppleAlert.success('保存成功', '角色配置已更新')
     } else {
       await addRole(formState)
@@ -446,19 +537,13 @@ onMounted(() => { fetchData(); fetchCommonStatus() })
 <style scoped>
 /* ================= 菜单分配树样式 ================= */
 .menu-tree-wrap {
-  max-height: 50vh;
-  overflow-y: auto;
   padding: 4px 0;
 }
-.menu-tree-wrap::-webkit-scrollbar { width: 5px; }
-.menu-tree-wrap::-webkit-scrollbar-track { background: transparent; }
-.menu-tree-wrap::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15); border-radius: 3px;
-}
-.menu-tree-wrap::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.25); }
 
 .menu-tree-wrap :deep(.ant-tree-node-content-wrapper) {
   background: transparent !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 .menu-tree-wrap :deep(.ant-tree-node-content-wrapper:hover) {
   background: transparent !important;
@@ -466,8 +551,77 @@ onMounted(() => { fetchData(); fetchCommonStatus() })
 .menu-tree-wrap :deep(.ant-tree-treenode-selected .ant-tree-node-content-wrapper) {
   background: transparent !important;
 }
+.menu-tree-wrap :deep(.ant-tree) {
+  background: transparent !important;
+}
 .menu-tree-wrap :deep(.ant-tree-checkbox) {
   margin-right: 8px;
+  margin-top: 0 !important;
+  align-self: center;
+}
+
+/* ---- 复选框主题色覆盖 ---- */
+.menu-tree-wrap :deep(.ant-tree-checkbox-inner) {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(60, 60, 67, 0.25);
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.menu-tree-wrap :deep(.ant-tree-checkbox:hover .ant-tree-checkbox-inner) {
+  border-color: var(--apple-blue, #007AFF);
+  background: color-mix(in srgb, var(--apple-blue, #007AFF) 6%, transparent);
+}
+
+/* 选中 & 半选 — 主题蓝填充 + 白勾 */
+.menu-tree-wrap :deep(.ant-tree-checkbox-checked .ant-tree-checkbox-inner),
+.menu-tree-wrap :deep(.ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner) {
+  background: var(--apple-blue, #007AFF) !important;
+  border-color: var(--apple-blue, #007AFF) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.menu-tree-wrap :deep(.ant-tree-checkbox-checked .ant-tree-checkbox-inner::after) {
+  border-color: #ffffff;
+  border-width: 0 2px 2px 0;
+  width: 5px;
+  height: 9px;
+  top: 44%;
+  left: 20%;
+  transform: rotate(45deg) translate(-50%, -50%);
+}
+.menu-tree-wrap :deep(.ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner::after) {
+  background: #ffffff;
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 禁用态 */
+.menu-tree-wrap :deep(.ant-tree-checkbox-disabled .ant-tree-checkbox-inner) {
+  opacity: 0.4;
+  border-color: rgba(60, 60, 67, 0.15);
+  background: rgba(60, 60, 67, 0.04);
+}
+.menu-tree-wrap :deep(.ant-tree-checkbox-disabled.ant-tree-checkbox-checked .ant-tree-checkbox-inner) {
+  background: color-mix(in srgb, var(--apple-blue, #007AFF) 40%, transparent) !important;
+  border-color: transparent !important;
+}
+
+/* 暗黑模式 */
+:global(.dark) .menu-tree-wrap :deep(.ant-tree-checkbox-inner) {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+:global(.dark) .menu-tree-wrap :deep(.ant-tree-checkbox:hover .ant-tree-checkbox-inner) {
+  border-color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent);
+}
+:global(.dark) .menu-tree-wrap :deep(.ant-tree-checkbox-disabled .ant-tree-checkbox-inner) {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .tree-node-row {
@@ -602,5 +756,178 @@ onMounted(() => { fetchData(); fetchCommonStatus() })
 :deep(.status-select .ant-select-clear) {
   right: 0px !important;
   background: transparent !important;
+}
+</style>
+
+<style>
+/* ===== 删除结果弹窗（Teleport 内容需要非 scoped 样式）===== */
+.delete-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.delete-result-modal {
+  width: 420px;
+  max-height: 70vh;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px -12px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modal-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+@keyframes modal-spring {
+  0% { transform: scale(0.92) translateY(10px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* 头部 */
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 24px 16px;
+}
+
+.result-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.result-header.success .result-icon-wrap {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.12), rgba(52, 199, 89, 0.22));
+  color: #34C759;
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.15);
+}
+
+.result-header.error .result-icon-wrap {
+  background: linear-gradient(135deg, rgba(255, 59, 48, 0.12), rgba(255, 59, 48, 0.22));
+  color: #FF3B30;
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.15);
+}
+
+.result-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main, #1d1d1f);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.result-subtitle {
+  font-size: 13px;
+  color: var(--text-muted, #8e8e93);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+/* 结果列表 */
+.result-list {
+  padding: 0 24px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(60, 60, 67, 0.04);
+}
+
+.item-status-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.item-fail .item-status-icon {
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-reason {
+  font-size: 13px;
+  color: var(--text-main, #1d1d1f);
+  word-break: break-word;
+}
+
+/* 底部按钮 */
+.result-footer {
+  padding: 12px 24px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 过渡动画 */
+.result-modal-enter-active {
+  transition: opacity 0.3s ease;
+}
+.result-modal-enter-active .delete-result-modal {
+  animation: modal-spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+.result-modal-leave-active {
+  transition: opacity 0.25s ease;
+}
+.result-modal-leave-active .delete-result-modal {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  transform: scale(0.95);
+  opacity: 0;
+}
+.result-modal-enter-from,
+.result-modal-leave-to {
+  opacity: 0;
+}
+
+/* 暗黑模式 */
+.dark .delete-result-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dark .delete-result-modal {
+  background: rgba(28, 28, 30, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 80px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.dark .result-item {
+  background: rgba(255, 255, 255, 0.04);
 }
 </style>

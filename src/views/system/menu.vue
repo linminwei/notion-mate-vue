@@ -256,43 +256,54 @@
         @confirm="executeStatusToggle"
     />
 
-    <!-- ================= 菜单删除 - 已分配角色结果弹窗 ================= -->
+    <!-- ================= 菜单删除 - 结果弹窗 ================= -->
     <Teleport to="body">
       <Transition name="result-modal">
         <div v-if="menuDeleteResultVisible" class="delete-result-overlay" @click.self="menuDeleteResultVisible = false">
           <div class="delete-result-modal">
             <!-- 头部 -->
-            <div class="result-header error">
+            <div class="result-header" :class="menuDeleteResultType">
               <div class="result-icon-wrap">
-                <font-awesome-icon :icon="['fas', 'times-circle']" />
+                <font-awesome-icon v-if="menuDeleteResultType === 'success'" :icon="['fas', 'check-circle']" />
+                <font-awesome-icon v-else :icon="['fas', 'times-circle']" />
               </div>
               <div class="result-header-text">
-                <h3 class="result-title">无法删除</h3>
-                <p class="result-subtitle">
-                  该菜单已分配给以下角色，无法删除
-                </p>
+                <h3 class="result-title">{{ menuDeleteResultTitle }}</h3>
+                <p class="result-subtitle">{{ menuDeleteResultSubtitle }}</p>
               </div>
             </div>
 
-            <!-- 已分配角色列表 -->
-            <div class="result-list" v-if="menuDeleteAssignedRoles.length">
-              <div
-                v-for="role in menuDeleteAssignedRoles"
-                :key="role.id"
-                class="result-item item-fail"
-              >
-                <div class="item-status-icon">
-                  <font-awesome-icon :icon="['fas', 'user-shield']" />
+            <!-- 已分配角色列表 / 错误详情 -->
+            <div class="result-list" v-if="menuDeleteAssignedRoles.length || menuDeleteErrorMessage">
+              <template v-if="menuDeleteAssignedRoles.length">
+                <div
+                  v-for="role in menuDeleteAssignedRoles"
+                  :key="role.id"
+                  class="result-item item-fail"
+                >
+                  <div class="item-status-icon">
+                    <font-awesome-icon :icon="['fas', 'user-shield']" />
+                  </div>
+                  <div class="item-info">
+                    <span class="item-username">{{ role.roleName }}</span>
+                  </div>
                 </div>
-                <div class="item-info">
-                  <span class="item-username">{{ role.roleName }}</span>
+              </template>
+              <template v-else>
+                <div class="result-item item-fail">
+                  <div class="item-status-icon">
+                    <font-awesome-icon :icon="['fas', 'xmark']" />
+                  </div>
+                  <div class="item-info">
+                    <span class="item-reason">{{ menuDeleteErrorMessage }}</span>
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
 
             <!-- 底部按钮 -->
             <div class="result-footer">
-              <button class="alert-btn cancel" @click="menuDeleteResultVisible = false">我知道了</button>
+              <button class="result-confirm-btn" @click="menuDeleteResultVisible = false">我知道了</button>
             </div>
           </div>
         </div>
@@ -425,32 +436,16 @@ const deleteConfirmVisible = ref(false)
 const deleteConfirmLoading = ref(false)
 const deleteTargetId = ref<string | null>(null)
 
-// --- 菜单删除已分配角色结果弹窗
+// --- 菜单删除结果弹窗
 const menuDeleteResultVisible = ref(false)
+const menuDeleteResultType = ref<'success' | 'error'>('success')
+const menuDeleteResultTitle = ref('')
+const menuDeleteResultSubtitle = ref('')
+const menuDeleteErrorMessage = ref('')
 const menuDeleteAssignedRoles = ref<any[]>([])
 
-// 公共：检查菜单已分配角色，有则展示结果弹窗，返回是否已展示弹窗
-const checkAssignedAndShowModal = async (menuId: string): Promise<boolean> => {
-  try {
-    const res = await getMenuAssignedRoles(menuId)
-    const roles = res.data || []
-    if (roles.length > 0) {
-      menuDeleteAssignedRoles.value = roles
-      menuDeleteResultVisible.value = true
-      return true
-    }
-    return false
-  } catch (error: any) {
-    AppleAlert.error('检查失败', error.message || '无法检查菜单分配状态')
-    return true // 阻断后续操作
-  }
-}
-
-const confirmDelete = async (id: string) => {
+const confirmDelete = (id: string) => {
   deleteTargetId.value = id
-  const blocked = await checkAssignedAndShowModal(id)
-  if (blocked) return
-  // 无已分配角色，展示删除确认弹窗
   deleteConfirmVisible.value = true
 }
 
@@ -458,20 +453,40 @@ const executeDelete = async () => {
   if (!deleteTargetId.value) return
   deleteConfirmLoading.value = true
   try {
-    await deleteMenu(deleteTargetId.value)
-    AppleAlert.success('删除成功', '菜单项及其子项已移除')
+    // 先检查是否已分配角色
+    const targetId = deleteTargetId.value
+    const checkRes = await getMenuAssignedRoles(targetId)
+    const roles = checkRes.data || []
+    if (roles.length > 0) {
+      // 有关联角色：关闭确认框，展示冲突结果弹窗
+      deleteConfirmVisible.value = false
+      menuDeleteAssignedRoles.value = roles
+      menuDeleteResultType.value = 'error'
+      menuDeleteResultTitle.value = '无法删除'
+      menuDeleteResultSubtitle.value = '该菜单已分配给以下角色，无法删除'
+      menuDeleteResultVisible.value = true
+      return
+    }
+    // 无关联角色：执行删除
+    await deleteMenu(targetId)
+    deleteConfirmVisible.value = false
+    menuDeleteResultType.value = 'success'
+    menuDeleteResultTitle.value = '删除成功'
+    menuDeleteResultSubtitle.value = '菜单项及其子项已移除'
+    menuDeleteErrorMessage.value = ''
+    menuDeleteResultVisible.value = true
     await fetchData()
     await userStore.fetchUserInfo()
   } catch (error: any) {
     const msg = error.message || ''
-    if (msg.includes('已分配给角色')) {
-      AppleAlert.error('无法删除', msg)
-    } else {
-      AppleAlert.error('删除失败', msg || '操作未完成')
-    }
+    deleteConfirmVisible.value = false
+    menuDeleteResultType.value = 'error'
+    menuDeleteResultTitle.value = '删除失败'
+    menuDeleteResultSubtitle.value = msg || '操作未完成'
+    menuDeleteErrorMessage.value = msg
+    menuDeleteResultVisible.value = true
   } finally {
     deleteConfirmLoading.value = false
-    deleteConfirmVisible.value = false
   }
 }
 
@@ -1367,57 +1382,6 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
-/* AppleConfirmModal 风格按钮 */
-.alert-btn {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.alert-btn.danger {
-  background: #FF453A;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
-}
-
-.alert-btn.danger:hover {
-  background: #FF3B30;
-  transform: translateY(-1px);
-}
-
-.alert-btn.cancel {
-  background: var(--hover-bg, #f5f5f7);
-  color: var(--text-main, #333);
-}
-
-.alert-btn.cancel:hover {
-  filter: brightness(0.9);
-}
-
-.alert-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 行内小号按钮 */
-.alert-btn.sm {
-  flex: none;
-  height: 32px;
-  font-size: 13px;
-  padding: 0 16px;
-  border-radius: 10px;
-}
-
 /* 过渡动画 */
 .result-modal-enter-active {
   transition: opacity 0.3s ease;
@@ -1472,10 +1436,5 @@ onBeforeUnmount(() => {
 
 .dark .result-item.item-fail {
   background: rgba(255, 59, 48, 0.1);
-}
-
-.dark .alert-btn.cancel {
-  background: #2a2a2e;
-  color: #e0e0e0;
 }
 </style>
