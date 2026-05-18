@@ -34,7 +34,12 @@
         <li>按钮权限：通过 v-permission 指令控制按钮级别的权限</li>
       </ul>
     </a-card>
-  </div>
+
+    <a class="neo-btn-flat" href="https://api.notion.com/v1/oauth/authorize?client_id=364d872b-594c-81b6-b0e8-0037ce3f419e&response_type=code&owner=user&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fsystem%2Fmenu">
+      授权 Notion
+    </a>
+
+    </div>
 </template>
 
 <script setup lang="ts">
