@@ -1894,7 +1894,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   --text-main: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.55);
   --sidebar-bg: #151516;
-  --header-bg: rgba(11, 12, 14, 0.6);
+  --header-bg: #0b0c0e;
   --content-bg: #0a0a0b;
   --border-color: rgba(255, 255, 255, 0.08);
   --hover-bg: rgba(255, 255, 255, 0.08);
