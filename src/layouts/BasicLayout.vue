@@ -1890,12 +1890,12 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 <style>
 /* CSS 变量定义 - 非 scoped，确保子组件可继承 */
 .apple-layout-root {
-  --bg-base: #0b0c0e;
+  --bg-base: #262629;
   --text-main: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.55);
-  --sidebar-bg: #151516;
-  --header-bg: #0b0c0e;
-  --content-bg: #0a0a0b;
+  --sidebar-bg: #262629;
+  --header-bg: #262629;
+  --content-bg: #262629;
   --border-color: rgba(255, 255, 255, 0.08);
   --hover-bg: rgba(255, 255, 255, 0.08);
   --active-bg: rgba(255, 255, 255, 0.12);
