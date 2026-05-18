@@ -40,7 +40,7 @@ const goHome = () => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--bg-base, #0b0c0e);
+  background: var(--bg-base, #161615);
 }
 
 .error-content {

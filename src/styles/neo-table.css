@@ -144,7 +144,7 @@
    ================================================================ */
 
 .neo-card {
-  background: var(--content-bg, #ffffff);
+  background: var(--card-bg, #ffffff);
   border-radius: 20px;
   box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04));
   border: 1px solid var(--border-color, rgba(0,0,0,0.05));
@@ -1002,12 +1002,11 @@
    ================================================================ */
 
 /*
- * 暗黑模式下 .apple-content-inner 和 .neo-card 都使用 --content-bg，
- * 导致「卡中卡」效果突兀。通过微妙的背景抬升和柔化边框，
- * 让卡片在页面容器上形成自然的视觉层级。
+ * 暗黑模式下卡片比内容区更深（内凹层次），
+ * .apple-content-inner 用 --content-bg, .neo-card 用 --card-bg。
  */
 .dark .neo-card {
-  background: var(--sidebar-bg, #151516);
+  background: var(--card-bg, #1e1e1c);
   border-color: rgba(255, 255, 255, 0.06);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -1019,7 +1018,7 @@
 
 /* 弹性布局吸顶表头需要不透明背景覆盖滚动内容 */
 .dark .neo-table-flex-container .neo-table .ant-table-thead > tr > th {
-  background: var(--sidebar-bg, #151516) !important;
+  background: var(--card-bg, #1e1e1c) !important;
 }
 
 /* ================================================================

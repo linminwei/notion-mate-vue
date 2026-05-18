@@ -177,13 +177,13 @@ const handleConfirm = () => {
 <style>
 /* 暗黑模式适配 - 实色递进层次感 */
 html.dark .apple-alert-box {
-  background: #1e1e22;
+  background: var(--modal-bg);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 html.dark .alert-btn.cancel {
-  background: #2a2a2e;
-  color: #e0e0e0;
+  background: var(--modal-card-bg);
+  color: var(--text-main);
 }
 </style>

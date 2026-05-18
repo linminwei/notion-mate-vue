@@ -45,3 +45,9 @@
   padding: 0;
 }
 </style>
+
+<style>
+.dark .dashboard .ant-card {
+  background: var(--card-bg) !important;
+}
+</style>

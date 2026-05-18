@@ -643,7 +643,7 @@ onMounted(() => {
 .capsule-search {
   display: flex;
   min-width: 420px;
-  background: var(--hover-bg, #f5f5f7);
+  background: var(--card-bg, #f5f5f7);
   border-radius: 14px;
   padding: 4px;
   border: 1px solid transparent;
@@ -914,7 +914,7 @@ onMounted(() => {
   align-items: stretch;
   border-radius: 14px;
   border: 1.5px solid var(--border-color, rgba(60, 60, 67, 0.12));
-  background: var(--card-bg, rgba(255, 255, 255, 0.6));
+  background: var(--card-bg);
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
   cursor: pointer;

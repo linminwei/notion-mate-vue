@@ -741,21 +741,21 @@ watch(() => props.value, (val) => {
 <style>
 html.dark .icon-picker,
 .dark .icon-picker {
-  background: #1c1c1e;
+  background: var(--card-bg);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 html.dark .search-input,
 .dark .search-input {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--input-bg);
   border-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 html.dark .search-input:focus,
 .dark .search-input:focus {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hover-bg);
   border-color: var(--apple-blue);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue) 15%, transparent);
 }
@@ -767,14 +767,14 @@ html.dark .search-input::placeholder,
 
 html.dark .search-clear,
 .dark .search-clear {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--active-bg);
+  color: var(--text-muted);
 }
 
 html.dark .search-clear:hover,
 .dark .search-clear:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: var(--scrollbar-thumb);
+  color: var(--text-main);
 }
 
 html.dark .category-tabs,
@@ -812,7 +812,7 @@ html.dark .pagination,
 html.dark .page-btn:hover:not(:disabled),
 .dark .page-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 html.dark .page-num:hover,
@@ -822,14 +822,14 @@ html.dark .page-num:hover,
 
 html.dark .svg-textarea,
 .dark .svg-textarea {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--input-bg);
   border-color: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 html.dark .svg-textarea:focus,
 .dark .svg-textarea:focus {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hover-bg);
   border-color: var(--apple-blue);
 }
 
@@ -890,17 +890,17 @@ html.dark .svg-textarea::-webkit-scrollbar-thumb:hover,
 
 html.dark .empty-state,
 .dark .empty-state {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
 }
 
 html.dark .mode-tab,
 .dark .mode-tab {
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
 }
 
 html.dark .mode-tab:hover,
 .dark .mode-tab:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hover-bg);
 }
 
 html.dark .mode-tab.active,

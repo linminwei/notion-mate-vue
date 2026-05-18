@@ -1890,22 +1890,30 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
 <style>
 /* CSS 变量定义 - 非 scoped，确保子组件可继承 */
 .apple-layout-root {
-  --bg-base: #262629;
-  --text-main: #ffffff;
-  --text-muted: rgba(255, 255, 255, 0.55);
-  --sidebar-bg: #262629;
-  --header-bg: #262629;
-  --content-bg: #262629;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --hover-bg: rgba(255, 255, 255, 0.08);
-  --active-bg: rgba(255, 255, 255, 0.12);
-  --popup-bg: rgba(30, 30, 30, 0.85);
-  --modal-bg: #1c1c1e;
-  --modal-card-bg: #28282b;
-  --shadow-color: rgba(0, 0, 0, 0.6);
+  /* ===== 背景层级：表面统一 + 卡片下沉内凹（v2.2） ===== */
+  --bg-base: #252523;
+  --sidebar-bg: #252523;
+  --header-bg: #252523;
+  --content-bg: #252523;
+  --card-bg: #1e1e1c;
+  --modal-bg: #1e1e1c;
+  --modal-card-bg: #191917;
+  --popup-bg: rgba(30, 30, 28, 0.95);
+  /* ===== 输入/图标容器 ===== */
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --icon-bg: rgba(255, 255, 255, 0.06);
+  /* ===== 交互状态 ===== */
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --active-bg: rgba(255, 255, 255, 0.10);
   --pill-bg: rgba(255, 255, 255, 0.04);
-  --pill-border: rgba(255, 255, 255, 0.08);
-  --logo-text: #ffffff;
+  --pill-border: rgba(255, 255, 255, 0.07);
+  --border-color: rgba(255, 255, 255, 0.07);
+  --shadow-color: rgba(0, 0, 0, 0.6);
+  /* ===== 文本 ===== */
+  --text-main: rgba(255, 255, 255, 0.92);
+  --text-muted: rgba(255, 255, 255, 0.48);
+  --logo-text: rgba(255, 255, 255, 0.92);
+  /* ===== 滚动条 ===== */
   --scrollbar-thumb: rgba(255, 255, 255, 0.15);
   --scrollbar-hover: rgba(255, 255, 255, 0.3);
 }
@@ -1917,6 +1925,7 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   --sidebar-bg: #ffffff;
   --header-bg: rgba(255, 255, 255, 0.75);
   --content-bg: #ffffff;
+  --card-bg: #ffffff;
   --border-color: rgba(0, 0, 0, 0.08);
   --hover-bg: rgba(0, 0, 0, 0.05);
   --active-bg: rgba(0, 0, 0, 0.08);
@@ -1927,6 +1936,8 @@ watch(() => route.path, (path) => selectedKeys.value = [path], { immediate: true
   --pill-bg: rgba(255, 255, 255, 1);
   --pill-border: rgba(0, 0, 0, 0.1);
   --logo-text: #1d1d1f;
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --icon-bg: rgba(0, 0, 0, 0.06);
   --scrollbar-thumb: rgba(0, 0, 0, 0.2);
   --scrollbar-hover: rgba(0, 0, 0, 0.35);
 }

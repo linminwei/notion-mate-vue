@@ -853,7 +853,7 @@ onBeforeUnmount(() => {
 :deep(.neo-tree-select .ant-select-selector) {
   border-radius: 10px !important;
   border: 1.5px solid rgba(0, 0, 0, 0.12) !important;
-  background: var(--input-bg, #fff) !important;
+  background: var(--input-bg) !important;
   padding: 4px 12px !important;
   height: auto !important;
   min-height: 40px;

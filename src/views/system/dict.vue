@@ -797,7 +797,7 @@ onBeforeUnmount(() => {
 .neo-sidebar {
   width: 360px;
   flex-shrink: 0;
-  background: var(--content-bg, #ffffff);
+  background: var(--card-bg, #ffffff);
   border-radius: 20px;
   display: flex;
   flex-direction: column;
@@ -846,7 +846,7 @@ onBeforeUnmount(() => {
 .capsule-search {
   display: flex;
   width: 100%;
-  background: var(--hover-bg, #f5f5f7);
+  background: var(--card-bg, #f5f5f7);
   border-radius: 14px;
   padding: 4px;
   border: 1px solid transparent;
@@ -1151,7 +1151,7 @@ onBeforeUnmount(() => {
 /* ================= 右侧主工作区 ================== */
 .neo-main {
   flex: 1; min-width: 0;
-  background: var(--content-bg, #ffffff);
+  background: var(--card-bg, #ffffff);
   border-radius: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
   border: 1px solid var(--border-color, rgba(0,0,0,0.05));
@@ -1183,7 +1183,7 @@ onBeforeUnmount(() => {
 .modern-empty-card {
   width: 100%;
   max-width: 380px;
-  background: var(--content-bg, #ffffff);
+  background: var(--card-bg, #ffffff);
   border: 1px solid var(--border-color, rgba(0,0,0,0.05));
   border-radius: 20px;
   overflow: hidden;
@@ -1192,7 +1192,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   animation: float-up-fade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
-:global(.dark) .modern-empty-card {
+:global(.dark .modern-empty-card) {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
@@ -1223,7 +1223,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 2;
 }
-:global(.dark) .mockup-window {
+:global(.dark .mockup-window) {
   box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
 }
 .mockup-header { display: flex; align-items: center; gap: 8px; }
@@ -1460,8 +1460,8 @@ onBeforeUnmount(() => {
   color: rgba(60, 60, 67, 0.50);
 }
 
-:global(.dark) .sort-badge {
-  color: rgba(235, 235, 245, 0.42);
+:global(.dark .sort-badge) {
+  color: rgba(255, 255, 255, 0.60);
 }
 
 .drag-handle {
@@ -1495,19 +1495,19 @@ onBeforeUnmount(() => {
   transform: scale(0.88);
 }
 
-:global(.dark) .drag-icon {
-  color: rgba(235, 235, 245, 0.18);
+:global(.dark .drag-icon) {
+  color: rgba(235, 235, 245, 0.30);
 }
 
 :global(.dark) :deep(.ant-table-row):hover .drag-icon {
-  color: rgba(235, 235, 245, 0.36);
+  color: rgba(235, 235, 245, 0.45);
 }
 
-:global(.dark) .drag-handle:hover .drag-icon {
+:global(.dark .drag-handle:hover .drag-icon) {
   color: rgba(235, 235, 245, 0.60);
 }
 
-:global(.dark) .drag-handle:active .drag-icon {
+:global(.dark .drag-handle:active .drag-icon) {
   color: #0A84FF;
 }
 
@@ -1562,50 +1562,50 @@ onBeforeUnmount(() => {
 /* ================= 右侧表格：状态列（使用全局 .status-indicator-wrap） ================= */
 
 /* ================= 暗黑模式补全 ================= */
-:global(.dark) .sidebar-footer {
+:global(.dark .sidebar-footer) {
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
-:global(.dark) .page-btn {
+:global(.dark .page-btn) {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.06);
 }
 
-:global(.dark) .page-btn:disabled {
+:global(.dark .page-btn:disabled) {
   background: rgba(255, 255, 255, 0.02);
 }
 
-:global(.dark) .search-trigger.reset-btn {
+:global(.dark .search-trigger.reset-btn) {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.7);
 }
 
-:global(.dark) .search-trigger.reset-btn:hover {
+:global(.dark .search-trigger.reset-btn:hover) {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.85);
 }
 
-:global(.dark) .toolbar-action-btn.danger {
+:global(.dark .toolbar-action-btn.danger) {
   background: rgba(255, 69, 58, 0.15);
 }
 
-:global(.dark) .toolbar-action-btn.danger:hover:not(:disabled) {
+:global(.dark .toolbar-action-btn.danger:hover:not(:disabled)) {
   background: #FF453A;
 }
 
-:global(.dark) .toolbar-action-btn.warning {
+:global(.dark .toolbar-action-btn.warning) {
   background: rgba(255, 149, 0, 0.15);
 }
 
-:global(.dark) .toolbar-action-btn.warning:hover:not(:disabled) {
+:global(.dark .toolbar-action-btn.warning:hover:not(:disabled)) {
   background: #FF9500;
 }
 
-:global(.dark) .icon-btn.danger:not(:disabled) {
+:global(.dark .icon-btn.danger:not(:disabled)) {
   background: rgba(255, 69, 58, 0.15);
 }
 
-:global(.dark) .icon-btn.danger:not(:disabled):hover {
+:global(.dark .icon-btn.danger:not(:disabled):hover) {
   background: rgba(255, 69, 58, 0.25);
 }
 

@@ -426,7 +426,7 @@ const handleConfirm = () => {
 <style>
 /* ================== 暗黑模式完整适配 (非scoped，确保teleported modal正确匹配) ================== */
 html.dark .neo-modal-content-wrap {
-  background: #1c1c1e !important;
+  background: var(--modal-bg) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.06),
@@ -437,18 +437,18 @@ html.dark .neo-modal-content-wrap {
 
 html.dark .neo-modal-close {
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 html.dark .neo-modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--active-bg);
+  color: var(--text-main);
 }
 
 html.dark .neo-modal-content-wrap .custom-title {
-  color: #ffffff !important;
+  color: var(--text-main) !important;
 }
 html.dark .neo-modal-content-wrap .custom-subtitle {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: var(--text-muted) !important;
 }
 
 /* 图标盒子暗色模式 - 保持渐变背景，增强光晕 */
@@ -485,12 +485,12 @@ html.dark .neo-modal-footer {
 }
 
 html.dark .neo-btn-flat {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: var(--hover-bg) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
 }
 html.dark .neo-btn-flat:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--active-bg) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
@@ -556,12 +556,12 @@ html.dark .neo-form textarea.ant-input[disabled] {
 }
 
 html.dark .neo-form textarea.ant-input {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--input-bg) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
 }
 
 html.dark .neo-form .ant-select-arrow {
-  color: rgba(255, 255, 255, 0.4) !important;
+  color: var(--text-muted) !important;
 }
 </style>
