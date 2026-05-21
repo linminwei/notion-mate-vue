@@ -849,7 +849,7 @@ onBeforeUnmount(() => {
   background: var(--card-bg, #f5f5f7);
   border-radius: 14px;
   padding: 4px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   transition: all 0.3s;
   box-sizing: border-box;
   align-items: center;
@@ -961,7 +961,7 @@ onBeforeUnmount(() => {
   margin-bottom: 4px;
   border-radius: 14px;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   position: relative;
   user-select: none;
@@ -1055,7 +1055,7 @@ onBeforeUnmount(() => {
   transition: all 0.3s ease;
 
   background: var(--hover-bg, rgba(0,0,0,0.05));
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0 8px; /* 仅左右 padding，靠 height 撑起上下空间 */
   box-sizing: border-box;

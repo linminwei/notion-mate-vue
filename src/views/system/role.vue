@@ -675,7 +675,7 @@ onMounted(() => { fetchData(); fetchCommonStatus() })
   background: var(--card-bg, #f5f5f7);
   border-radius: 14px;
   padding: 4px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-color);
   transition: all 0.3s;
   align-items: center;
 }

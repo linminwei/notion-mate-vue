@@ -227,6 +227,16 @@
           </template>
           <a-input v-model:value="formState.component" placeholder="如：system/user/index" />
         </a-form-item>
+
+        <a-form-item name="permission" :rules="[{ required: true, message: '请输入权限标识', trigger: 'blur' }]">
+          <template #label>
+            权限标识
+            <a-tooltip title="权限控制字符，如：`system:user:add`">
+              <font-awesome-icon :icon="['fas', 'info-circle']" class="help-icon" />
+            </a-tooltip>
+          </template>
+          <a-input v-model:value="formState.permission" placeholder="如：system:user:add" />
+        </a-form-item>
       </div>
 
       <a-form-item v-if="formState.menuType !== 3" label="菜单图标" name="icon" class="icon-picker-form-item">

@@ -137,6 +137,17 @@ export interface DictData {
   createTime: string
 }
 
+// Notion 工作区配置
+export interface NotionWorkspace {
+  id: string
+  workspaceName: string
+  workspaceCode: string
+  workspaceIcon: string
+  token: string
+  createTime: string
+  createBy: string
+}
+
 // 批量删除结果
 export interface BatchDeleteResult {
   allSuccess: boolean

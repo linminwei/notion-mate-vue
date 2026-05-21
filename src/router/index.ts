@@ -44,6 +44,12 @@ const constantRoutes: RouteRecordRaw[] = [
         name: 'SystemDict',
         component: () => import('@/views/system/dict.vue'),
         meta: { title: ' 字典管理 ', icon: 'BookOutlined', permission: 'system:dict:list' }
+      },
+      {
+        path: 'notion/config',
+        name: 'NotionConfig',
+        component: () => import('@/views/notion/config.vue'),
+        meta: { title: ' 基础配置 ', icon: 'ThunderboltOutlined', permission: 'notion:workspace:list' }
       }
     ]
   },
