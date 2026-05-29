@@ -50,6 +50,12 @@ const constantRoutes: RouteRecordRaw[] = [
         name: 'NotionConfig',
         component: () => import('@/views/notion/config.vue'),
         meta: { title: ' 基础配置 ', icon: 'ThunderboltOutlined', permission: 'notion:workspace:list' }
+      },
+      {
+        path: 'notion/datasource',
+        name: 'NotionDatasource',
+        component: () => import('@/views/notion/datasource.vue'),
+        meta: { title: ' 数据源管理 ', icon: 'database', permission: 'notion:datasource:list' }
       }
     ]
   },

@@ -855,7 +855,7 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 .capsule-search:focus-within {
-  background: transparent;
+  background: var(--card-bg, #ffffff);
   border-color: var(--apple-blue, #0A84FF);
   /* 应用全局强调色 */
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, transparent);

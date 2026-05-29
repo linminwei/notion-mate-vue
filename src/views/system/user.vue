@@ -651,7 +651,7 @@ onMounted(() => {
   align-items: center;
 }
 .capsule-search:focus-within {
-  background: transparent;
+  background: var(--card-bg, #ffffff);
   border-color: var(--apple-blue, #0A84FF);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 10%, transparent);
 }

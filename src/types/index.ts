@@ -148,6 +148,31 @@ export interface NotionWorkspace {
   createBy: string
 }
 
+// Notion 数据源
+export interface NotionDatasource {
+  id: string
+  workspaceId: string
+  workspaceName: string
+  workspaceCode: string
+  datasourceId: string
+  datasourceIcon: string
+  datasourceTitle: string
+  propertyCount: number
+  createTime: string
+  updateTime: string
+}
+
+// Notion 数据源属性
+export interface NotionDatasourceProperty {
+  id: string
+  propertyId: string
+  propertyName: string
+  propertyType: string
+  datasourceId: string
+  createTime: string
+  updateTime: string
+}
+
 // 批量删除结果
 export interface BatchDeleteResult {
   allSuccess: boolean

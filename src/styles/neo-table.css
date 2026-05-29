@@ -978,6 +978,17 @@
   background: transparent !important;
 }
 
+.dark .capsule-search {
+  background: var(--card-bg, #1e1e1c) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark .capsule-search:focus-within {
+  background: var(--card-bg, #1e1e1c) !important;
+  border-color: var(--apple-blue, #0A84FF) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 14%, transparent) !important;
+}
+
 .dark .ant-select-dropdown {
   background: rgba(30, 30, 32, 0.95) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
