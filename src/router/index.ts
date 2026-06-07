@@ -46,16 +46,22 @@ const constantRoutes: RouteRecordRaw[] = [
         meta: { title: ' 字典管理 ', icon: 'BookOutlined', permission: 'system:dict:list' }
       },
       {
-        path: 'notion/config',
-        name: 'NotionConfig',
-        component: () => import('@/views/notion/config.vue'),
-        meta: { title: ' 基础配置 ', icon: 'ThunderboltOutlined', permission: 'notion:workspace:list' }
+        path: 'notion/workspace',
+        name: 'NotionWorkspace',
+        component: () => import('@/views/notion/workspace.vue'),
+        meta: { title: ' 工作区配置 ', icon: 'ThunderboltOutlined', permission: 'workspace:list' }
       },
       {
         path: 'notion/datasource',
         name: 'NotionDatasource',
         component: () => import('@/views/notion/datasource.vue'),
-        meta: { title: ' 数据源管理 ', icon: 'database', permission: 'notion:datasource:list' }
+        meta: { title: ' 数据源管理 ', icon: 'database', permission: 'datasource:list' }
+      },
+      {
+        path: 'notion/file-upload-test',
+        name: 'NotionFileUploadTest',
+        component: () => import('@/views/notion/file-upload-test.vue'),
+        meta: { title: ' 文件上传测试 ', icon: 'CloudUploadOutlined', hidden: true }
       }
     ]
   },

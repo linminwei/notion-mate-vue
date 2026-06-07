@@ -6,9 +6,9 @@
       <header class="neo-page-header">
         <div class="capsule-search">
           <div class="search-inputs">
-            <input type="text" v-model="searchForm.workspaceName" placeholder="工作区名称" @keyup.enter="handleSearch" />
+            <input type="text" v-model="searchForm.name" placeholder="工作区名称" @keyup.enter="handleSearch" />
             <div class="divider"></div>
-            <input type="text" v-model="searchForm.workspaceCode" placeholder="工作区编码" @keyup.enter="handleSearch" />
+            <input type="text" v-model="searchForm.code" placeholder="工作区编码" @keyup.enter="handleSearch" />
           </div>
           <div class="search-actions">
             <button class="search-trigger" @click="handleSearch" title="搜索">
@@ -21,11 +21,11 @@
         </div>
 
         <div class="header-actions">
-          <button class="neo-btn-solid primary" v-permission="'notion:workspace:add'" @click="handleAdd">
+          <button class="neo-btn-solid primary" v-permission="'workspace:add'" @click="handleAdd">
             <font-awesome-icon :icon="['fas', 'plus']" />
             新增配置
           </button>
-          <button class="neo-btn-flat danger" v-permission="'notion:workspace:delete'" v-if="selectedRowKeys.length > 0" @click="confirmBatchDelete">
+          <button class="neo-btn-flat danger" v-permission="'workspace:delete'" v-if="selectedRowKeys.length > 0" @click="confirmBatchDelete">
             <font-awesome-icon :icon="['fas', 'trash']" />
             批量删除
           </button>
@@ -45,19 +45,19 @@
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'workspace'">
-              <div class="workspace-cell" :title="`${record.workspaceName} · ${record.workspaceCode}`">
+              <div class="workspace-cell" :title="`${record.name} · ${record.code}`">
                 <div class="workspace-avatar">
-                  <img v-if="isBase64Image(record.workspaceIcon)" :src="record.workspaceIcon" class="table-icon-img" @error="handleImgError" />
-                  <span v-else-if="record.workspaceIcon" class="table-icon-emoji">{{ record.workspaceIcon }}</span>
+                  <img v-if="isBase64Image(record.icon)" :src="record.icon" class="table-icon-img" @error="handleImgError" />
+                  <span v-else-if="record.icon" class="table-icon-emoji">{{ record.icon }}</span>
                   <font-awesome-icon v-else :icon="['fas', 'cube']" />
                 </div>
                 <div class="workspace-meta">
                   <div class="workspace-name-row">
-                    <span class="workspace-name">{{ record.workspaceName || '未命名工作区' }}</span>
+                    <span class="workspace-name">{{ record.name || '未命名工作区' }}</span>
                   </div>
                   <div class="workspace-code-row">
                     <span class="workspace-code-label">编码</span>
-                    <span class="workspace-code">{{ record.workspaceCode || '-' }}</span>
+                    <span class="workspace-code">{{ record.code || '-' }}</span>
                   </div>
                 </div>
               </div>
@@ -73,14 +73,17 @@
             <template v-if="column.key === 'createTime'">
               <span>{{ formatDateTime(record.createTime) }}</span>
             </template>
+            <template v-if="column.key === 'updateTime'">
+              <span>{{ formatDateTime(record.updateTime) }}</span>
+            </template>
             <template v-if="column.key === 'createBy'">
               <span>{{ record.createBy || '-' }}</span>
             </template>
             <template v-if="column.key === 'action'">
               <div class="action-btn-group">
-                <button class="text-action-btn primary" v-permission="'notion:workspace:edit'" @click="handleEdit(record)">编辑</button>
+                <button class="text-action-btn primary" v-permission="'workspace:edit'" @click="handleEdit(record)">编辑</button>
                 <span class="action-divider"></span>
-                <button class="text-action-btn danger" v-permission="'notion:workspace:delete'" @click="confirmDelete(record.id)">删除</button>
+                <button class="text-action-btn danger" v-permission="'workspace:delete'" @click="confirmDelete(record.id)">删除</button>
               </div>
             </template>
           </template>
@@ -260,8 +263,8 @@
                     </div>
 
                     <div class="workspace-live-preview">
-                      <strong>{{ formState.workspaceName || '未命名工作区' }}</strong>
-                      <span class="preview-code">{{ formState.workspaceCode || 'workspace_code' }}</span>
+                      <strong>{{ formState.name || '未命名工作区' }}</strong>
+                      <span class="preview-code">{{ formState.code || 'workspace_code' }}</span>
                     </div>
                   </div>
                 </section>
@@ -282,14 +285,14 @@
                           <label>工作区编码 <i class="req">*</i></label>
                           <div class="input-box input-box-icon">
                             <font-awesome-icon :icon="['fas', 'hashtag']" class="input-leading-icon" />
-                            <input type="text" v-model="formState.workspaceCode" placeholder="例如：my_workspace" />
+                            <input type="text" v-model="formState.code" placeholder="例如：my_workspace" />
                           </div>
                         </div>
                         <div class="field-item">
                           <label>工作区名称 <i class="req">*</i></label>
                           <div class="input-box input-box-icon">
                             <font-awesome-icon :icon="['fas', 'briefcase']" class="input-leading-icon" />
-                            <input type="text" v-model="formState.workspaceName" placeholder="例如：我的工作区" />
+                            <input type="text" v-model="formState.name" placeholder="例如：我的工作区" />
                           </div>
                         </div>
                       </div>
@@ -367,7 +370,7 @@
                   <div class="test-config-item">
                     <font-awesome-icon :icon="['fas', 'briefcase']" />
                     <span>工作区</span>
-                    <strong>{{ formState.workspaceName || '未命名工作区' }}</strong>
+                    <strong>{{ formState.name || '未命名工作区' }}</strong>
                   </div>
                   <div class="test-config-item">
                     <font-awesome-icon :icon="['fas', 'key']" />
@@ -423,10 +426,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import {
-  getNotionWorkspacePage, addNotionWorkspace, updateNotionWorkspace,
-  deleteNotionWorkspaceBatch, testNotionConnection
+  getWorkspacePage, addWorkspace, updateWorkspace,
+  deleteWorkspaceBatch, testWorkspaceConnection
 } from '@/api/notion.ts'
-import type { NotionWorkspace } from '@/types'
+import type { Workspace } from '@/types'
 import type { TablePaginationConfig } from 'ant-design-vue'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
@@ -454,15 +457,16 @@ const columns = [
   { title: '工作区', key: 'workspace', width: 340 },
   { title: '访问令牌', key: 'token', width: 220 },
   { title: '创建时间', key: 'createTime', width: 180 },
+  { title: '更新时间', key: 'updateTime', width: 180 },
   { title: '创建人', key: 'createBy', width: 120 },
   { title: '操作', key: 'action', align: 'center' as const, width: 140 }
 ]
 
 const loading = ref(false)
-const tableData = ref<NotionWorkspace[]>([])
+const tableData = ref<Workspace[]>([])
 const selectedRowKeys = ref<string[]>([])
 
-const searchForm = reactive({ workspaceName: '', workspaceCode: '', pageNum: 1, pageSize: 10 })
+const searchForm = reactive({ name: '', code: '', pageNum: 1, pageSize: 10 })
 const pagination = reactive<TablePaginationConfig>({
   current: 1, pageSize: 10, total: 0,
   showSizeChanger: true, showQuickJumper: true,
@@ -484,7 +488,7 @@ const executeDelete = async () => {
   deleteConfirmLoading.value = true
   try {
     const ids = deleteIsBatch.value ? selectedRowKeys.value : [deleteTargetId.value!]
-    await deleteNotionWorkspaceBatch(ids)
+    await deleteWorkspaceBatch(ids)
     AppleAlert.success('删除成功', `已删除 ${ids.length} 个工作区`)
     if (deleteIsBatch.value) selectedRowKeys.value = []
     deleteConfirmVisible.value = false
@@ -500,8 +504,8 @@ const isEditMode = ref(false)
 const editingId = ref<string | null>(null)
 const hasExistingData = ref(false)
 const tokenVisible = ref(false)
-const formState = reactive({ workspaceName: '', workspaceCode: '', workspaceIcon: '', token: '' })
-const originalEditState = ref({ workspaceName: '', workspaceCode: '', workspaceIcon: '', token: '' })
+const formState = reactive({ name: '', code: '', icon: '', token: '' })
+const originalEditState = ref({ name: '', code: '', icon: '', token: '' })
 
 // ---------- 图标上传 ----------
 const iconFileInput = ref<HTMLInputElement | null>(null)
@@ -523,7 +527,7 @@ const connectionProgressClass = computed(() => {
 const pendingPayload = ref<any>(null)
 
 const canSubmit = computed(() => {
-  const base = formState.workspaceName.trim() && formState.workspaceCode.trim()
+  const base = formState.name.trim() && formState.code.trim()
   return base && formState.token.trim()
 })
 
@@ -549,7 +553,7 @@ const handleIconFileChange = (e: Event) => {
   const reader = new FileReader()
   reader.onload = () => {
     const base64 = reader.result as string
-    formState.workspaceIcon = base64
+    formState.icon = base64
     iconPreviewUrl.value = base64
     svgCodeVisible.value = false
     svgCodeInput.value = ''
@@ -564,7 +568,7 @@ const onSvgCodeInput = () => {
   svgCodeError.value = ''
   const code = svgCodeInput.value.trim()
   if (!code) {
-    formState.workspaceIcon = iconPreviewFailed.value ? '' : formState.workspaceIcon
+    formState.icon = iconPreviewFailed.value ? '' : formState.icon
     return
   }
   if (!code.startsWith('<svg') && !code.startsWith('<?xml')) {
@@ -572,7 +576,7 @@ const onSvgCodeInput = () => {
     return
   }
   const base64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(code)))
-  formState.workspaceIcon = base64
+  formState.icon = base64
   iconPreviewUrl.value = base64
   iconPreviewFailed.value = false
 }
@@ -580,7 +584,7 @@ const onSvgCodeInput = () => {
 const onIconPreviewError = () => {
   iconPreviewFailed.value = true
   iconPreviewUrl.value = ''
-  formState.workspaceIcon = ''
+  formState.icon = ''
 }
 
 const handleImgError = (e: Event) => {
@@ -605,9 +609,9 @@ onBeforeUnmount(() => lockScroll(false))
 
 // ---------- 表单操作 ----------
 const resetForm = () => {
-  formState.workspaceName = ''; formState.workspaceCode = ''
-  formState.workspaceIcon = ''; formState.token = ''
-  originalEditState.value = { workspaceName: '', workspaceCode: '', workspaceIcon: '', token: '' }
+  formState.name = ''; formState.code = ''
+  formState.icon = ''; formState.token = ''
+  originalEditState.value = { name: '', code: '', icon: '', token: '' }
   editingId.value = null; tokenVisible.value = false
   iconPreviewUrl.value = ''; svgCodeVisible.value = false
   svgCodeInput.value = ''; svgCodeError.value = ''
@@ -618,15 +622,15 @@ const resetForm = () => {
 }
 
 const handleAdd = () => { isEditMode.value = false; resetForm(); guidedSetupVisible.value = true; currentStep.value = 0 }
-const handleEdit = (record: NotionWorkspace) => {
+const handleEdit = (record: Workspace) => {
   isEditMode.value = true; editingId.value = record.id
-  formState.workspaceName = record.workspaceName; formState.workspaceCode = record.workspaceCode
-  formState.workspaceIcon = record.workspaceIcon || ''
+  formState.name = record.name; formState.code = record.code
+  formState.icon = record.icon || ''
   formState.token = record.token || ''
   originalEditState.value = {
-    workspaceName: record.workspaceName || '',
-    workspaceCode: record.workspaceCode || '',
-    workspaceIcon: record.workspaceIcon || '',
+    name: record.name || '',
+    code: record.code || '',
+    icon: record.icon || '',
     token: record.token || ''
   }
   tokenVisible.value = false; svgCodeVisible.value = false
@@ -634,8 +638,8 @@ const handleEdit = (record: NotionWorkspace) => {
   connectionTested.value = false; connectionPassed.value = false
   connectionTesting.value = false; connectionMessage.value = ''
   pendingPayload.value = null
-  if (record.workspaceIcon && isBase64Image(record.workspaceIcon)) {
-    iconPreviewUrl.value = record.workspaceIcon
+  if (record.icon && isBase64Image(record.icon)) {
+    iconPreviewUrl.value = record.icon
     iconPreviewFailed.value = false
   } else {
     iconPreviewUrl.value = ''
@@ -646,31 +650,31 @@ const handleEdit = (record: NotionWorkspace) => {
 const goToStep1 = () => { currentStep.value = 0 }
 const goToStep2 = () => { currentStep.value = 1 }
 const goToStep3 = () => {
-  if (!formState.workspaceName.trim()) { AppleAlert.warning('表单校验', '请输入工作区名称'); return }
-  if (!formState.workspaceCode.trim()) { AppleAlert.warning('表单校验', '请输入工作区编码'); return }
+  if (!formState.name.trim()) { AppleAlert.warning('表单校验', '请输入工作区名称'); return }
+  if (!formState.code.trim()) { AppleAlert.warning('表单校验', '请输入工作区编码'); return }
   if (!formState.token.trim()) { AppleAlert.warning('表单校验', '请输入访问令牌'); return }
   pendingPayload.value = {
-    workspaceName: formState.workspaceName.trim(),
-    workspaceCode: formState.workspaceCode.trim(),
-    workspaceIcon: formState.workspaceIcon,
+    name: formState.name.trim(),
+    code: formState.code.trim(),
+    icon: formState.icon,
     token: formState.token.trim()
   }
   currentStep.value = 2
 }
 const goToEditStep3 = () => {
-  if (!formState.workspaceName.trim()) { AppleAlert.warning('表单校验', '请输入工作区名称'); return }
-  if (!formState.workspaceCode.trim()) { AppleAlert.warning('表单校验', '请输入工作区编码'); return }
+  if (!formState.name.trim()) { AppleAlert.warning('表单校验', '请输入工作区名称'); return }
+  if (!formState.code.trim()) { AppleAlert.warning('表单校验', '请输入工作区编码'); return }
   if (!formState.token.trim()) { AppleAlert.warning('表单校验', '请输入访问令牌'); return }
   const nextState = {
-    workspaceName: formState.workspaceName.trim(),
-    workspaceCode: formState.workspaceCode.trim(),
-    workspaceIcon: formState.workspaceIcon,
+    name: formState.name.trim(),
+    code: formState.code.trim(),
+    icon: formState.icon,
     token: formState.token.trim()
   }
   const payload: any = { id: editingId.value }
-  if (nextState.workspaceName !== originalEditState.value.workspaceName) payload.workspaceName = nextState.workspaceName
-  if (nextState.workspaceCode !== originalEditState.value.workspaceCode) payload.workspaceCode = nextState.workspaceCode
-  if (nextState.workspaceIcon !== originalEditState.value.workspaceIcon) payload.workspaceIcon = nextState.workspaceIcon
+  if (nextState.name !== originalEditState.value.name) payload.name = nextState.name
+  if (nextState.code !== originalEditState.value.code) payload.code = nextState.code
+  if (nextState.icon !== originalEditState.value.icon) payload.icon = nextState.icon
   if (nextState.token !== originalEditState.value.token) payload.token = nextState.token
   pendingPayload.value = payload
   connectionTested.value = false
@@ -687,7 +691,7 @@ const handleTestConnection = async () => {
   connectionPassed.value = false
   connectionMessage.value = ''
   try {
-    await testNotionConnection(formState.token.trim())
+    await testWorkspaceConnection(formState.token.trim())
     connectionPassed.value = true
     connectionMessage.value = '令牌有效，已成功连接至你的 Notion 工作区'
   } catch (error: any) {
@@ -711,10 +715,10 @@ const handleGuidedSubmit = async () => {
         AppleAlert.warning('无需保存', '未检测到配置变更')
         return
       }
-      await updateNotionWorkspace(pendingPayload.value)
+      await updateWorkspace(pendingPayload.value)
       AppleAlert.success('编辑成功', '工作区配置已更新')
     } else {
-      await addNotionWorkspace(pendingPayload.value)
+      await addWorkspace(pendingPayload.value)
       AppleAlert.success('新增成功', '工作区配置已创建')
     }
     guidedSetupVisible.value = false; currentStep.value = 0; isEditMode.value = false
@@ -724,12 +728,12 @@ const handleGuidedSubmit = async () => {
 }
 
 const handleSearch = () => { searchForm.pageNum = 1; pagination.current = 1; fetchData() }
-const handleReset = () => { searchForm.workspaceName = ''; searchForm.workspaceCode = ''; searchForm.pageNum = 1; pagination.current = 1; selectedRowKeys.value = []; fetchData() }
+const handleReset = () => { searchForm.name = ''; searchForm.code = ''; searchForm.pageNum = 1; pagination.current = 1; selectedRowKeys.value = []; fetchData() }
 
 const fetchData = async (checkEmpty = false) => {
   loading.value = true
   try {
-    const res = await getNotionWorkspacePage(searchForm)
+    const res = await getWorkspacePage(searchForm)
     tableData.value = res.data.list
     pagination.total = res.data.total
     pagination.current = res.data.pageNum

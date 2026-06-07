@@ -137,29 +137,47 @@ export interface DictData {
   createTime: string
 }
 
-// Notion 工作区配置
-export interface NotionWorkspace {
+// 工作区配置
+export interface WorkspaceVo {
   id: string
-  workspaceName: string
-  workspaceCode: string
-  workspaceIcon: string
+  name: string
+  code: string
+  icon: string
+  token: string
+  createTime: string
+  updateTime: string
+  createBy: string
+}
+
+
+export interface Workspace {
+  id: string
+  name: string
+  code: string
+  icon: string
   token: string
   createTime: string
   createBy: string
 }
 
 // Notion 数据源
-export interface NotionDatasource {
+export interface Datasource {
   id: string
   workspaceId: string
-  workspaceName: string
-  workspaceCode: string
   datasourceId: string
-  datasourceIcon: string
-  datasourceTitle: string
-  propertyCount: number
+  icon: string
+  title: string
   createTime: string
   updateTime: string
+  createBy: string
+  updateBy: string
+}
+
+export interface DatasourceVo {
+  id: string
+  datasourceId: string
+  iconUrl: string
+  title: string
 }
 
 // Notion 数据源属性

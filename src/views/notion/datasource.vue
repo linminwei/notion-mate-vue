@@ -46,19 +46,19 @@
               <div class="item-prefix">
                 <span class="workspace-mini-icon">
                   <img
-                    v-if="isImage(workspace.workspaceIcon)"
-                    :src="workspace.workspaceIcon"
+                    v-if="isImage(workspace.icon)"
+                    :src="workspace.icon"
                     alt=""
                     @error="handleImgError"
                   />
-                  <span v-else-if="workspace.workspaceIcon">{{ workspace.workspaceIcon }}</span>
+                  <span v-else-if="workspace.icon">{{ workspace.icon }}</span>
                   <font-awesome-icon v-else :icon="['fab', 'notion']" />
                 </span>
               </div>
 
               <div class="item-content">
-                <div class="item-title">{{ workspace.workspaceName || '未命名工作区' }}</div>
-                <div class="item-subtitle">{{ workspace.workspaceCode || '-' }}</div>
+                <div class="item-title">{{ workspace.name || '未命名工作区' }}</div>
+                <div class="item-subtitle">{{ workspace.code || '-' }}</div>
               </div>
 
               <div class="item-tail">
@@ -153,7 +153,7 @@
         <header class="data-header">
           <div class="header-info">
             <div class="title-row">
-              <h1>{{ activeWorkspace.workspaceName || '未命名工作区' }}</h1>
+              <h1>{{ activeWorkspace.name || '未命名工作区' }}</h1>
             </div>
             <p class="dict-remark">
               同步并查看当前工作区下的 Notion 数据源，字段结构可从右侧抽屉查看。
@@ -165,7 +165,7 @@
           <div class="capsule-search data-capsule">
             <div class="search-inputs">
               <input
-                v-model="searchForm.datasourceTitle"
+                v-model="searchForm.title"
                 type="text"
                 placeholder="搜索数据源标题"
                 @keyup.enter="handleSearch"
@@ -260,12 +260,12 @@
                   <div class="datasource-name-cell">
                     <span class="datasource-avatar">
                       <img
-                        v-if="isImage(record.datasourceIcon)"
-                        :src="record.datasourceIcon"
+                        v-if="isImage(record.iconUrl)"
+                        :src="record.iconUrl"
                         alt=""
                         @error="handleImgError"
                       />
-                      <span v-else-if="record.datasourceIcon">{{ record.datasourceIcon }}</span>
+                      <span v-else-if="record.icon">{{ record.iconUrl }}</span>
                       <font-awesome-icon v-else :icon="['fas', 'database']" />
                     </span>
                     <span class="datasource-copy">
@@ -288,11 +288,11 @@
                         title="点击编辑标题"
                         @click.stop="startInlineTitleEdit(record)"
                       >
-                        <span>{{ record.datasourceTitle || '未命名数据源' }}</span>
+                        <span>{{ record.title || '未命名数据源' }}</span>
                         <font-awesome-icon :icon="['fas', 'pen']" />
                       </button>
-                      <span v-else class="cell-label">{{ record.datasourceTitle || '未命名数据源' }}</span>
-                      <span class="cell-muted">{{ record.workspaceName || activeWorkspace?.workspaceName || '-' }}</span>
+                      <span v-else class="cell-label">{{ record.title || '未命名数据源' }}</span>
+                      <span class="cell-muted">{{ record.workspaceName || activeWorkspace?.name || '-' }}</span>
                     </span>
                   </div>
                 </template>
@@ -342,16 +342,16 @@
         <div class="drawer-title">
           <span class="drawer-source-icon">
             <img
-              v-if="currentDatasource && isImage(currentDatasource.datasourceIcon)"
-              :src="currentDatasource.datasourceIcon"
+              v-if="currentDatasource && isImage(currentDatasource.icon)"
+              :src="currentDatasource.icon"
               alt=""
               @error="handleImgError"
             />
-            <span v-else-if="currentDatasource?.datasourceIcon">{{ currentDatasource.datasourceIcon }}</span>
+            <span v-else-if="currentDatasource?.icon">{{ currentDatasource.icon }}</span>
             <font-awesome-icon v-else :icon="['fas', 'database']" />
           </span>
           <span>
-            <strong>{{ currentDatasource?.datasourceTitle || '未命名数据源' }}</strong>
+            <strong>{{ currentDatasource?.title || '未命名数据源' }}</strong>
             <small>{{ currentDatasource?.datasourceId || '-' }}</small>
           </span>
         </div>
@@ -361,11 +361,7 @@
         <div v-if="currentDatasource" class="drawer-summary">
           <div>
             <span>字段数量</span>
-            <strong>{{ properties.length || currentDatasource.propertyCount || 0 }}</strong>
-          </div>
-          <div>
-            <span>更新时间</span>
-            <strong>{{ formatDateTime(currentDatasource.updateTime || currentDatasource.createTime) }}</strong>
+            <strong>{{ properties.length  || 0 }}</strong>
           </div>
         </div>
 
@@ -431,14 +427,14 @@ import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import {
-  getCurrentUserNotionWorkspaces,
-  getNotionDatasourcePage,
-  getNotionDatasourceProperties,
-  deleteNotionDatasourceBatch,
-  updateNotionDatasourceTitle,
-  syncNotionDatasource
+  getCurrentUserWorkspaces,
+  getDatasourcePage,
+  getDatasourceProperties,
+  deleteDatasourceBatch,
+  updateDatasourceTitle,
+  syncDatasource
 } from '@/api/notion.ts'
-import type { NotionDatasource, NotionDatasourceProperty, NotionWorkspace } from '@/types'
+import type { Datasource, NotionDatasourceProperty, Workspace } from '@/types'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
 
@@ -451,14 +447,14 @@ const workspaceLoading = ref(false)
 const propertyLoading = ref(false)
 const propertyDrawerVisible = ref(false)
 
-const workspaces = ref<NotionWorkspace[]>([])
-const tableData = ref<NotionDatasource[]>([])
+const workspaces = ref<Workspace[]>([])
+const tableData = ref<Datasource[]>([])
 const properties = ref<NotionDatasourceProperty[]>([])
-const currentDatasource = ref<NotionDatasource | null>(null)
+const currentDatasource = ref<Datasource | null>(null)
 const selectedRowKeys = ref<string[]>([])
 const editingTitleId = ref('')
 const editingTitleValue = ref('')
-const pendingTitleTarget = ref<NotionDatasource | null>(null)
+const pendingTitleTarget = ref<Datasource | null>(null)
 const pendingTitleValue = ref('')
 const titleConfirmVisible = ref(false)
 const titleSubmitLoading = ref(false)
@@ -471,9 +467,9 @@ const deleteConfirmDesc = computed(() =>
 const titleConfirmDesc = computed(() =>
   `确定将数据源标题修改为「${pendingTitleValue.value}」吗？该变更会同步更新到 Notion。`
 )
-const canDeleteDatasource = computed(() => userStore.hasPermission('notion:datasource:delete'))
-const canSyncDatasource = computed(() => userStore.hasPermission('notion:datasource:sync'))
-const canEditDatasource = computed(() => userStore.hasPermission('notion:datasource:edit'))
+const canDeleteDatasource = computed(() => userStore.hasPermission('datasource:delete'))
+const canSyncDatasource = computed(() => userStore.hasPermission('datasource:sync'))
+const canEditDatasource = computed(() => userStore.hasPermission('datasource:edit'))
 
 const workspaceSearchForm = reactive({
   workspaceName: '',
@@ -482,7 +478,7 @@ const workspaceSearchForm = reactive({
 
 const searchForm = reactive({
   workspaceId: '',
-  datasourceTitle: '',
+  title: '',
   pageNum: 1,
   pageSize: 8
 })
@@ -498,7 +494,6 @@ const pagination = reactive({
 const datasourceColumns = [
   { title: '数据源', key: 'datasource', width: 300 },
   { title: '数据源 ID', key: 'datasourceId', width: 320 },
-  { title: '更新时间', key: 'updateTime', width: 190 },
   { title: '操作', key: 'action', width: 110, align: 'center' }
 ]
 
@@ -508,8 +503,8 @@ const filteredWorkspaces = computed(() => {
   const code = workspaceSearchForm.workspaceCode.trim().toLowerCase()
 
   return workspaces.value.filter(item => {
-    const workspaceName = (item.workspaceName || '').toLowerCase()
-    const workspaceCode = (item.workspaceCode || '').toLowerCase()
+    const workspaceName = (item.name || '').toLowerCase()
+    const workspaceCode = (item.code || '').toLowerCase()
     return (!name || workspaceName.includes(name)) && (!code || workspaceCode.includes(code))
   })
 })
@@ -604,7 +599,7 @@ const resetDatasourceState = () => {
 const fetchWorkspaces = async () => {
   workspaceLoading.value = true
   try {
-    const res = await getCurrentUserNotionWorkspaces()
+    const res = await getCurrentUserWorkspaces()
     const workspaceList = res.data || []
     workspaces.value = workspaceList
     if (searchForm.workspaceId && !workspaceList.some(item => item.id === searchForm.workspaceId)) {
@@ -626,7 +621,7 @@ const fetchData = async () => {
 
   loading.value = true
   try {
-    const res = await getNotionDatasourcePage(searchForm)
+    const res = await getDatasourcePage(searchForm)
     tableData.value = res.data.list || []
     pagination.total = res.data.total || 0
     pagination.current = res.data.pageNum || searchForm.pageNum
@@ -658,7 +653,7 @@ const handleWorkspaceReset = () => {
 
 const selectWorkspace = (workspaceId: string) => {
   searchForm.workspaceId = workspaceId
-  searchForm.datasourceTitle = ''
+  searchForm.title = ''
   searchForm.pageNum = 1
   pagination.current = 1
   clearCurrentDatasource()
@@ -677,7 +672,7 @@ const handleSearch = () => {
 }
 
 const handleReset = () => {
-  searchForm.datasourceTitle = ''
+  searchForm.title = ''
   searchForm.pageNum = 1
   pagination.current = 1
   clearCurrentDatasource()
@@ -709,7 +704,7 @@ const handleSync = async () => {
 
   syncing.value = true
   try {
-    const res = await syncNotionDatasource(activeWorkspace.value.id)
+    const res = await syncDatasource(activeWorkspace.value.id)
     AppleAlert.success('同步完成', `已同步 ${res.data?.length || 0} 个数据源`)
     clearCurrentDatasource()
     clearSelection()
@@ -743,7 +738,7 @@ const executeDelete = async () => {
   deleteConfirmLoading.value = true
   try {
     const ids = [...selectedRowKeys.value]
-    await deleteNotionDatasourceBatch(ids)
+    await deleteDatasourceBatch(ids)
     AppleAlert.success('删除成功', `已删除 ${ids.length} 个数据源`)
     clearSelection()
     clearCurrentDatasource()
@@ -763,10 +758,10 @@ const executeDelete = async () => {
   }
 }
 
-const startInlineTitleEdit = (record: NotionDatasource) => {
+const startInlineTitleEdit = (record: Datasource) => {
   if (titleSubmitLoading.value) return
   editingTitleId.value = record.id
-  editingTitleValue.value = record.datasourceTitle || ''
+  editingTitleValue.value = record.title || ''
   nextTick(() => {
     const input = document.querySelector<HTMLInputElement>(`[data-title-edit-id="${record.id}"]`)
     input?.focus()
@@ -782,11 +777,11 @@ const handleTitleEnter = (event: KeyboardEvent) => {
   ;(event.target as HTMLInputElement).blur()
 }
 
-const handleTitleInputBlur = (record: NotionDatasource) => {
+const handleTitleInputBlur = (record: Datasource) => {
   if (editingTitleId.value !== record.id) return
 
   const nextTitle = editingTitleValue.value.trim()
-  const prevTitle = record.datasourceTitle || ''
+  const prevTitle = record.title || ''
   resetInlineTitleEdit()
 
   if (!nextTitle) {
@@ -818,18 +813,18 @@ const executeTitleUpdate = async () => {
   const nextTitle = pendingTitleValue.value
   titleSubmitLoading.value = true
   try {
-    await updateNotionDatasourceTitle({
+    await updateDatasourceTitle({
       id: targetId,
-      datasourceTitle: nextTitle
+      title: nextTitle
     })
     AppleAlert.success('保存成功', '数据源标题已更新')
 
     const updated = tableData.value.find(item => item.id === targetId)
     if (updated) {
-      updated.datasourceTitle = nextTitle
+      updated.title = nextTitle
     }
     if (currentDatasource.value?.id === targetId) {
-      currentDatasource.value = { ...currentDatasource.value, datasourceTitle: nextTitle }
+      currentDatasource.value = { ...currentDatasource.value, title: nextTitle }
     }
 
     titleConfirmVisible.value = false
@@ -841,13 +836,13 @@ const executeTitleUpdate = async () => {
   }
 }
 
-const openProperties = async (record: NotionDatasource) => {
+const openProperties = async (record: Datasource) => {
   currentDatasource.value = record
   propertyDrawerVisible.value = true
   propertyLoading.value = true
   properties.value = []
   try {
-    const res = await getNotionDatasourceProperties(record.id)
+    const res = await getDatasourceProperties(record.id)
     properties.value = res.data || []
   } catch (error: any) {
     AppleAlert.error('字段读取失败', error.message || '请稍后重试')
