@@ -260,13 +260,28 @@ const formatFaIcon = (iconStr: string) => {
   return iconName ? [prefix, iconName] : ''
 }
 
-// 递归扁平化菜单树，提取所有菜单ID
-const flattenMenuIds = (nodes: any[]): string[] => {
-  return nodes.reduce<string[]>((ids, node) => {
-    ids.push(node.id)
-    if (node.children?.length) ids.push(...flattenMenuIds(node.children))
-    return ids
-  }, [])
+/** 获取节点下所有子孙叶子节点的 ID */
+const getAllLeafIds = (node: any): string[] => {
+  if (!node.children?.length) return [node.id]
+  return node.children.flatMap((c: any) => getAllLeafIds(c))
+}
+
+/** 计算当前已选叶子集合对应的祖先节点 ID（模拟 Ant Design Tree 的 halfCheckedKeys） */
+const computeAncestorIds = (treeNodes: any[], leafIdSet: Set<string>): string[] => {
+  const result: string[] = []
+  const walk = (nodes: any[]) => {
+    for (const node of nodes) {
+      if (node.children?.length) {
+        const leaves = getAllLeafIds(node)
+        if (leaves.length > 0 && leaves.every(id => leafIdSet.has(id))) {
+          result.push(node.id)
+        }
+        walk(node.children)
+      }
+    }
+  }
+  walk(treeNodes)
+  return result
 }
 
 // --- 状态与数据 ---
@@ -396,7 +411,10 @@ const handleAssignMenu = async (record: SysRole) => {
       getRoleMenuTree(record.id)
     ])
     menuTreeData.value = menuRes.data || []
-    checkedMenuIds.value = flattenLeafIds(roleTreeRes.data || [])
+    const leafIds = flattenLeafIds(roleTreeRes.data || [])
+    checkedMenuIds.value = leafIds
+    // 计算初始 halfCheckedKeys：在完整菜单树中，所有「子孙叶节点全部在已选集合中」的祖先节点
+    halfCheckedMenuIds.value = computeAncestorIds(menuTreeData.value, new Set(leafIds))
   } catch {
     AppleAlert.error('加载失败', '无法获取菜单列表')
     return

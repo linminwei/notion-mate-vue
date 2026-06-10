@@ -191,6 +191,80 @@ export interface NotionDatasourceProperty {
   updateTime: string
 }
 
+// ==================== 文件上传 SSE 事件类型 ====================
+
+/** 文件信息摘要 */
+export interface UploadFileInfo {
+  fileName: string
+  contentType: string
+}
+
+/** 上传任务开始事件 */
+export interface UploadStartEvent {
+  type: 'start'
+  fileCount: number
+  totalBytes: number
+  files: UploadFileInfo[]
+}
+
+/** 单个文件开始上传事件 */
+export interface UploadFileStartEvent {
+  type: 'file_start'
+  fileIndex: number
+  fileCount: number
+  fileName: string
+  mode: string        // "single_part" | "multi_part"
+  numberOfParts: number
+}
+
+/** 上传进度事件 */
+export interface UploadProgressEvent {
+  type: 'progress'
+  fileIndex: number
+  fileCount: number
+  fileName: string
+  uploadedBytes: number
+  totalBytes: number
+}
+
+/** 单个文件上传完成事件 */
+export interface UploadFileCompleteEvent {
+  type: 'file_complete'
+  fileIndex: number
+  fileCount: number
+  fileName: string
+  id: string
+  url: string
+}
+
+/** 已保存的文件信息 */
+export interface SavedFileInfo {
+  sysId: string
+  notionId: string
+  url: string
+}
+
+/** 全部上传完成事件 */
+export interface UploadCompleteEvent {
+  type: 'complete'
+  files: SavedFileInfo[]
+}
+
+/** 上传错误事件 */
+export interface UploadErrorEvent {
+  type: 'error'
+  message: string
+}
+
+/** SSE 事件联合类型 */
+export type UploadSSEEvent =
+  | UploadStartEvent
+  | UploadFileStartEvent
+  | UploadProgressEvent
+  | UploadFileCompleteEvent
+  | UploadCompleteEvent
+  | UploadErrorEvent
+
 // 批量删除结果
 export interface BatchDeleteResult {
   allSuccess: boolean

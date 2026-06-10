@@ -1,6 +1,14 @@
 import { request } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
-import type {NotionDatasourceProperty, Workspace, PageResult, WorkspaceVo, DatasourceVo} from '@/types'
+import type {
+  Datasource,
+  DatasourceVo,
+  NotionDatasourceProperty,
+  WorkspaceVo,
+  Workspace,
+  PageResult,
+  UploadSSEEvent,
+} from '@/types'
 
 // 分页查询工作区配置
 export const getWorkspacePage = (params: any) =>
@@ -32,7 +40,7 @@ export const getDatasourcePage = (params: any) =>
 
 // 同步数据源
 export const syncDatasource = (workspaceId: string) =>
-  request.post('/datasource/sync', workspaceId, {
+  request.post<Datasource[]>('/datasource/sync', workspaceId, {
     headers: { 'Content-Type': 'text/plain' }
   })
 
@@ -42,103 +50,108 @@ export const updateDatasourceTitle = (data: { id: string; title: string }) =>
 
 // 批量删除数据源
 export const deleteDatasourceBatch = (ids: string[]) =>
-  request.delete('/datasource/delete', { data: ids })
+  request.delete('/datasource', { data: ids })
 
 // 查询数据源属性
 export const getDatasourceProperties = (id: string) =>
   request.get<NotionDatasourceProperty[]>(`/datasource/${id}/properties`)
 
-// SSE 进度事件类型
-// 事件流: start → file_start (×N) → progress (×M) → file_complete (×N) → complete
-export interface UploadProgressEvent {
-  type: 'start' | 'file_start' | 'progress' | 'file_complete' | 'complete' | 'error'
-  // start 事件: files 为文件清单
-  fileCount?: number
-  totalBytes?: number
-  files?: { name: string; size: number }[] | { sysId: string; notionId: string; url: string }[]
-  // file_start 事件
-  fileIndex?: number
-  fileName?: string
-  mode?: string           // 'single_part' | 'multi_part'
-  numberOfParts?: number  // 多分片模式下的分片总数
-  // progress 事件
-  uploadedBytes?: number
-  // file_complete 事件
-  id?: string             // Notion 文件 ID
-  url?: string            // Notion 文件 URL
-  // error 事件
-  message?: string
+// ==================== SSE 文件上传 ====================
+
+export interface UploadCallbacks {
+  onStart?: (event: UploadSSEEvent & { type: 'start' }) => void
+  onFileStart?: (event: UploadSSEEvent & { type: 'file_start' }) => void
+  onProgress?: (event: UploadSSEEvent & { type: 'progress' }) => void
+  onFileComplete?: (event: UploadSSEEvent & { type: 'file_complete' }) => void
+  onComplete?: (event: UploadSSEEvent & { type: 'complete' }) => void
+  onError?: (event: UploadSSEEvent & { type: 'error' }) => void
 }
 
-// 上传多个文件到 Notion（SSE 进度推送）
-export const uploadFilesToNotion = (
+/**
+ * 通过 SSE 流式上传文件到 Notion，支持实时进度回调。
+ * 返回 AbortController 用于取消上传。
+ */
+export const uploadNotionFiles = (
   workspaceId: string,
   files: File[],
-  onEvent: (event: UploadProgressEvent) => void
-): Promise<{ sysId: string; notionId: string; url: string }[]> => {
-  return new Promise((resolve, reject) => {
-    const formData = new FormData()
-    formData.append('workspaceId', workspaceId)
-    files.forEach(file => formData.append('files', file))
+  callbacks: UploadCallbacks
+): AbortController => {
+  const abortController = new AbortController()
+  const formData = new FormData()
+  formData.append('workspaceId', workspaceId)
+  for (const file of files) {
+    formData.append('files', file)
+  }
 
-    const userStore = useUserStore()
-    const headers: Record<string, string> = { 'Accept': 'text/event-stream' }
-    if (userStore.token) {
-      headers['Authorization'] = `Bearer ${userStore.token}`
-    }
+  const userStore = useUserStore()
+  const headers: Record<string, string> = {}
+  if (userStore.token) {
+    headers['Authorization'] = `Bearer ${userStore.token}`
+  }
 
-    fetch('/api/file/upload', {
-      method: 'POST',
-      body: formData,
-      headers
-    }).then(async response => {
+  fetch('/api/file/upload', {
+    method: 'POST',
+    headers,
+    body: formData,
+    signal: abortController.signal,
+  })
+    .then(async (response) => {
       if (!response.ok) {
-        reject(new Error(`HTTP ${response.status}: ${response.statusText}`))
-        return
+        throw new Error(`上传请求失败: HTTP ${response.status}`)
+      }
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error('浏览器不支持流式响应')
       }
 
-      const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
-      let results: { sysId: string; notionId: string; url: string }[] = []
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-          buffer += decoder.decode(value, { stream: true })
-          // SSE 数据格式: "data:{...}\n\n"
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || '' // 保留不完整的行
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
 
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              const json = line.substring(5).trim()
-              if (!json) continue
-              try {
-                const event: UploadProgressEvent = JSON.parse(json)
-                onEvent(event)
-                if (event.type === 'complete' && event.files) {
-                  const completeFiles = event.files as { sysId: string; notionId: string; url: string }[]
-                  results = completeFiles
-                  resolve(results)
-                } else if (event.type === 'error') {
-                  reject(new Error(event.message || '上传失败'))
-                }
-              } catch {
-                // 忽略解析失败的行
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const dataStr = line.slice(5).trim()
+            if (!dataStr) continue
+            try {
+              const event = JSON.parse(dataStr) as UploadSSEEvent
+              switch (event.type) {
+                case 'start':
+                  callbacks.onStart?.(event)
+                  break
+                case 'file_start':
+                  callbacks.onFileStart?.(event)
+                  break
+                case 'progress':
+                  callbacks.onProgress?.(event)
+                  break
+                case 'file_complete':
+                  callbacks.onFileComplete?.(event)
+                  break
+                case 'complete':
+                  callbacks.onComplete?.(event)
+                  break
+                case 'error':
+                  callbacks.onError?.(event)
+                  break
               }
+            } catch {
+              // 忽略无法解析的行
             }
           }
         }
-        // 如果流结束但没有 complete 事件
-        if (results.length === 0) {
-          reject(new Error('上传异常终止'))
-        }
-      } catch (e) {
-        reject(e)
       }
-    }).catch(reject)
-  })
+    })
+    .catch((error: Error) => {
+      if (error.name === 'AbortError') return
+      callbacks.onError?.({ type: 'error', message: error.message || '网络异常' })
+    })
+
+  return abortController
 }
