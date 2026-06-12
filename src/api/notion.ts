@@ -1,7 +1,6 @@
 import { request } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import type {
-  Datasource,
   DatasourceVo,
   NotionDatasourceProperty,
   WorkspaceVo,
@@ -40,7 +39,7 @@ export const getDatasourcePage = (params: any) =>
 
 // 同步数据源
 export const syncDatasource = (workspaceId: string) =>
-  request.post<Datasource[]>('/datasource/sync', workspaceId, {
+  request.post<number>('/datasource/sync', workspaceId, {
     headers: { 'Content-Type': 'text/plain' }
   })
 
@@ -48,9 +47,13 @@ export const syncDatasource = (workspaceId: string) =>
 export const updateDatasourceTitle = (data: { id: string; title: string }) =>
   request.put('/datasource/update-title', data)
 
+// 修改数据源图标
+export const updateDatasourceIcon = (data: { id: string; uploadId: string }) =>
+  request.put('/datasource/update-icon', data)
+
 // 批量删除数据源
 export const deleteDatasourceBatch = (ids: string[]) =>
-  request.delete('/datasource', { data: ids })
+  request.delete('/datasource/delete', { data: ids })
 
 // 查询数据源属性
 export const getDatasourceProperties = (id: string) =>
@@ -60,28 +63,24 @@ export const getDatasourceProperties = (id: string) =>
 
 export interface UploadCallbacks {
   onStart?: (event: UploadSSEEvent & { type: 'start' }) => void
-  onFileStart?: (event: UploadSSEEvent & { type: 'file_start' }) => void
   onProgress?: (event: UploadSSEEvent & { type: 'progress' }) => void
-  onFileComplete?: (event: UploadSSEEvent & { type: 'file_complete' }) => void
   onComplete?: (event: UploadSSEEvent & { type: 'complete' }) => void
   onError?: (event: UploadSSEEvent & { type: 'error' }) => void
 }
 
 /**
- * 通过 SSE 流式上传文件到 Notion，支持实时进度回调。
+ * 通过 SSE 流式上传单个文件到 Notion，支持实时进度回调。
  * 返回 AbortController 用于取消上传。
  */
-export const uploadNotionFiles = (
+export const uploadNotionFile = (
   workspaceId: string,
-  files: File[],
+  file: File,
   callbacks: UploadCallbacks
 ): AbortController => {
   const abortController = new AbortController()
   const formData = new FormData()
   formData.append('workspaceId', workspaceId)
-  for (const file of files) {
-    formData.append('files', file)
-  }
+  formData.append('file', file)
 
   const userStore = useUserStore()
   const headers: Record<string, string> = {}
@@ -107,6 +106,32 @@ export const uploadNotionFiles = (
       const decoder = new TextDecoder()
       let buffer = ''
 
+      const processSSELine = (line: string) => {
+        if (line.startsWith('data:')) {
+          const dataStr = line.slice(5).trim()
+          if (!dataStr) return
+          try {
+            const event = JSON.parse(dataStr) as UploadSSEEvent
+            switch (event.type) {
+              case 'start':
+                callbacks.onStart?.(event)
+                break
+              case 'progress':
+                callbacks.onProgress?.(event)
+                break
+              case 'complete':
+                callbacks.onComplete?.(event)
+                break
+              case 'error':
+                callbacks.onError?.(event)
+                break
+            }
+          } catch {
+            // 忽略无法解析的行
+          }
+        }
+      }
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -116,36 +141,13 @@ export const uploadNotionFiles = (
         buffer = lines.pop() || ''
 
         for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const dataStr = line.slice(5).trim()
-            if (!dataStr) continue
-            try {
-              const event = JSON.parse(dataStr) as UploadSSEEvent
-              switch (event.type) {
-                case 'start':
-                  callbacks.onStart?.(event)
-                  break
-                case 'file_start':
-                  callbacks.onFileStart?.(event)
-                  break
-                case 'progress':
-                  callbacks.onProgress?.(event)
-                  break
-                case 'file_complete':
-                  callbacks.onFileComplete?.(event)
-                  break
-                case 'complete':
-                  callbacks.onComplete?.(event)
-                  break
-                case 'error':
-                  callbacks.onError?.(event)
-                  break
-              }
-            } catch {
-              // 忽略无法解析的行
-            }
-          }
+          processSSELine(line)
         }
+      }
+
+      // 流结束后处理 buffer 中残留的最后一条事件
+      if (buffer) {
+        processSSELine(buffer)
       }
     })
     .catch((error: Error) => {

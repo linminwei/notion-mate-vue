@@ -258,15 +258,24 @@
               <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'datasource'">
                   <div class="datasource-name-cell">
-                    <span class="datasource-avatar">
-                      <img
-                        v-if="isImage(record.iconUrl)"
-                        :src="record.iconUrl"
-                        alt=""
-                        @error="handleImgError"
-                      />
-                      <span v-else-if="record.icon">{{ record.iconUrl }}</span>
-                      <font-awesome-icon v-else :icon="['fas', 'database']" />
+                    <span
+                      class="datasource-avatar"
+                      :class="{ 'icon-uploading': iconUploadingId === record.id }"
+                      @click="triggerIconUpload(record)"
+                    >
+                      <span v-if="iconUploadingId === record.id" class="icon-upload-spinner">
+                        <font-awesome-icon :icon="['fas', 'spinner']" spin />
+                      </span>
+                      <template v-else>
+                        <img
+                          v-if="isImage(record.iconUrl)"
+                          :src="record.iconUrl"
+                          alt=""
+                          @error="handleImgError"
+                        />
+                        <span v-else-if="record.iconUrl">{{ record.iconUrl }}</span>
+                        <font-awesome-icon v-else :icon="['fas', 'image']" />
+                      </template>
                     </span>
                     <span class="datasource-copy">
                       <input
@@ -340,15 +349,24 @@
     >
       <template #title>
         <div class="drawer-title">
-          <span class="drawer-source-icon">
-            <img
-              v-if="currentDatasource && isImage(currentDatasource.icon)"
-              :src="currentDatasource.icon"
-              alt=""
-              @error="handleImgError"
-            />
-            <span v-else-if="currentDatasource?.icon">{{ currentDatasource.icon }}</span>
-            <font-awesome-icon v-else :icon="['fas', 'database']" />
+          <span
+            class="drawer-source-icon"
+            :class="{ 'icon-uploading': iconUploadingId === currentDatasource?.id }"
+            @click="triggerIconUpload(currentDatasource!)"
+          >
+            <span v-if="iconUploadingId === currentDatasource?.id" class="icon-upload-spinner">
+              <font-awesome-icon :icon="['fas', 'spinner']" spin />
+            </span>
+            <template v-else>
+              <img
+                v-if="currentDatasource && isImage(drawerIcon)"
+                :src="drawerIcon"
+                alt=""
+                @error="handleImgError"
+              />
+              <span v-else-if="drawerIcon">{{ drawerIcon }}</span>
+              <font-awesome-icon v-else :icon="['fas', 'image']" />
+            </template>
           </span>
           <span>
             <strong>{{ currentDatasource?.title || '未命名数据源' }}</strong>
@@ -359,42 +377,135 @@
 
       <div class="drawer-content">
         <div v-if="currentDatasource" class="drawer-summary">
-          <div>
-            <span>字段数量</span>
-            <strong>{{ properties.length  || 0 }}</strong>
+          <div class="summary-stat">
+            <span class="summary-stat-value">{{ properties.length || 0 }}</span>
+            <span class="summary-stat-label">字段数量</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-stat-value">{{ uniqueTypeCount }}</span>
+            <span class="summary-stat-label">类型数量</span>
           </div>
         </div>
 
         <a-spin :spinning="propertyLoading" wrapperClassName="property-spin">
-          <div v-if="properties.length > 0" class="property-list">
-            <header class="property-list-head">
-              <span>字段列表</span>
-              <strong>{{ properties.length }} 项</strong>
-            </header>
+          <template v-if="properties.length > 0">
+            <section class="property-config-card">
+              <div class="property-config-separator"></div>
 
-            <div
-              v-for="(property, index) in properties"
-              :key="property.id || property.propertyId"
-              class="property-item"
-            >
-              <span class="property-index">{{ String(index + 1).padStart(2, '0') }}</span>
-              <span class="property-type-icon">
-                <font-awesome-icon :icon="getPropertyIcon(property.propertyType)" />
-              </span>
-              <span class="property-main">
-                <strong>{{ property.propertyName || '未命名字段' }}</strong>
-                <small>{{ property.propertyId || '-' }}</small>
-              </span>
-              <span class="property-type">{{ normalizeType(property.propertyType) }}</span>
-            </div>
-          </div>
+              <div class="property-list">
+                <div
+                  v-for="property in properties"
+                  :key="property.propertyId"
+                  class="property-item"
+                >
+                  <span class="property-type-icon" :style="getTypeColorStyle(property.propertyType)">
+                    <font-awesome-icon :icon="getPropertyIcon(property.propertyType)" />
+                  </span>
+                  <span class="property-main">
+                    <strong>{{ property.propertyName || '未命名字段' }}</strong>
+                    <small>{{ property.propertyId || '-' }}</small>
+                  </span>
+                  <button
+                    class="property-type property-type-clickable"
+                    :style="getTypeColorStyle(property.propertyType)"
+                    type="button"
+                    @click.stop="openPropertyDetail(property)"
+                  >
+                    {{ normalizeType(property.propertyType) }}
+                    <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="type-link-icon" />
+                  </button>
+                  <button class="property-more-btn" type="button" title="更多">
+                    <font-awesome-icon :icon="['fas', 'ellipsis']" />
+                  </button>
+                </div>
+              </div>
+
+              <button class="property-add-btn" type="button" disabled>
+                <font-awesome-icon :icon="['fas', 'plus']" />
+                <span>添加新字段</span>
+              </button>
+            </section>
+          </template>
 
           <div v-else class="property-empty">
-            <span><font-awesome-icon :icon="['fas', 'table-columns']" /></span>
+            <div class="property-empty-icon">
+              <font-awesome-icon :icon="['fas', 'table-columns']" />
+            </div>
             <strong>{{ propertyLoading ? '正在读取字段' : '暂无字段' }}</strong>
             <small>{{ propertyLoading ? '请稍候' : '该数据源暂未同步到字段结构' }}</small>
           </div>
         </a-spin>
+      </div>
+    </a-drawer>
+
+    <!-- 属性详情抽屉 -->
+    <a-drawer
+      v-if="selectedProperty"
+      v-model:open="propertyDetailVisible"
+      class="property-detail-drawer"
+      placement="right"
+      :width="400"
+      :mask="false"
+      :destroy-on-close="false"
+    >
+      <template #title>
+        <span class="detail-panel-title">属性详情</span>
+      </template>
+
+      <div
+        class="detail-inspector"
+        :style="{
+          '--accent-bg': getTypeColorStyle(selectedProperty!.propertyType)['--type-bg'] || '#f0f0f0',
+          '--accent-text': getTypeColorStyle(selectedProperty!.propertyType)['--type-text'] || '#555',
+        }"
+      >
+        <section class="detail-name-panel">
+          <span class="detail-label">属性名称</span>
+          <h3>{{ selectedProperty!.propertyName || '未命名字段' }}</h3>
+        </section>
+
+        <section class="detail-type-panel">
+          <span class="detail-label">属性类型</span>
+          <div class="detail-type-card">
+            <span class="detail-type-icon" :style="getTypeColorStyle(selectedProperty!.propertyType)">
+              <font-awesome-icon :icon="getPropertyIcon(selectedProperty!.propertyType)" />
+            </span>
+            <span class="detail-type-name">{{ normalizeType(selectedProperty!.propertyType) }}</span>
+          </div>
+        </section>
+
+        <!-- 选项 -->
+        <template v-if="showDetailOptions">
+          <section class="detail-options-panel">
+            <div class="detail-options-head">
+              <span class="detail-label">选项</span>
+              <span class="detail-count">{{ selectedProperty!.options?.length }}</span>
+            </div>
+            <div class="detail-option-grid">
+              <span
+                v-for="(opt, index) in selectedProperty!.options"
+                :key="opt.id"
+                class="detail-option-pill"
+                :style="{ ...optionChipStyle(opt.color), animationDelay: index * 0.03 + 's' }"
+              >
+                <span class="detail-option-color"></span>
+                <span class="detail-option-name">{{ opt.name }}</span>
+              </span>
+            </div>
+          </section>
+        </template>
+
+        <template v-else-if="hasOptionsType">
+          <section class="detail-options-panel">
+            <div class="detail-options-head">
+              <span class="detail-label">选项</span>
+              <span class="detail-count">0</span>
+            </div>
+            <div class="detail-empty-state">
+              <span>暂无选项</span>
+            </div>
+          </section>
+        </template>
       </div>
     </a-drawer>
 
@@ -419,6 +530,15 @@
       @confirm="executeTitleUpdate"
       @cancel="cancelPendingTitleUpdate"
     />
+
+    <!-- 隐藏的上传图标文件输入 -->
+    <input
+      ref="iconFileInput"
+      type="file"
+      accept="image/png, image/jpeg, image/webp, image/svg+xml"
+      class="icon-hidden-input"
+      @change="handleIconFileChange"
+    />
   </div>
 </template>
 
@@ -432,6 +552,8 @@ import {
   getDatasourceProperties,
   deleteDatasourceBatch,
   updateDatasourceTitle,
+  updateDatasourceIcon,
+  uploadNotionFile,
   syncDatasource
 } from '@/api/notion.ts'
 import type { Datasource, NotionDatasourceProperty, Workspace } from '@/types'
@@ -446,6 +568,8 @@ const syncing = ref(false)
 const workspaceLoading = ref(false)
 const propertyLoading = ref(false)
 const propertyDrawerVisible = ref(false)
+const propertyDetailVisible = ref(false)
+const selectedProperty = ref<NotionDatasourceProperty | null>(null)
 
 const workspaces = ref<Workspace[]>([])
 const tableData = ref<Datasource[]>([])
@@ -461,6 +585,10 @@ const titleSubmitLoading = ref(false)
 
 const deleteConfirmVisible = ref(false)
 const deleteConfirmLoading = ref(false)
+
+const iconFileInput = ref<HTMLInputElement | null>(null)
+const iconUploadTarget = ref<Datasource | null>(null)
+const iconUploadingId = ref('')
 const deleteConfirmDesc = computed(() =>
   `确定要删除选中的 ${selectedRowKeys.value.length} 个数据源吗？此操作不可恢复。`
 )
@@ -470,6 +598,15 @@ const titleConfirmDesc = computed(() =>
 const canDeleteDatasource = computed(() => userStore.hasPermission('datasource:delete'))
 const canSyncDatasource = computed(() => userStore.hasPermission('datasource:sync'))
 const canEditDatasource = computed(() => userStore.hasPermission('datasource:edit'))
+
+/**
+ * 抽屉中当前数据源的图标。
+ * 兼容 Datasource.icon 与 DatasourceVo.iconUrl 两种字段名。
+ */
+const drawerIcon = computed(() => {
+  const ds = currentDatasource.value as any
+  return ds?.iconUrl || ds?.icon || ''
+})
 
 const workspaceSearchForm = reactive({
   workspaceName: '',
@@ -535,6 +672,44 @@ const formatDateTime = (dateStr?: string) => {
 
 const normalizeType = (type?: string) => type || 'unknown'
 
+/** 属性字段的去重类型数量 */
+const uniqueTypeCount = computed(() => {
+  const types = new Set(properties.value.map(p => normalizeType(p.propertyType)))
+  return types.size
+})
+
+/** 属性类型 → 色彩映射（与图标配色保持一致） */
+const PROPERTY_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  title:            { bg: '#E8F5E9', text: '#2E7D32' },
+  rich_text:        { bg: '#E3F2FD', text: '#1565C0' },
+  number:           { bg: '#FFF3E0', text: '#E65100' },
+  select:           { bg: '#F3E5F5', text: '#7B1FA2' },
+  multi_select:     { bg: '#EDE7F6', text: '#4A148C' },
+  date:             { bg: '#E0F7FA', text: '#00695C' },
+  checkbox:         { bg: '#FFF8E1', text: '#F57F17' },
+  url:              { bg: '#E8EAF6', text: '#1A237E' },
+  email:            { bg: '#FCE4EC', text: '#880E4F' },
+  phone_number:     { bg: '#F1F8E9', text: '#33691E' },
+  people:           { bg: '#E1F5FE', text: '#01579B' },
+  files:            { bg: '#EFEBE9', text: '#3E2723' },
+  relation:         { bg: '#F9FBE7', text: '#827717' },
+  rollup:           { bg: '#E0F2F1', text: '#004D40' },
+  formula:          { bg: '#FBE9E7', text: '#BF360C' },
+  status:           { bg: '#E8F5E9', text: '#1B5E20' },
+  created_time:     { bg: '#ECEFF1', text: '#37474F' },
+  created_by:       { bg: '#E1F5FE', text: '#01579B' },
+  last_edited_time: { bg: '#ECEFF1', text: '#37474F' },
+  last_edited_by:   { bg: '#E1F5FE', text: '#01579B' }
+}
+
+const getTypeColorStyle = (type?: string) => {
+  const colors = PROPERTY_TYPE_COLORS[type || ''] || { bg: '#F5F5F5', text: '#616161' }
+  return {
+    '--type-bg': colors.bg,
+    '--type-text': colors.text
+  } as Record<string, string>
+}
+
 const getPropertyIcon = (type?: string): [string, string] => {
   const map: Record<string, [string, string]> = {
     title: ['fas', 'heading'],
@@ -559,6 +734,47 @@ const getPropertyIcon = (type?: string): [string, string] => {
     last_edited_by: ['fas', 'user-pen']
   }
   return map[type || ''] || ['fas', 'columns']
+}
+
+/** 有选项的选择类属性类型 */
+const SELECT_TYPES = new Set(['select', 'multi_select', 'status'])
+
+/** 详情抽屉中是否展示选项 */
+const showDetailOptions = computed(() => {
+  const p = selectedProperty.value
+  return p && SELECT_TYPES.has(p.propertyType) && p.options && p.options.length > 0
+})
+
+/** 是否为选项类属性（但可能无选项） */
+const hasOptionsType = computed(() => {
+  const p = selectedProperty.value
+  return p && SELECT_TYPES.has(p.propertyType)
+})
+
+/** 打开属性详情抽屉 */
+const openPropertyDetail = (property: NotionDatasourceProperty) => {
+  selectedProperty.value = property
+  propertyDetailVisible.value = true
+}
+
+/** Notion 选项颜色 → CSS 色值映射 */
+const NOTION_COLOR_MAP: Record<string, { bg: string; text: string }> = {
+  default:        { bg: '#E8E8E8', text: '#4A4A4A' },
+  gray:           { bg: '#E8E8E8', text: '#4A4A4A' },
+  brown:          { bg: '#F0E1D8', text: '#603B2C' },
+  orange:         { bg: '#FDEAD8', text: '#9B4400' },
+  yellow:         { bg: '#FDF3D0', text: '#89632A' },
+  green:          { bg: '#DFF0D8', text: '#2B5934' },
+  blue:           { bg: '#D9EBFC', text: '#1A5180' },
+  purple:         { bg: '#EAE0F6', text: '#4A2E7A' },
+  pink:           { bg: '#FBE0EC', text: '#8A2A5E' },
+  red:            { bg: '#FBE3E3', text: '#8B1A1A' },
+}
+
+const optionChipStyle = (color?: string): Record<string, string> => {
+  const key = (color && NOTION_COLOR_MAP[color]) ? color : 'default'
+  const c = NOTION_COLOR_MAP[key]!
+  return { '--opt-bg': c.bg, '--opt-text': c.text }
 }
 
 const goToConfig = () => {
@@ -705,7 +921,7 @@ const handleSync = async () => {
   syncing.value = true
   try {
     const res = await syncDatasource(activeWorkspace.value.id)
-    AppleAlert.success('同步完成', `已同步 ${res.data?.length || 0} 个数据源`)
+    AppleAlert.success('同步完成', `已同步 ${res.data || 0} 个数据源`)
     clearCurrentDatasource()
     clearSelection()
     propertyDrawerVisible.value = false
@@ -719,6 +935,68 @@ const handleSync = async () => {
 
 const onSelectChange = (keys: Array<string | number>) => {
   selectedRowKeys.value = keys.map(String)
+}
+
+// ==================== 图标上传 ====================
+
+const triggerIconUpload = (record: Datasource) => {
+  if (!canEditDatasource.value) return
+  iconUploadTarget.value = record
+  iconFileInput.value?.click()
+}
+
+const handleIconFileChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !iconUploadTarget.value || !activeWorkspace.value) return
+
+  // 校验文件类型
+  if (!file.type.startsWith('image/')) {
+    AppleAlert.warning('格式不支持', '请选择图片文件')
+    iconUploadTarget.value = null
+    return
+  }
+  // 校验文件大小（2MB）
+  if (file.size > 2 * 1024 * 1024) {
+    AppleAlert.warning('文件过大', '图标文件不能超过 2MB')
+    iconUploadTarget.value = null
+    return
+  }
+
+  const targetId = iconUploadTarget.value.id
+  iconUploadingId.value = targetId
+
+  uploadNotionFile(activeWorkspace.value.id, file, {
+    onComplete(event) {
+      const fileId = event.fileId
+      if (!fileId) {
+        AppleAlert.error('上传失败', '未获取到文件信息')
+        iconUploadingId.value = ''
+        iconUploadTarget.value = null
+        return
+      }
+
+      // 调用后端接口更新数据源图标
+      updateDatasourceIcon({ id: targetId, uploadId: fileId })
+        .then(() => {
+          // 刷新数据源列表以获取更新后的图标
+          fetchData()
+        })
+        .catch((error: any) => {
+          AppleAlert.error('图标更新失败', error.message || '请稍后重试')
+        })
+        .finally(() => {
+          iconUploadingId.value = ''
+          iconUploadTarget.value = null
+        })
+    },
+    onError(event) {
+      AppleAlert.error('上传失败', event.message)
+      iconUploadingId.value = ''
+      iconUploadTarget.value = null
+    }
+  })
 }
 
 const confirmBatchDelete = () => {
@@ -990,6 +1268,8 @@ onMounted(async () => {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 .sidebar-list-container::-webkit-scrollbar {
@@ -1580,16 +1860,16 @@ onMounted(async () => {
   overflow-x: hidden;
   padding-bottom: 8px;
   scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 :deep(.data-spin-wrap > .ant-spin-container::-webkit-scrollbar) {
-  width: 6px;
-  height: 6px;
+  width: 4px;
 }
 
 :deep(.data-spin-wrap > .ant-spin-container::-webkit-scrollbar-thumb) {
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text-muted, #86868b) 28%, transparent);
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
 }
 
 :deep(.datasource-table) {
@@ -1687,6 +1967,36 @@ onMounted(async () => {
   border: 1px solid color-mix(in srgb, var(--apple-blue, #0A84FF) 16%, transparent);
   font-size: 14px;
   font-weight: 800;
+  cursor: pointer;
+  position: relative;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.datasource-avatar:hover {
+  border-color: var(--apple-blue, #0A84FF);
+}
+
+.datasource-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.icon-uploading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.icon-upload-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--apple-blue, #0A84FF);
+}
+
+.icon-hidden-input {
+  display: none;
 }
 
 .datasource-copy {
@@ -1795,7 +2105,7 @@ onMounted(async () => {
 .drawer-title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
@@ -1803,7 +2113,7 @@ onMounted(async () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .drawer-title strong,
@@ -1816,8 +2126,9 @@ onMounted(async () => {
 
 .drawer-title strong {
   color: var(--text-main);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 750;
+  letter-spacing: -0.01em;
 }
 
 .drawer-title small {
@@ -1829,23 +2140,33 @@ onMounted(async () => {
 .drawer-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
 }
 
 .drawer-source-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   color: var(--apple-blue, #0A84FF);
-  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--apple-blue, #0A84FF) 18%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue, #0A84FF) 18%, transparent), color-mix(in srgb, var(--apple-blue, #0A84FF) 8%, transparent));
+  border: 1px solid color-mix(in srgb, var(--apple-blue, #0A84FF) 20%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent);
   font-size: 20px;
   font-weight: 800;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.drawer-source-icon:hover {
+  border-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--apple-blue, #0A84FF) 18%, transparent);
+  transform: translateY(-1px);
 }
 
 .drawer-source-icon img {
@@ -1854,104 +2175,239 @@ onMounted(async () => {
   object-fit: cover;
 }
 
+/* ==================== 字段配置统计卡片（苹果毛玻璃风格） ==================== */
+
 .drawer-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-}
-
-.drawer-summary > div {
-  min-width: 0;
-  min-height: 66px;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--content-bg, color-mix(in srgb, var(--card-bg) 92%, var(--apple-blue, #0A84FF) 2%));
-  box-sizing: border-box;
-}
-
-.drawer-summary span {
-  display: block;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.drawer-summary strong {
-  display: block;
-  margin-top: 8px;
-  color: var(--text-main);
-  font-size: 14px;
+  padding: 28px 16px 26px;
+  border-radius: 18px;
+  isolation: isolate;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+  /* 毛玻璃基底层：局部亮点 + 整体半透明 */
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,0.28) 0%, transparent 100%),
+    color-mix(in srgb, var(--card-bg, #ffffff) 68%, transparent);
+
+  /* 毛玻璃模糊 + 饱和度 */
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+
+  /* 玻璃边缘：极细半透明边框 */
+  border: 0.5px solid rgba(0, 0, 0, 0.09);
+
+  /* 多层深度阴影系统 */
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.03),
+    0 2px 6px rgba(0, 0, 0, 0.03),
+    0 8px 22px rgba(0, 0, 0, 0.05),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.03);
+
+  transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* 玻璃表面左上角斜向光斑 */
+.summary-stat::before {
+  content: '';
+  position: absolute;
+  top: -35%;
+  left: -25%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 玻璃边缘光折射渐变 */
+.summary-stat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(
+    140deg,
+    rgba(255,255,255,0.08) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.02) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* hover：玻璃接更多光，轻微抬起 */
+.summary-stat:hover {
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    0 12px 30px rgba(0, 0, 0, 0.08),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.02);
+  transform: translateY(-2px);
+}
+
+.summary-stat:hover::before {
+  opacity: 0.7;
+}
+
+.summary-stat-value {
+  position: relative;
+  z-index: 1;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
+}
+
+/* 字段数量 — 苹果蓝点缀 */
+.summary-stat:first-child .summary-stat-value {
+  color: color-mix(in srgb, var(--apple-blue, #0A84FF) 85%, var(--text-main));
+}
+
+/* 类型数量 — 紫色点缀 */
+.summary-stat:last-child .summary-stat-value {
+  color: color-mix(in srgb, #7C4DFF 85%, var(--text-main));
+}
+
+/* 数值下方淡色光晕 */
+.summary-stat-value::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
+  height: 16px;
+  background: radial-gradient(ellipse, color-mix(in srgb, currentColor 10%, transparent), transparent);
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.summary-stat-label {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* ==================== 属性列表 ==================== */
 
 :deep(.property-spin),
 :deep(.property-spin > .ant-spin-container) {
-  min-height: 300px;
+  min-height: 280px;
+}
+
+.property-config-card {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.06);
+}
+
+.property-config-head {
+  min-height: 104px;
+  padding: 28px 20px 20px;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border-color);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--layout-bg, #f5f5f7) 36%, transparent), transparent);
+}
+
+.property-config-head div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.property-config-head strong {
+  color: var(--text-main);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.property-config-head span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .property-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.property-list-head {
-  height: 34px;
-  padding: 0 4px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.property-list-head strong {
-  color: var(--apple-blue, #0A84FF);
-  font-size: 12px;
-  font-weight: 800;
+  gap: 0;
+  padding: 0 18px;
 }
 
 .property-item {
-  min-height: 68px;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
+  position: relative;
+  min-height: 86px;
+  padding: 18px 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--content-bg, color-mix(in srgb, var(--card-bg) 92%, transparent));
+  gap: 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
   box-sizing: border-box;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, padding-left 0.2s ease;
+}
+
+.property-item::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--apple-blue, #0A84FF);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .property-item:hover {
-  border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 22%, var(--border-color));
-  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 4%, var(--card-bg));
-  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 2%, transparent);
+  padding-left: 6px;
 }
 
-.property-index {
-  width: 28px;
-  flex: none;
-  color: var(--text-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
-  font-weight: 750;
+.property-item:hover::before {
+  opacity: 1;
 }
 
 .property-type-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--apple-blue);
-  background: color-mix(in srgb, var(--apple-blue) 10%, transparent);
+  color: var(--type-text);
+  background: var(--type-bg);
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 20px;
 }
 
 .property-main {
@@ -1959,7 +2415,7 @@ onMounted(async () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .property-main strong,
@@ -1971,80 +2427,371 @@ onMounted(async () => {
 
 .property-main strong {
   color: var(--text-main);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 760;
+  line-height: 1.25;
 }
 
 .property-main small {
   color: var(--text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-size: 13px;
 }
 
-.property-type {
+/* ==================== 属性类型标签 ==================== */
+
+.property-type-clickable {
+  border: none;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.property-type-clickable:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.05);
+  box-shadow: 0 2px 8px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.type-link-icon {
+  margin-left: 4px;
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.property-more-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
   flex: none;
-  max-width: 130px;
-  height: 26px;
-  padding: 0 9px;
-  border-radius: 999px;
   display: inline-flex;
   align-items: center;
-  color: var(--apple-blue);
-  background: color-mix(in srgb, var(--apple-blue) 10%, transparent);
+  justify-content: center;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.property-more-btn:hover {
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--text-main) 6%, transparent);
+}
+
+.property-add-btn {
+  width: calc(100% - 36px);
+  height: 44px;
+  margin: 18px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: color-mix(in srgb, var(--apple-blue, #0A84FF) 84%, var(--text-main));
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--apple-blue, #0A84FF) 56%, var(--border-color));
+  font-size: 14px;
+  font-weight: 650;
+  cursor: not-allowed;
+  opacity: 0.86;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.property-add-btn:hover {
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 4%, transparent);
+}
+
+/* ==================== 选项标签 ==================== */
+
+.option-chip {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--opt-text);
+  background: var(--opt-bg);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+
+.option-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px color-mix(in srgb, currentColor 22%, transparent);
+}
+
+/* ==================== 属性详情抽屉 ==================== */
+
+.detail-panel-title {
+  color: var(--text-main);
+  font-size: 14px;
   font-weight: 700;
+}
+
+.detail-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-name-panel,
+.detail-type-panel,
+.detail-options-panel {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.detail-name-panel h3 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 22px;
+  font-weight: 760;
+  line-height: 1.28;
+  word-break: break-word;
+}
+
+.detail-type-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.detail-type-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--type-text);
+  background: var(--type-bg);
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  font-size: 17px;
+}
+
+.detail-type-name {
+  min-width: 0;
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.detail-options-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.detail-options-head .detail-label {
+  margin-bottom: 0;
+}
+
+.detail-count {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-text, var(--text-muted));
+  background: color-mix(in srgb, var(--accent-bg, #f0f0f0) 48%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent-text, #555555) 10%, var(--border-color));
+  font-size: 11px;
+  font-weight: 750;
+  flex: none;
+}
+
+.detail-option-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.detail-option-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.detail-option-grid::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.detail-option-pill {
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--opt-text);
+  background: var(--opt-bg);
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  animation: detailOptionIn 0.2s ease both;
+}
+
+.detail-option-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.detail-option-color {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.detail-option-name {
+  min-width: 0;
+  color: currentColor;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-empty-state {
+  min-height: 72px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-color);
+  background: color-mix(in srgb, var(--card-bg) 70%, var(--layout-bg, #f5f5f7));
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@keyframes detailOptionIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.property-type {
+  flex: none;
+  max-width: 150px;
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--type-text);
+  background: var(--type-bg);
+  font-size: 13px;
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* ==================== 空状态 ==================== */
+
 .property-empty {
-  min-height: 300px;
+  min-height: 280px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--text-muted);
+  gap: 10px;
   text-align: center;
 }
 
-.property-empty span {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+.property-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--apple-blue);
-  background: color-mix(in srgb, var(--apple-blue) 10%, transparent);
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border: 1px dashed var(--border-color);
+  font-size: 24px;
+  margin-bottom: 2px;
 }
 
 .property-empty strong {
   color: var(--text-main);
   font-size: 16px;
+  font-weight: 700;
 }
 
 .property-empty small {
   color: var(--text-muted);
+  font-size: 13px;
+  max-width: 260px;
+  line-height: 1.5;
 }
+
+/* ==================== Drawer 全局覆盖 ==================== */
 
 :deep(.ant-drawer-content),
 :deep(.ant-drawer-header),
 :deep(.ant-drawer-body) {
-  background: var(--card-bg);
+  background: var(--layout-bg, #f5f5f7);
 }
 
 :deep(.ant-drawer-header) {
+  padding: 18px 22px 16px;
   border-bottom-color: var(--border-color);
 }
 
 :deep(.ant-drawer-body) {
-  padding: 18px;
+  padding: 20px 22px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 :deep(.datasource-property-drawer .ant-drawer-content) {
   border-left: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.04);
 }
 
 :global(.dark) .neo-sidebar,
@@ -2066,6 +2813,68 @@ onMounted(async () => {
 
 :global(.dark) .modern-empty-card {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+:global(.dark) .summary-stat,
+:global(.theme-dark) .summary-stat {
+  /* 更高级的暗色玻璃：高不透明度避免透底泛白，深色基调 */
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 100%),
+    color-mix(in srgb, var(--card-bg, #1c1c1e) 90%, transparent);
+
+  /* 暗色玻璃边缘：极细淡白边框 */
+  border-color: rgba(255, 255, 255, 0.05);
+
+  /* 深色高级阴影体系 */
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.03),
+    0 2px 8px rgba(0,0,0,0.3),
+    0 8px 28px rgba(0,0,0,0.35),
+    inset 0 0.5px 0 rgba(255,255,255,0.04),
+    inset 0 -0.5px 0 rgba(0,0,0,0.25);
+}
+:global(.dark) .summary-stat::before,
+:global(.theme-dark) .summary-stat::before {
+  /* 暗色下减弱光斑，避免泛白感 */
+  background: radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+:global(.dark) .summary-stat::after,
+:global(.theme-dark) .summary-stat::after {
+  background: linear-gradient(
+    140deg,
+    rgba(255,255,255,0.02) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.08) 100%
+  );
+}
+:global(.dark) .summary-stat:hover,
+:global(.theme-dark) .summary-stat:hover {
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.04),
+    0 4px 14px rgba(0,0,0,0.35),
+    0 14px 36px rgba(0,0,0,0.4),
+    inset 0 0.5px 0 rgba(255,255,255,0.06),
+    inset 0 -0.5px 0 rgba(0,0,0,0.2);
+}
+:global(.dark) .summary-stat:first-child .summary-stat-value,
+:global(.theme-dark) .summary-stat:first-child .summary-stat-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+:global(.dark) .summary-stat:last-child .summary-stat-value,
+:global(.theme-dark) .summary-stat:last-child .summary-stat-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+:global(.dark) .property-config-card,
+:global(.theme-dark) .property-config-card {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+:global(.dark) .property-config-head,
+:global(.theme-dark) .property-config-head {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--apple-blue, #0A84FF) 4%, transparent), transparent);
 }
 
 :global(.dark) .mockup-window {
@@ -2150,5 +2959,63 @@ onMounted(async () => {
   .drawer-summary {
     grid-template-columns: 1fr;
   }
+}
+</style>
+
+<!-- 非 scoped：Drawer 滚动条伪元素在 Vue 3 scoped :deep() 中可能编译异常 -->
+<style>
+.datasource-property-drawer .ant-drawer-body,
+.property-detail-drawer .ant-drawer-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color, rgba(0,0,0,0.08)) transparent;
+}
+.datasource-property-drawer .ant-drawer-body::-webkit-scrollbar,
+.property-detail-drawer .ant-drawer-body::-webkit-scrollbar {
+  width: 4px;
+}
+.datasource-property-drawer .ant-drawer-body::-webkit-scrollbar-thumb,
+.property-detail-drawer .ant-drawer-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+/* ========== 暗黑模式统计卡（非 scoped，显式色值，确保 Drawer 内生效） ========== */
+html.dark .summary-stat {
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 100%),
+    #1c1c1e !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.03),
+    0 2px 8px rgba(0,0,0,0.3),
+    0 8px 28px rgba(0,0,0,0.35),
+    inset 0 0.5px 0 rgba(255,255,255,0.04),
+    inset 0 -0.5px 0 rgba(0,0,0,0.25) !important;
+}
+html.dark .summary-stat::before {
+  background: radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+html.dark .summary-stat::after {
+  background: linear-gradient(
+    140deg,
+    rgba(255,255,255,0.02) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.08) 100%
+  );
+}
+html.dark .summary-stat:hover {
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.04),
+    0 4px 14px rgba(0,0,0,0.35),
+    0 14px 36px rgba(0,0,0,0.4),
+    inset 0 0.5px 0 rgba(255,255,255,0.06),
+    inset 0 -0.5px 0 rgba(0,0,0,0.2) !important;
+}
+html.dark .summary-stat:first-child .summary-stat-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .summary-stat:last-child .summary-stat-value {
+  color: rgba(255, 255, 255, 0.92);
 }
 </style>

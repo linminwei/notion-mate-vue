@@ -1168,15 +1168,14 @@ onBeforeUnmount(() => {
   z-index: 10;
 }
 
-/* 右侧局部数据为空时的完美居中占位层 */
+/* 右侧局部数据为空时的完美居中占位层（绝对定位，不依赖 flex 链条） */
 .data-empty-container {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 100%;
-  min-height: 400px;
 }
 
 /* 通用空状态卡片基座 */
@@ -1424,23 +1423,30 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-/* ================= 核心修复：表格与分页器的弹性布局重写 ================= */
+/* ================= 核心修复：表格滚动容器 ================= */
+/* 不再使用 flex column 嵌套，用纯块级布局让表格自然撑高，wrapper 负责滚动 */
 .data-table-wrapper {
-  flex: 1; /* 撑满剩余空间 */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0 32px;
+  position: relative;
 }
 
-/* 深度渗透 Ant Design 内部结构，打通 Flex 链条 */
-:deep(.data-spin-wrap),
+/* 清除 Ant Design Spin/Table 内部可能阻止滚动的 overflow:hidden */
+:deep(.data-spin-wrap) {
+  overflow: visible !important;
+  min-height: 100%;
+}
 :deep(.data-spin-wrap > .ant-spin-container) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  overflow: visible !important;
+  min-height: 100%;
+}
+:deep(.neo-table.ant-table-wrapper) {
+  overflow: visible !important;
+}
+:deep(.neo-table .ant-table) {
+  overflow: visible !important;
 }
 
 /* 单元格定制 */

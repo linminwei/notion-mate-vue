@@ -182,72 +182,45 @@ export interface DatasourceVo {
 
 // Notion 数据源属性
 export interface NotionDatasourceProperty {
-  id: string
   propertyId: string
   propertyName: string
   propertyType: string
   datasourceId: string
-  createTime: string
-  updateTime: string
+  sysDatasourceId: string
+  workspaceId: string
+  /** 选项列表（仅 select / multi_select / status 有效） */
+  options?: NotionOption[]
+}
+
+/** Notion 选项对象 */
+export interface NotionOption {
+  color: string
+  id: string
+  name: string
 }
 
 // ==================== 文件上传 SSE 事件类型 ====================
 
-/** 文件信息摘要 */
-export interface UploadFileInfo {
-  fileName: string
-  contentType: string
-}
-
-/** 上传任务开始事件 */
+/** 单文件上传开始事件 */
 export interface UploadStartEvent {
   type: 'start'
-  fileCount: number
-  totalBytes: number
-  files: UploadFileInfo[]
-}
-
-/** 单个文件开始上传事件 */
-export interface UploadFileStartEvent {
-  type: 'file_start'
-  fileIndex: number
-  fileCount: number
   fileName: string
-  mode: string        // "single_part" | "multi_part"
-  numberOfParts: number
+  fileSize: number
+  contentType: string
 }
 
 /** 上传进度事件 */
 export interface UploadProgressEvent {
   type: 'progress'
-  fileIndex: number
-  fileCount: number
   fileName: string
   uploadedBytes: number
   totalBytes: number
 }
 
-/** 单个文件上传完成事件 */
-export interface UploadFileCompleteEvent {
-  type: 'file_complete'
-  fileIndex: number
-  fileCount: number
-  fileName: string
-  id: string
-  url: string
-}
-
-/** 已保存的文件信息 */
-export interface SavedFileInfo {
-  sysId: string
-  notionId: string
-  url: string
-}
-
-/** 全部上传完成事件 */
+/** 上传完成事件 */
 export interface UploadCompleteEvent {
   type: 'complete'
-  files: SavedFileInfo[]
+  fileId: string
 }
 
 /** 上传错误事件 */
@@ -259,9 +232,7 @@ export interface UploadErrorEvent {
 /** SSE 事件联合类型 */
 export type UploadSSEEvent =
   | UploadStartEvent
-  | UploadFileStartEvent
   | UploadProgressEvent
-  | UploadFileCompleteEvent
   | UploadCompleteEvent
   | UploadErrorEvent
 
