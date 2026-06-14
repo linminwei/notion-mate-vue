@@ -45,11 +45,11 @@ export const syncDatasource = (workspaceId: string) =>
 
 // 修改数据源标题
 export const updateDatasourceTitle = (data: { id: string; title: string }) =>
-  request.put('/datasource/update-title', data)
+  request.put('/datasource/title/update', data)
 
 // 修改数据源图标
 export const updateDatasourceIcon = (data: { id: string; uploadId: string }) =>
-  request.put('/datasource/update-icon', data)
+  request.put('/datasource/icon/update', data)
 
 // 批量删除数据源
 export const deleteDatasourceBatch = (ids: string[]) =>
@@ -58,6 +58,18 @@ export const deleteDatasourceBatch = (ids: string[]) =>
 // 查询数据源属性
 export const getDatasourceProperties = (id: string) =>
   request.get<NotionDatasourceProperty[]>(`/datasource/${id}/properties`)
+
+// 修改数据源属性
+export const updateDatasourceProperty = (data: { id: string; property?: { name?: string; type?: string; options?: { name: string; color: string }[]; prefix?: string; relation?: { relationMode: string; datasourceId: string; dualPropertyName?: string } }; sort?: number }) =>
+  request.put('/datasource/property/update', data)
+
+// 新增数据源属性
+export const addDatasourceProperty = (data: { datasourceId: string; property: { name: string; type: string; prefix?: string; options?: { name: string; color: string }[]; relation?: { relationMode: string; datasourceId: string; dualPropertyName?: string } } }) =>
+  request.post('/datasource/add', data)
+
+// 删除数据源属性
+export const deleteDatasourceProperty = (propertyId: string) =>
+  request.delete(`/datasource/property/delete/${propertyId}`)
 
 // ==================== SSE 文件上传 ====================
 

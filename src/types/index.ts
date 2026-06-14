@@ -176,12 +176,14 @@ export interface Datasource {
 export interface DatasourceVo {
   id: string
   datasourceId: string
-  iconUrl: string
+  icon: string
   title: string
 }
 
 // Notion 数据源属性
 export interface NotionDatasourceProperty {
+  /** 数据库主键 */
+  id: string
   propertyId: string
   propertyName: string
   propertyType: string
@@ -190,6 +192,14 @@ export interface NotionDatasourceProperty {
   workspaceId: string
   /** 选项列表（仅 select / multi_select / status 有效） */
   options?: NotionOption[]
+  /** 唯一标识符前缀（仅 unique_id 有效） */
+  prefix?: string
+  /** 关联配置（仅 relation 有效） */
+  relation?: {
+    relationMode: string
+    datasourceId: string
+    dualPropertyName?: string
+  }
 }
 
 /** Notion 选项对象 */
@@ -197,6 +207,7 @@ export interface NotionOption {
   color: string
   id: string
   name: string
+  description?: string
 }
 
 // ==================== 文件上传 SSE 事件类型 ====================

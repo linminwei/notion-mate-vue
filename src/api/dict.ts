@@ -30,3 +30,7 @@ export const deleteDictDataBatch = (ids: string[]) =>
 // 根据字典编码查询字典值
 export const getDictDataByDictCode = (dictCode: string) =>
     request.get<DictData[]>('/system/dict/data/by-type-code', { params: { dictCode } })
+
+// 根据字典编码查询已启用的字典值
+export const getDictDataByDictCodeEnable = (dictCode: string) =>
+  request.get<DictData[]>('/system/dict/data/by-type-code/enable', { params: { dictCode } })

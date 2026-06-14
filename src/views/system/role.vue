@@ -225,7 +225,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { getRolePage, addRole, updateRole, deleteRole } from '@/api/role.ts'
 import { getMenuList, assignMenu, getRoleMenuTree } from '@/api/menu.ts'
-import { getDictDataByDictCode } from '@/api/dict'
+import { getDictDataByDictCodeEnable } from '@/api/dict'
 import type { SysRole, DictData } from '@/types'
 import type { Rule } from 'ant-design-vue/es/form'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
@@ -462,7 +462,7 @@ const fetchData = async () => {
 
 const fetchCommonStatus = async () => {
   try {
-    const res = await getDictDataByDictCode('sys_common_status')
+    const res = await getDictDataByDictCodeEnable('sys_common_status')
     commonStatusDict.value = res.data || []
   } catch (error) {
     console.warn('获取 sys_common_status 字典失败', error)

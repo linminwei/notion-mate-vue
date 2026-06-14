@@ -370,7 +370,7 @@
 import { ref, computed, onMounted, nextTick, onBeforeUnmount, watch } from 'vue'
 import {
   getDictTypePage, addDictType, updateDictType, deleteDictTypeBatch,
-  getDictDataPage, addDictData, updateDictData, deleteDictDataBatch, getDictDataByDictCode
+  getDictDataPage, addDictData, updateDictData, deleteDictDataBatch, getDictDataByDictCodeEnable
 } from '@/api/dict.ts'
 import type { DictType, DictData } from '@/types'
 import type { Rule } from 'ant-design-vue/es/form'
@@ -411,7 +411,7 @@ const commonStatusDict = ref<DictData[]>([])
 
 const fetchCommonStatus = async () => {
   try {
-    const res = await getDictDataByDictCode('sys_common_status')
+    const res = await getDictDataByDictCodeEnable('sys_common_status')
     commonStatusDict.value = res.data || []
   } catch (error) {
     console.warn('获取 sys_common_status 字典失败', error)
@@ -1436,11 +1436,11 @@ onBeforeUnmount(() => {
 /* 清除 Ant Design Spin/Table 内部可能阻止滚动的 overflow:hidden */
 :deep(.data-spin-wrap) {
   overflow: visible !important;
-  min-height: 100%;
+  height: 100%;
 }
 :deep(.data-spin-wrap > .ant-spin-container) {
   overflow: visible !important;
-  min-height: 100%;
+  height: 100%;
 }
 :deep(.neo-table.ant-table-wrapper) {
   overflow: visible !important;

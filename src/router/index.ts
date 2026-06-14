@@ -57,12 +57,6 @@ const constantRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/notion/datasource.vue'),
         meta: { title: ' 数据源管理 ', icon: 'database', permission: 'datasource:list' }
       },
-      {
-        path: 'notion/upload-test',
-        name: 'NotionFileUploadTest',
-        component: () => import('@/views/notion/upload-test.vue'),
-        meta: { title: ' 文件上传测试 ', icon: 'CloudUploadOutlined', hidden: true }
-      }
     ]
   },
   {

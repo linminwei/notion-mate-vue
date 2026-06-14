@@ -268,12 +268,12 @@
                       </span>
                       <template v-else>
                         <img
-                          v-if="isImage(record.iconUrl)"
-                          :src="record.iconUrl"
+                          v-if="isImage(record.icon)"
+                          :src="record.icon"
                           alt=""
                           @error="handleImgError"
                         />
-                        <span v-else-if="record.iconUrl">{{ record.iconUrl }}</span>
+                        <span v-else-if="record.icon">{{ record.icon }}</span>
                         <font-awesome-icon v-else :icon="['fas', 'image']" />
                       </template>
                     </span>
@@ -316,7 +316,7 @@
 
                 <template v-else-if="column.key === 'action'">
                   <div class="action-btn-group">
-                    <button class="text-action-btn primary" @click="openProperties(record)">字段配置</button>
+                    <button class="text-action-btn primary" @click="openProperties(record)">属性配置</button>
                   </div>
                 </template>
               </template>
@@ -344,8 +344,9 @@
       class="datasource-property-drawer"
       placement="right"
       :width="560"
-      :mask="false"
+      :mask-style="{ background: 'rgba(0, 0, 0, 0.06)' }"
       :destroy-on-close="false"
+      @close="cancelAddProperty"
     >
       <template #title>
         <div class="drawer-title">
@@ -393,119 +394,366 @@
               <div class="property-config-separator"></div>
 
               <div class="property-list">
-                <div
-                  v-for="property in properties"
-                  :key="property.propertyId"
-                  class="property-item"
-                >
-                  <span class="property-type-icon" :style="getTypeColorStyle(property.propertyType)">
-                    <font-awesome-icon :icon="getPropertyIcon(property.propertyType)" />
-                  </span>
-                  <span class="property-main">
-                    <strong>{{ property.propertyName || '未命名字段' }}</strong>
-                    <small>{{ property.propertyId || '-' }}</small>
-                  </span>
-                  <button
-                    class="property-type property-type-clickable"
-                    :style="getTypeColorStyle(property.propertyType)"
-                    type="button"
-                    @click.stop="openPropertyDetail(property)"
+                <template v-for="(property, index) in properties" :key="property.propertyId">
+                  <div
+                    class="property-item"
+                    :class="{ 'is-dragging': dragIndex === index, 'is-drag-over': dragOverIndex === index }"
+                    draggable="true"
+                    @dragstart="handleDragStart($event, index)"
+                    @dragenter.prevent="handleDragEnter($event, index)"
+                    @dragover.prevent
+                    @dragleave="handleDragLeave($event, index)"
+                    @drop="handleDrop($event, index)"
+                    @dragend="handleDragEnd"
                   >
-                    {{ normalizeType(property.propertyType) }}
-                    <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" class="type-link-icon" />
-                  </button>
-                  <button class="property-more-btn" type="button" title="更多">
-                    <font-awesome-icon :icon="['fas', 'ellipsis']" />
-                  </button>
-                </div>
+                    <span class="property-drag-handle" title="拖拽排序">
+                      <font-awesome-icon :icon="['fas', 'grip-vertical']" />
+                    </span>
+                    <span class="property-type-icon" :style="getTypeColorStyle(property.propertyType)">
+                      <font-awesome-icon :icon="getPropertyIcon(property.propertyType)" />
+                    </span>
+                    <span class="property-main">
+                      <!-- 属性名称：编辑态 / 可点击态 / 只读态 -->
+                      <input
+                        v-if="canEditDatasource && editingNameId === property.propertyId"
+                        v-model="editingPropertyName"
+                        class="inline-title-input"
+                        :data-prop-edit-id="property.propertyId"
+                        type="text"
+                        maxlength="80"
+                        @click.stop
+                        @blur="handleNameBlur(property)"
+                        @keydown.enter.prevent="handlePropertyNameEnter"
+                        @keydown.esc.prevent="cancelPropertyNameEdit"
+                      />
+                      <button
+                        v-else-if="canEditDatasource"
+                        class="cell-title-edit property-name-btn"
+                        type="button"
+                        title="点击编辑属性名"
+                        @click.stop="startEditName(property)"
+                      >
+                        <span>{{ property.propertyName || '未命名字段' }}</span>
+                        <font-awesome-icon :icon="['fas', 'pen']" />
+                      </button>
+                      <strong v-else>{{ property.propertyName || '未命名字段' }}</strong>
+                      <!-- 属性类型：编辑态 / 可点击态 / 只读态（TITLE 不可修改） -->
+                      <a-select
+                        v-if="canEditDatasource && editingTypeId === property.propertyId && property.propertyType !== 'TITLE'"
+                        v-model:value="editingPropertyType"
+                        class="property-type-select"
+                        dropdown-class-name="property-type-select-dropdown"
+                        :bordered="false"
+                        :show-search="true"
+                        :filter-option="filterPropertyTypeOption"
+                        :virtual="false"
+                        placement="bottomLeft"
+                        default-open
+                        :get-popup-container="getPopupContainer"
+                        @change="handleTypeChange(property)"
+                        @click.stop
+                      >
+                        <a-select-option
+                          v-for="(label, value) in options"
+                          :key="value"
+                          :value="value"
+                        >{{ label }}</a-select-option>
+                      </a-select>
+                      <small
+                        v-else-if="canEditDatasource && effectiveType(property) !== 'title'"
+                        class="property-type-label is-editable"
+                        title="点击编辑属性类型"
+                        @click.stop="startEditType(property)"
+                      >{{ getPropertyTypeLabel(effectiveType(property)) }}</small>
+                      <small v-else>{{ getPropertyTypeLabel(effectiveType(property)) }}</small>
+                    </span>
+                    <button
+                      v-if="INLINE_CONFIG_TYPES.has(effectiveType(property))"
+                      class="property-option-btn"
+                      :class="{ 'is-expanded': expandedPropertyId === property.propertyId }"
+                      type="button"
+                      @click.stop="togglePropertyExpand(property)"
+                    >
+                      {{ effectiveType(property) === 'unique_id' ? '前缀配置' : effectiveType(property) === 'relation' ? '关联配置' : '选项配置' }}
+                    </button>
+                    <button
+                      v-if="canEditDatasource && property.propertyType !== 'TITLE'"
+                      class="property-delete-btn"
+                      type="button"
+                      title="删除属性"
+                      @click.stop="confirmPropertyDelete(property)"
+                    >
+                      <font-awesome-icon :icon="['fas', 'trash']" />
+                    </button>
+                  </div>
+                  <div v-if="expandedPropertyId === property.propertyId" class="property-options-expand">
+                    <!-- unique_id：前缀配置 -->
+                    <template v-if="effectiveType(property) === 'unique_id'">
+                      <div class="prefix-config-row">
+                        <span class="prefix-config-label">标识符前缀</span>
+                        <input v-model="editingPrefix" class="add-option-name" type="text" placeholder="例如: USER-" maxlength="20" />
+                      </div>
+                    </template>
+                    <!-- relation：关联配置 -->
+                    <template v-else-if="effectiveType(property) === 'relation'">
+                      <div class="expand-relation-config">
+                        <!-- 只读展示（属性本身已是关联类型，非类型变更） -->
+                        <template v-if="pendingPropertyTarget !== property">
+                          <div class="relation-readonly-row">
+                            <span class="relation-readonly-label">关联模式</span>
+                            <span class="relation-readonly-value">{{ getRelationModeLabel(editingRelationMode) }}</span>
+                          </div>
+                          <div class="relation-readonly-row">
+                            <span class="relation-readonly-label">目标数据源</span>
+                            <span class="relation-readonly-value" :class="{ 'is-empty': !editingTargetDatasourceId }">{{ getTargetDatasourceTitle(editingTargetDatasourceId) }}</span>
+                          </div>
+                          <div v-if="editingRelationMode === 'dual_property'" class="relation-readonly-row">
+                            <span class="relation-readonly-label">目标属性名称</span>
+                            <span class="relation-readonly-value" :class="{ 'is-empty': !editingDualPropertyName }">{{ editingDualPropertyName || '未配置' }}</span>
+                          </div>
+                          <div v-if="!property.relation" class="relation-readonly-row">
+                            <span class="relation-readonly-value is-empty">未配置关联</span>
+                          </div>
+                        </template>
+                        <!-- 可编辑（从其他类型变更为关联类型） -->
+                        <template v-else>
+                        <a-select v-model:value="editingRelationMode" class="property-add-form-type"
+                                  :virtual="false" placement="bottomLeft" placeholder="关联模式"
+                                  dropdown-class-name="property-type-select-dropdown"
+                                  :get-popup-container="getPopupContainer">
+                          <a-select-option v-for="(label, value) in relationModeOptions" :key="value" :value="value">{{ label }}</a-select-option>
+                        </a-select>
+                        <a-select v-model:value="editingTargetDatasourceId" class="property-add-form-type"
+                                  :virtual="false" placement="bottomLeft" placeholder="目标数据源"
+                                  :show-search="true" :filter-option="filterPropertyTypeOption"
+                                  :loading="targetDatasourceLoading"
+                                  dropdown-class-name="property-type-select-dropdown"
+                                  :get-popup-container="getPopupContainer"
+                                  @focus="loadTargetDatasources">
+                          <template #notFoundContent>
+                            <div v-if="targetDatasourceLoading" class="select-loading-state">
+                              <div class="select-loading-shimmer"></div>
+                              <div class="select-loading-skeleton">
+                                <div class="skeleton-row" v-for="i in 3" :key="i" :style="{ animationDelay: (i - 1) * 0.12 + 's' }">
+                                  <span class="skeleton-bar"></span>
+                                </div>
+                              </div>
+                              <div class="select-loading-hint">
+                                <font-awesome-icon :icon="['fas', 'spinner']" spin />
+                                <span>正在加载数据源列表...</span>
+                              </div>
+                            </div>
+                          </template>
+                          <a-select-option v-for="ds in targetDatasourceList" :key="ds.id" :value="ds.datasourceId">{{ ds.title }}</a-select-option>
+                        </a-select>
+                        <template v-if="editingRelationMode === 'dual_property'">
+                          <input v-model="editingDualPropertyName" class="property-add-form-name" type="text"
+                                 placeholder="目标数据源显示的属性名称" maxlength="80" />
+                        </template>
+                        </template>
+                      </div>
+                    </template>
+                    <!-- select / multi_select / status：选项配置 -->
+                    <template v-else>
+                      <!-- 已有选项（可删除；类型变更中不展示旧选项） -->
+                      <div v-if="pendingPropertyTarget !== property" class="expand-option-grid">
+                        <div
+                          v-for="(opt, index) in property.options"
+                          :key="opt.id"
+                          class="add-option-row"
+                          :class="{ 'is-removed': pendingRemovedOptionIds.has(opt.id) }"
+                          :style="{ animationDelay: index * 0.03 + 's', backgroundColor: optionBgColor(opt.color) }"
+                        >
+                          <div class="option-info-wrap">
+                            <span class="add-option-name display">{{ opt.name }}</span>
+                            <span v-if="opt.description" class="add-option-desc">{{ opt.description }}</span>
+                          </div>
+                          <button v-if="!pendingRemovedOptionIds.has(opt.id)" class="add-option-remove" type="button" @click="markOptionForRemoval(opt)" :disabled="propertySubmitLoading">
+                            <font-awesome-icon :icon="['fas', 'xmark']" />
+                          </button>
+                          <button v-else class="add-option-remove is-undo" type="button" @click="unmarkOptionForRemoval(opt.id)" :disabled="propertySubmitLoading" title="撤销删除">
+                            <font-awesome-icon :icon="['fas', 'rotate-left']" />
+                          </button>
+                        </div>
+                      </div>
+                      <!-- 新增选项（可编辑） -->
+                      <template v-if="editingOptions.length">
+                        <div class="expand-option-grid" style="margin-top: 6px">
+                          <div
+                            v-for="(opt, index) in editingOptions"
+                            :key="'edit-' + index"
+                            class="add-option-row"
+                            :style="{ animationDelay: index * 0.03 + 's', backgroundColor: optionBgColor(opt.color) }"
+                          >
+                            <div class="add-option-color-palette">
+                              <span v-for="c in NOTION_COLOR_OPTIONS" :key="c.name"
+                                    class="add-option-swatch"
+                                    :class="{ active: opt.color === c.name }"
+                                    :style="{ backgroundColor: c.color }"
+                                    :title="c.name"
+                                    @click="opt.color = c.name"></span>
+                            </div>
+                            <input v-model="opt.name" class="add-option-name" type="text" placeholder="选项名称" maxlength="80" />
+                            <button class="add-option-remove" type="button" @click="removeEditingOption(index)" :disabled="propertySubmitLoading">
+                              <font-awesome-icon :icon="['fas', 'xmark']" />
+                            </button>
+                          </div>
+                        </div>
+                      </template>
+                      <button class="add-option-btn" type="button" @click="addEditingOption" :disabled="propertySubmitLoading">
+                        <font-awesome-icon :icon="['fas', 'plus']" />
+                        <span>添加选项</span>
+                      </button>
+                    </template>
+                    <!-- 操作按钮：类型变更、选项编辑、unique_id 配置时显示 -->
+                    <div v-if="pendingPropertyTarget === property || editingOptions.length || effectiveType(property) === 'unique_id' || pendingRemovedOptionIds.size > 0" class="expand-option-actions">
+                      <button type="button" class="property-cancel-btn" @click="cancelExpandConfig(property)" :disabled="propertySubmitLoading">取消</button>
+                      <button type="button" class="property-confirm-btn" :disabled="propertySubmitLoading" @click="saveExpandConfig(property)">
+                        {{ pendingPropertyTarget === property ? '保存' : editingOptions.length ? '保存选项' : '保存' }}
+                      </button>
+                    </div>
+                  </div>
+                </template>
               </div>
 
-              <button class="property-add-btn" type="button" disabled>
-                <font-awesome-icon :icon="['fas', 'plus']" />
-                <span>添加新字段</span>
-              </button>
+              <!-- 添加属性 — 独立容器，居中于卡片底部 -->
+              <div v-if="canEditDatasource" class="property-add-section">
+                <div v-if="!addingProperty" class="property-add-trigger" tabindex="0" role="button"
+                     @click="startAddProperty" @keydown.enter.prevent="startAddProperty" @keydown.space.prevent="startAddProperty">
+                  <span class="property-add-trigger-icon"><font-awesome-icon :icon="['fas', 'plus']" /></span>
+                  <span class="property-add-trigger-text">添加属性</span>
+                </div>
+
+                <div v-else class="property-add-form">
+                  <span class="property-add-form-icon"><font-awesome-icon :icon="['fas', 'circle-plus']" /></span>
+                  <div class="property-add-form-fields">
+                    <input v-model="newPropertyName" class="property-add-form-name" type="text"
+                           placeholder="属性名称" maxlength="80"
+                           @keydown.enter.prevent="handleAddProperty" @keydown.esc.prevent="cancelAddProperty" />
+                    <a-select v-model:value="newPropertyType" class="property-add-form-type"
+                              :show-search="true" :filter-option="filterPropertyTypeOption" :virtual="false" placement="bottomLeft" placeholder="属性类型"
+                              dropdown-class-name="property-add-form-dropdown"
+                              :get-popup-container="getPopupContainer"
+                              @keydown.esc.prevent="cancelAddProperty">
+                      <a-select-option v-for="(label, value) in options" :key="value" :value="value">{{ label }}</a-select-option>
+                    </a-select>
+
+                    <!-- 唯一标识符前缀（仅 unique_id 显示） -->
+                    <template v-if="newPropertyType === 'unique_id'">
+                      <div class="add-option-label">标识符前缀</div>
+                      <input v-model="newPropertyPrefix" class="property-add-form-name" type="text"
+                             placeholder="例如: USER-" maxlength="20" />
+                    </template>
+
+                    <!-- 关联配置（仅 relation 显示） -->
+                    <template v-if="newPropertyType === 'relation'">
+                      <div class="add-option-label">关联配置</div>
+                      <a-select v-model:value="newPropertyRelationMode" class="property-add-form-type"
+                                :virtual="false" placement="bottomLeft" placeholder="关联模式"
+                                dropdown-class-name="property-add-form-dropdown"
+                                :get-popup-container="getPopupContainer"
+                                @keydown.esc.prevent="cancelAddProperty">
+                        <a-select-option v-for="(label, value) in relationModeOptions" :key="value" :value="value">{{ label }}</a-select-option>
+                      </a-select>
+                      <a-select v-model:value="newPropertyTargetDatasourceId" class="property-add-form-type"
+                                :virtual="false" placement="bottomLeft" placeholder="目标数据源"
+                                :show-search="true" :filter-option="filterPropertyTypeOption"
+                                :loading="targetDatasourceLoading"
+                                dropdown-class-name="property-add-form-dropdown"
+                                :get-popup-container="getPopupContainer"
+                                @keydown.esc.prevent="cancelAddProperty"
+                                @focus="loadTargetDatasources">
+                        <template #notFoundContent>
+                          <div v-if="targetDatasourceLoading" class="select-loading-state">
+                            <div class="select-loading-shimmer"></div>
+                            <div class="select-loading-skeleton">
+                              <div class="skeleton-row" v-for="i in 3" :key="i" :style="{ animationDelay: (i - 1) * 0.12 + 's' }">
+                                <span class="skeleton-bar"></span>
+                              </div>
+                            </div>
+                            <div class="select-loading-hint">
+                              <font-awesome-icon :icon="['fas', 'spinner']" spin />
+                              <span>正在加载数据源列表...</span>
+                            </div>
+                          </div>
+                        </template>
+                        <a-select-option v-for="ds in targetDatasourceList" :key="ds.id" :value="ds.datasourceId">{{ ds.title }}</a-select-option>
+                      </a-select>
+                      <template v-if="newPropertyRelationMode === 'dual_property'">
+                        <input v-model="newPropertyDualPropertyName" class="property-add-form-name" type="text"
+                               placeholder="目标数据源显示的属性名称" maxlength="80" />
+                      </template>
+                    </template>
+
+                    <!-- 选项配置（仅 select / multi_select / status 显示） -->
+                    <template v-if="SELECT_TYPES.has(newPropertyType)">
+                      <div class="add-option-label">选项</div>
+                      <div v-for="(opt, i) in newPropertyOptions" :key="i" class="add-option-row" :style="{ backgroundColor: optionBgColor(opt.color) }">
+                        <div class="add-option-color-palette">
+                          <span v-for="c in NOTION_COLOR_OPTIONS" :key="c.name"
+                                class="add-option-swatch"
+                                :class="{ active: opt.color === c.name }"
+                                :style="{ backgroundColor: c.color }"
+                                @click="opt.color = c.name"
+                                :title="c.name"></span>
+                        </div>
+                        <input v-model="opt.name" class="add-option-name" type="text" placeholder="选项名称" maxlength="80" />
+                        <button class="add-option-remove" type="button" @click="removeOption(i)" :disabled="newPropertySubmitting">
+                          <font-awesome-icon :icon="['fas', 'xmark']" />
+                        </button>
+                      </div>
+                      <button class="add-option-btn" type="button" @click="addOption" :disabled="newPropertySubmitting">
+                        <font-awesome-icon :icon="['fas', 'plus']" />
+                        <span>添加选项</span>
+                      </button>
+                    </template>
+                  </div>
+                  <div class="property-add-form-actions">
+                    <button class="property-add-form-save" type="button"
+                            :disabled="!newPropertyName.trim() || !newPropertyType || (newPropertyType === 'relation' && (!newPropertyRelationMode || !newPropertyTargetDatasourceId)) || newPropertySubmitting"
+                            @click.stop="handleAddProperty">
+                      <font-awesome-icon v-if="newPropertySubmitting" :icon="['fas', 'spinner']" spin />
+                      <font-awesome-icon v-else :icon="['fas', 'check']" />
+                      <span>添加</span>
+                    </button>
+                    <button class="property-add-form-cancel" type="button" :disabled="newPropertySubmitting"
+                            @click.stop="cancelAddProperty">
+                      <font-awesome-icon :icon="['fas', 'xmark']" />
+                      <span>取消</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </section>
           </template>
 
-          <div v-else class="property-empty">
-            <div class="property-empty-icon">
-              <font-awesome-icon :icon="['fas', 'table-columns']" />
+          <div v-else class="neo-empty-state">
+            <div class="modern-empty-card">
+              <div class="modern-empty-illus">
+                <div class="mockup-window">
+                  <div class="mockup-header">
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-line short"></div>
+                  </div>
+                  <div class="mockup-row">
+                    <font-awesome-icon :icon="['fas', 'star']" class="mockup-star" />
+                    <div class="mockup-avatar"></div>
+                    <div class="mockup-line"></div>
+                  </div>
+                  <div class="mockup-row">
+                    <font-awesome-icon :icon="['fas', 'star']" class="mockup-star" />
+                    <div class="mockup-avatar"></div>
+                    <div class="mockup-line shorter"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="modern-empty-content">
+                <h3 class="modern-empty-title">{{ propertyLoading ? '正在读取属性' : '暂无属性' }}</h3>
+                <p class="modern-empty-desc">{{ propertyLoading ? '请稍候' : '该数据源暂未同步到属性结构' }}</p>
+              </div>
             </div>
-            <strong>{{ propertyLoading ? '正在读取字段' : '暂无字段' }}</strong>
-            <small>{{ propertyLoading ? '请稍候' : '该数据源暂未同步到字段结构' }}</small>
           </div>
         </a-spin>
-      </div>
-    </a-drawer>
-
-    <!-- 属性详情抽屉 -->
-    <a-drawer
-      v-if="selectedProperty"
-      v-model:open="propertyDetailVisible"
-      class="property-detail-drawer"
-      placement="right"
-      :width="400"
-      :mask="false"
-      :destroy-on-close="false"
-    >
-      <template #title>
-        <span class="detail-panel-title">属性详情</span>
-      </template>
-
-      <div
-        class="detail-inspector"
-        :style="{
-          '--accent-bg': getTypeColorStyle(selectedProperty!.propertyType)['--type-bg'] || '#f0f0f0',
-          '--accent-text': getTypeColorStyle(selectedProperty!.propertyType)['--type-text'] || '#555',
-        }"
-      >
-        <section class="detail-name-panel">
-          <span class="detail-label">属性名称</span>
-          <h3>{{ selectedProperty!.propertyName || '未命名字段' }}</h3>
-        </section>
-
-        <section class="detail-type-panel">
-          <span class="detail-label">属性类型</span>
-          <div class="detail-type-card">
-            <span class="detail-type-icon" :style="getTypeColorStyle(selectedProperty!.propertyType)">
-              <font-awesome-icon :icon="getPropertyIcon(selectedProperty!.propertyType)" />
-            </span>
-            <span class="detail-type-name">{{ normalizeType(selectedProperty!.propertyType) }}</span>
-          </div>
-        </section>
-
-        <!-- 选项 -->
-        <template v-if="showDetailOptions">
-          <section class="detail-options-panel">
-            <div class="detail-options-head">
-              <span class="detail-label">选项</span>
-              <span class="detail-count">{{ selectedProperty!.options?.length }}</span>
-            </div>
-            <div class="detail-option-grid">
-              <span
-                v-for="(opt, index) in selectedProperty!.options"
-                :key="opt.id"
-                class="detail-option-pill"
-                :style="{ ...optionChipStyle(opt.color), animationDelay: index * 0.03 + 's' }"
-              >
-                <span class="detail-option-color"></span>
-                <span class="detail-option-name">{{ opt.name }}</span>
-              </span>
-            </div>
-          </section>
-        </template>
-
-        <template v-else-if="hasOptionsType">
-          <section class="detail-options-panel">
-            <div class="detail-options-head">
-              <span class="detail-label">选项</span>
-              <span class="detail-count">0</span>
-            </div>
-            <div class="detail-empty-state">
-              <span>暂无选项</span>
-            </div>
-          </section>
-        </template>
       </div>
     </a-drawer>
 
@@ -531,6 +779,28 @@
       @cancel="cancelPendingTitleUpdate"
     />
 
+    <AppleConfirmModal
+      v-model:visible="propertyConfirmVisible"
+      type="warning"
+      title="保存属性名称"
+      :desc="propertyConfirmDesc"
+      confirmText="保存"
+      cancelText="放弃"
+      :loading="propertySubmitLoading"
+      @confirm="executePropertyUpdate"
+      @cancel="cancelPendingPropertyUpdate"
+    />
+
+    <AppleConfirmModal
+      v-model:visible="propertyDeleteVisible"
+      type="danger"
+      title="删除属性"
+      :desc="propertyDeleteDesc"
+      confirmText="确认删除"
+      :loading="propertyDeleteLoading"
+      @confirm="executePropertyDelete"
+    />
+
     <!-- 隐藏的上传图标文件输入 -->
     <input
       ref="iconFileInput"
@@ -546,6 +816,7 @@
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import {
   getCurrentUserWorkspaces,
   getDatasourcePage,
@@ -553,28 +824,111 @@ import {
   deleteDatasourceBatch,
   updateDatasourceTitle,
   updateDatasourceIcon,
+  updateDatasourceProperty,
+  addDatasourceProperty,
+  deleteDatasourceProperty,
   uploadNotionFile,
   syncDatasource
 } from '@/api/notion.ts'
-import type { Datasource, NotionDatasourceProperty, Workspace } from '@/types'
+import type { Datasource, DatasourceVo, NotionDatasourceProperty, NotionOption, Workspace } from '@/types'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
+import {getDictDataByDictCode, getDictDataByDictCodeEnable} from '@/api/dict.ts'
 
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const loading = ref(false)
 const syncing = ref(false)
 const workspaceLoading = ref(false)
 const propertyLoading = ref(false)
 const propertyDrawerVisible = ref(false)
-const propertyDetailVisible = ref(false)
-const selectedProperty = ref<NotionDatasourceProperty | null>(null)
+const expandedPropertyId = ref<string | null>(null)
+/** 展开编辑的选项副本（浅拷贝原属性 options） */
+const editingOptions = ref<NotionOption[]>([])
+/** 待删除的已有选项 ID 集合 */
+const pendingRemovedOptionIds = ref<Set<string>>(new Set())
+/** 展开编辑：标识符前缀 */
+const editingPrefix = ref('')
+/** 展开编辑：关联模式 */
+const editingRelationMode = ref<string>()
+/** 展开编辑：关联目标数据源 */
+const editingTargetDatasourceId = ref<string>()
+/** 展开编辑：目标数据源属性名称 */
+const editingDualPropertyName = ref('')
 
 const workspaces = ref<Workspace[]>([])
 const tableData = ref<Datasource[]>([])
 const properties = ref<NotionDatasourceProperty[]>([])
 const currentDatasource = ref<Datasource | null>(null)
+
+/** 属性类型中文字典映射: 英文key -> 中文label */
+const propertyTypeDict = ref<Record<string, string>>({})
+const options = ref<Record<string, string>>({})
+
+/** 加载 notion_property_type 字典数据 */
+const loadPropertyTypeDict = async () => {
+  try {
+    const allRes = await getDictDataByDictCode('notion_property_type')
+    if (allRes.data) {
+      const allMap: Record<string, string> = {}
+      allRes.data.forEach((item) => {
+        allMap[item.dictValue] = item.dictLabel
+      })
+      propertyTypeDict.value = allMap
+    }
+    const res = await  getDictDataByDictCodeEnable("notion_property_type")
+    if (res.data) {
+      const map: Record<string, string> = {}
+      res.data.forEach((item) => {
+        map[item.dictValue] = item.dictLabel
+      })
+      options.value = map
+    }
+  } catch {
+    // 字典加载失败时静默降级，使用英文原始值
+  }
+}
+
+/** 关联模式字典 */
+const relationModeOptions = ref<Record<string, string>>({})
+
+/** 加载 notion_relation_mode 字典数据 */
+const loadRelationModeDict = async () => {
+  try {
+    const res = await getDictDataByDictCodeEnable('notion_relation_mode')
+    if (res.data) {
+      const map: Record<string, string> = {}
+      res.data.forEach((item) => {
+        map[item.dictValue] = item.dictLabel
+      })
+      relationModeOptions.value = map
+    }
+  } catch {
+    // 字典加载失败时静默降级
+  }
+}
+
+/** 加载目标数据源列表（用于 relation 类型属性） */
+const loadTargetDatasources = async () => {
+  if (!searchForm.workspaceId) return
+  targetDatasourceLoading.value = true
+  try {
+    const res = await getDatasourcePage({ workspaceId: searchForm.workspaceId, pageNum: 1, pageSize: 200 })
+    targetDatasourceList.value = res.data?.list || []
+  } catch {
+    targetDatasourceList.value = []
+  } finally {
+    targetDatasourceLoading.value = false
+  }
+}
+
+/** 获取属性类型的中文标签，降级为英文原始值 */
+const getPropertyTypeLabel = (type?: string) => {
+  if (!type) return '未知类型'
+  return propertyTypeDict.value[type] || normalizeType(type)
+}
 const selectedRowKeys = ref<string[]>([])
 const editingTitleId = ref('')
 const editingTitleValue = ref('')
@@ -582,6 +936,33 @@ const pendingTitleTarget = ref<Datasource | null>(null)
 const pendingTitleValue = ref('')
 const titleConfirmVisible = ref(false)
 const titleSubmitLoading = ref(false)
+
+const editingNameId = ref('')
+const editingTypeId = ref('')
+const editingPropertyName = ref('')
+const editingPropertyType = ref('')
+const pendingPropertyTarget = ref<NotionDatasourceProperty | null>(null)
+const pendingPropertyName = ref('')
+const pendingPropertyType = ref('')
+const propertyConfirmVisible = ref(false)
+const propertySubmitLoading = ref(false)
+
+// 拖拽排序
+const dragIndex = ref<number | null>(null)
+const dragOverIndex = ref<number | null>(null)
+
+// 添加属性表单
+const addingProperty = ref(false)
+const newPropertyName = ref('')
+const newPropertyType = ref<string>()
+const newPropertySubmitting = ref(false)
+const newPropertyOptions = ref<{ name: string; color: string; description?: string }[]>([])
+const newPropertyPrefix = ref('')
+const newPropertyRelationMode = ref<string>()
+const newPropertyTargetDatasourceId = ref<string>()
+const newPropertyDualPropertyName = ref('')
+const targetDatasourceList = ref<DatasourceVo[]>([])
+const targetDatasourceLoading = ref(false)
 
 const deleteConfirmVisible = ref(false)
 const deleteConfirmLoading = ref(false)
@@ -592,21 +973,36 @@ const iconUploadingId = ref('')
 const deleteConfirmDesc = computed(() =>
   `确定要删除选中的 ${selectedRowKeys.value.length} 个数据源吗？此操作不可恢复。`
 )
+const propertyDeleteVisible = ref(false)
+const propertyDeleteLoading = ref(false)
+const propertyDeleteTarget = ref<NotionDatasourceProperty | null>(null)
+const propertyDeleteDesc = computed(() =>
+  propertyDeleteTarget.value
+    ? `确定要删除属性「${propertyDeleteTarget.value.propertyName || '未命名'}」吗？此操作不可恢复。`
+    : ''
+)
 const titleConfirmDesc = computed(() =>
   `确定将数据源标题修改为「${pendingTitleValue.value}」吗？该变更会同步更新到 Notion。`
 )
+const propertyConfirmDesc = computed(() => {
+  const parts: string[] = []
+  if (pendingPropertyName.value && pendingPropertyTarget.value?.propertyName !== pendingPropertyName.value) {
+    parts.push(`名称修改为「${pendingPropertyName.value}」`)
+  }
+  if (pendingPropertyType.value && pendingPropertyTarget.value?.propertyType !== pendingPropertyType.value) {
+    const typeLabel = propertyTypeDict.value[pendingPropertyType.value] || pendingPropertyType.value
+    parts.push(`类型修改为「${typeLabel}」`)
+  }
+  return parts.length > 0 ? `确定将属性${parts.join('，')}吗？` : '确定保存属性变更吗？'
+})
 const canDeleteDatasource = computed(() => userStore.hasPermission('datasource:delete'))
 const canSyncDatasource = computed(() => userStore.hasPermission('datasource:sync'))
 const canEditDatasource = computed(() => userStore.hasPermission('datasource:edit'))
 
 /**
  * 抽屉中当前数据源的图标。
- * 兼容 Datasource.icon 与 DatasourceVo.iconUrl 两种字段名。
  */
-const drawerIcon = computed(() => {
-  const ds = currentDatasource.value as any
-  return ds?.iconUrl || ds?.icon || ''
-})
+const drawerIcon = computed(() => currentDatasource.value?.icon || '')
 
 const workspaceSearchForm = reactive({
   workspaceName: '',
@@ -739,42 +1135,230 @@ const getPropertyIcon = (type?: string): [string, string] => {
 /** 有选项的选择类属性类型 */
 const SELECT_TYPES = new Set(['select', 'multi_select', 'status'])
 
-/** 详情抽屉中是否展示选项 */
-const showDetailOptions = computed(() => {
-  const p = selectedProperty.value
-  return p && SELECT_TYPES.has(p.propertyType) && p.options && p.options.length > 0
-})
+/** 类型变更时需内联展开配置的类型 */
+const INLINE_CONFIG_TYPES = new Set(['select', 'multi_select', 'relation', 'status', 'unique_id'])
 
-/** 是否为选项类属性（但可能无选项） */
-const hasOptionsType = computed(() => {
-  const p = selectedProperty.value
-  return p && SELECT_TYPES.has(p.propertyType)
-})
-
-/** 打开属性详情抽屉 */
-const openPropertyDetail = (property: NotionDatasourceProperty) => {
-  selectedProperty.value = property
-  propertyDetailVisible.value = true
+/** 当前展开面板的有效类型（类型变更中则用新类型，否则用原类型） */
+const effectiveType = (property: NotionDatasourceProperty): string => {
+  if (pendingPropertyTarget.value === property && pendingPropertyType.value) {
+    return pendingPropertyType.value
+  }
+  return property.propertyType
 }
 
-/** Notion 选项颜色 → CSS 色值映射 */
+/** 是否显示选项配置按钮（select / multi_select / status 类型） */
+const showOptionButton = (property: NotionDatasourceProperty) =>
+  SELECT_TYPES.has(property.propertyType)
+
+/** 切换属性选项的展开/收起 */
+const togglePropertyExpand = (property: NotionDatasourceProperty) => {
+  if (expandedPropertyId.value === property.propertyId) {
+    resetExpandConfig()
+  } else {
+    expandedPropertyId.value = property.propertyId
+    editingOptions.value = []
+    // 初始化已有配置值
+    editingPrefix.value = property.prefix || ''
+    if (property.relation) {
+      editingRelationMode.value = property.relation.relationMode
+      editingTargetDatasourceId.value = property.relation.datasourceId
+      editingDualPropertyName.value = property.relation.dualPropertyName || ''
+      // 预加载目标数据源列表，确保 select 能正确显示当前配置的名称
+      loadTargetDatasources()
+    } else {
+      editingRelationMode.value = undefined
+      editingTargetDatasourceId.value = undefined
+      editingDualPropertyName.value = ''
+    }
+  }
+}
+
+/** 获取关联模式的中文标签 */
+const getRelationModeLabel = (mode?: string) => {
+  if (!mode) return '未配置'
+  return relationModeOptions.value[mode] || mode
+}
+
+/** 通过 datasourceId 查找目标数据源标题 */
+const getTargetDatasourceTitle = (id?: string) => {
+  if (!id) return '未配置'
+  const ds = targetDatasourceList.value.find(d => d.datasourceId === id)
+  return ds?.title || id
+}
+
+/** Notion 选项颜色 → CSS 色值映射（对齐 Notion 官方色板） */
 const NOTION_COLOR_MAP: Record<string, { bg: string; text: string }> = {
-  default:        { bg: '#E8E8E8', text: '#4A4A4A' },
-  gray:           { bg: '#E8E8E8', text: '#4A4A4A' },
-  brown:          { bg: '#F0E1D8', text: '#603B2C' },
-  orange:         { bg: '#FDEAD8', text: '#9B4400' },
-  yellow:         { bg: '#FDF3D0', text: '#89632A' },
-  green:          { bg: '#DFF0D8', text: '#2B5934' },
-  blue:           { bg: '#D9EBFC', text: '#1A5180' },
-  purple:         { bg: '#EAE0F6', text: '#4A2E7A' },
-  pink:           { bg: '#FBE0EC', text: '#8A2A5E' },
-  red:            { bg: '#FBE3E3', text: '#8B1A1A' },
+  default:        { bg: '#F1F1F0', text: '#37352F' },
+  gray:           { bg: '#F1F1EF', text: '#9B9A97' },
+  brown:          { bg: '#F3EEEE', text: '#64473A' },
+  orange:         { bg: '#FBECDD', text: '#D9730D' },
+  yellow:         { bg: '#FBF3DB', text: '#DFAB01' },
+  green:          { bg: '#EDF3EC', text: '#0F7B6C' },
+  blue:           { bg: '#E7F3F8', text: '#0B6E99' },
+  purple:         { bg: '#F4F0F7', text: '#6940A5' },
+  pink:           { bg: '#F9F2F5', text: '#AD1A72' },
+  red:            { bg: '#FDEBEB', text: '#E03E3E' },
+}
+
+/** 选项颜色调色板（供用户选择） */
+const NOTION_COLOR_OPTIONS = Object.entries(NOTION_COLOR_MAP).map(([name, { text: color }]) => ({ name, color }))
+
+/** 计算选项行背景色（light 直接返回 bg，dark 轻混合深色底） */
+const optionBgColor = (colorName: string): string => {
+  const key = (colorName || '').toLowerCase()
+  const c = NOTION_COLOR_MAP[key] || NOTION_COLOR_MAP.default
+  if (!appStore.isDark) return c.bg
+  // 暗黑模式：用极低比例混合，仅保留微弱色调
+  const isDefault = key === 'default'
+  const hex = (isDefault ? c.bg : c.text).replace('#', '')
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  const bgR = 44, bgG = 44, bgB = 46
+  const f = isDefault ? 0.08 : 0.12
+  const mix = (v: number, base: number) => Math.round(v * f + base * (1 - f))
+  return '#' + [mix(r, bgR), mix(g, bgG), mix(b, bgB)].map(v => v.toString(16).padStart(2, '0')).join('')
+}
+
+const addOption = () => {
+  newPropertyOptions.value.push({ name: '', color: 'default', description: '' })
+}
+
+const removeOption = (index: number) => {
+  newPropertyOptions.value.splice(index, 1)
+}
+
+/** 编辑已有属性：添加选项 */
+const addEditingOption = () => {
+  editingOptions.value.push({ name: '', color: 'default' } as NotionOption)
+}
+
+/** 编辑已有属性：删除选项 */
+const removeEditingOption = (index: number) => {
+  editingOptions.value.splice(index, 1)
+}
+
+/** 标记已有选项为待删除 */
+const markOptionForRemoval = (opt: NotionOption) => {
+  pendingRemovedOptionIds.value = new Set([...pendingRemovedOptionIds.value, opt.id])
+}
+
+/** 取消标记已有选项为待删除 */
+const unmarkOptionForRemoval = (optId: string) => {
+  const next = new Set(pendingRemovedOptionIds.value)
+  next.delete(optId)
+  pendingRemovedOptionIds.value = next
+}
+
+/** 编辑已有属性：统一保存（类型变更 + 选项 / 前缀 / 关联） */
+const saveExpandConfig = async (property: NotionDatasourceProperty) => {
+  propertySubmitLoading.value = true
+  try {
+    const isTypeChange = pendingPropertyTarget.value === property && !!pendingPropertyType.value
+    const propertyData: Record<string, unknown> = {
+      name: property.propertyName,
+      type: isTypeChange ? pendingPropertyType.value : property.propertyType,
+    }
+    const nextType = (isTypeChange ? pendingPropertyType.value : property.propertyType) as string
+
+    if (SELECT_TYPES.has(nextType)) {
+      // 选项配置：排除已标记删除的，合并已有 + 新增
+      const existing = (property.options || [])
+        .filter(opt => !pendingRemovedOptionIds.value.has(opt.id))
+        .map(opt => ({ name: opt.name, color: opt.color, description: opt.description }))
+      const added = editingOptions.value.map(opt => ({ name: opt.name, color: opt.color, description: opt.description }))
+      propertyData.options = isTypeChange ? added : [...existing, ...added]
+    } else if (nextType === 'unique_id') {
+      propertyData.prefix = editingPrefix.value || undefined
+    } else if (nextType === 'relation') {
+      if (editingRelationMode.value && editingTargetDatasourceId.value) {
+        propertyData.relation = {
+          relationMode: editingRelationMode.value,
+          datasourceId: editingTargetDatasourceId.value,
+          ...(editingRelationMode.value === 'dual_property' && editingDualPropertyName.value.trim()
+            ? { dualPropertyName: editingDualPropertyName.value.trim() }
+            : {}),
+        }
+      }
+    }
+
+    await updateDatasourceProperty({ id: property.id, property: propertyData })
+
+    // 本地状态更新
+    if (isTypeChange) {
+      property.propertyType = pendingPropertyType.value!
+    }
+    if (nextType === 'unique_id') {
+      property.prefix = editingPrefix.value || undefined
+    }
+    if (nextType === 'relation' && editingRelationMode.value && editingTargetDatasourceId.value) {
+      property.relation = {
+        relationMode: editingRelationMode.value,
+        datasourceId: editingTargetDatasourceId.value,
+        ...(editingRelationMode.value === 'dual_property' && editingDualPropertyName.value.trim()
+          ? { dualPropertyName: editingDualPropertyName.value.trim() }
+          : {}),
+      }
+    }
+    if (SELECT_TYPES.has(nextType)) {
+      const added = editingOptions.value.map(opt => ({ ...opt } as NotionOption))
+      const kept = (property.options || []).filter(opt => !pendingRemovedOptionIds.value.has(opt.id))
+      property.options = isTypeChange ? added : [...kept, ...added]
+    }
+    AppleAlert.success('保存成功', '配置已更新')
+    resetExpandConfig()
+  } catch (error: any) {
+    AppleAlert.error('保存失败', error.message || '无法保存配置')
+  } finally {
+    propertySubmitLoading.value = false
+  }
+}
+
+/** 编辑已有属性：统一取消 */
+const cancelExpandConfig = (_property: NotionDatasourceProperty) => {
+  resetExpandConfig()
+}
+
+/** 重置展开面板状态 */
+const resetExpandConfig = () => {
+  expandedPropertyId.value = null
+  editingOptions.value = []
+  pendingRemovedOptionIds.value = new Set()
+  editingPrefix.value = ''
+  editingRelationMode.value = undefined
+  editingTargetDatasourceId.value = undefined
+  editingDualPropertyName.value = ''
+  // 如果类型变更中，重置 pending
+  if (pendingPropertyType.value) {
+    resetPendingPropertyUpdate()
+  }
 }
 
 const optionChipStyle = (color?: string): Record<string, string> => {
-  const key = (color && NOTION_COLOR_MAP[color]) ? color : 'default'
-  const c = NOTION_COLOR_MAP[key]!
-  return { '--opt-bg': c.bg, '--opt-text': c.text }
+  const fallback = { backgroundColor: NOTION_COLOR_MAP.default!.bg, color: NOTION_COLOR_MAP.default!.text }
+  if (!color) return fallback
+
+  // 颜色名匹配（大小写不敏感）
+  const key = color.toLowerCase()
+  if (NOTION_COLOR_MAP[key]) {
+    const c = NOTION_COLOR_MAP[key]!
+    return { backgroundColor: c.bg, color: c.text }
+  }
+
+  // hex 色值直出：自动生成浅色背景
+  if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+    const hex = color.slice(1)
+    const r = parseInt(hex.slice(0, 2), 16)
+    const g = parseInt(hex.slice(2, 4), 16)
+    const b = parseInt(hex.slice(4, 6), 16)
+    const bgR = Math.round(r + (255 - r) * 0.85)
+    const bgG = Math.round(g + (255 - g) * 0.85)
+    const bgB = Math.round(b + (255 - b) * 0.85)
+    const bgHex = '#' + [bgR, bgG, bgB].map(v => v.toString(16).padStart(2, '0')).join('')
+    return { backgroundColor: bgHex, color: color }
+  }
+
+  return fallback
 }
 
 const goToConfig = () => {
@@ -794,6 +1378,279 @@ const resetInlineTitleEdit = () => {
 const resetPendingTitleUpdate = () => {
   pendingTitleTarget.value = null
   pendingTitleValue.value = ''
+}
+
+const resetPropertyNameEdit = () => {
+  editingNameId.value = ''
+  editingTypeId.value = ''
+  editingPropertyName.value = ''
+  editingPropertyType.value = ''
+}
+
+const resetPendingPropertyUpdate = () => {
+  pendingPropertyTarget.value = null
+  pendingPropertyName.value = ''
+  pendingPropertyType.value = ''
+}
+
+/** 点击属性名 → 只编辑名称 */
+const startEditName = (property: NotionDatasourceProperty) => {
+  if (propertySubmitLoading.value) return
+  editingNameId.value = property.propertyId
+  editingTypeId.value = ''
+  editingPropertyName.value = property.propertyName || ''
+  nextTick(() => {
+    const input = document.querySelector<HTMLInputElement>(`[data-prop-edit-id="${property.propertyId}"]`)
+    input?.focus()
+    input?.select()
+  })
+}
+
+/** 点击属性类型 → 只编辑类型（TITLE 不可修改，再次点击取消） */
+const startEditType = (property: NotionDatasourceProperty) => {
+  if (propertySubmitLoading.value) return
+  if (property.propertyType === 'TITLE') return
+  if (editingTypeId.value === property.propertyId) {
+    resetPropertyNameEdit()
+    return
+  }
+  editingTypeId.value = property.propertyId
+  editingNameId.value = ''
+  editingPropertyType.value = property.propertyType
+}
+
+/** a-select 搜索过滤 */
+const filterPropertyTypeOption = (input: string, option: any) => {
+  return (option.label || option.value || '').toLowerCase().includes(input.toLowerCase())
+}
+
+/** a-select 下拉面板挂载到 body，避免被父容器裁剪 */
+const getPopupContainer = () => document.body
+
+const cancelPropertyNameEdit = () => {
+  resetPropertyNameEdit()
+}
+
+const handlePropertyNameEnter = () => {
+  const input = document.activeElement as HTMLInputElement
+  input?.blur()
+}
+
+/** 名称输入框失焦 */
+const handleNameBlur = (property: NotionDatasourceProperty) => {
+  if (editingNameId.value !== property.propertyId) return
+  const nextName = editingPropertyName.value.trim()
+  const prevName = property.propertyName || ''
+  resetPropertyNameEdit()
+  if (!nextName) {
+    AppleAlert.warning('属性名不能为空', '请输入属性名称')
+    return
+  }
+  if (nextName === prevName) return
+  pendingPropertyTarget.value = property
+  pendingPropertyName.value = nextName
+  pendingPropertyType.value = ''
+  propertyConfirmVisible.value = true
+}
+
+/** 类型下拉 change 或失焦 */
+const handleTypeChange = (property: NotionDatasourceProperty) => {
+  if (editingTypeId.value !== property.propertyId) return
+  const nextType = editingPropertyType.value
+  const prevType = property.propertyType
+  resetPropertyNameEdit()
+  if (nextType === prevType) return
+  pendingPropertyTarget.value = property
+  pendingPropertyName.value = ''
+  pendingPropertyType.value = nextType
+  if (INLINE_CONFIG_TYPES.has(nextType)) {
+    // 展开配置面板而非弹出确认框
+    expandedPropertyId.value = property.propertyId
+    editingOptions.value = []
+    editingPrefix.value = ''
+    editingRelationMode.value = undefined
+    editingTargetDatasourceId.value = undefined
+    editingDualPropertyName.value = ''
+  } else {
+    propertyConfirmVisible.value = true
+  }
+}
+
+const cancelPendingPropertyUpdate = () => {
+  resetPendingPropertyUpdate()
+}
+
+const executePropertyUpdate = async () => {
+  if (!pendingPropertyTarget.value) {
+    propertyConfirmVisible.value = false
+    return
+  }
+  if (!pendingPropertyName.value && !pendingPropertyType.value) {
+    propertyConfirmVisible.value = false
+    return
+  }
+  const target = pendingPropertyTarget.value
+  const targetId = target.id
+  const nextName = pendingPropertyName.value || undefined
+  const nextType = pendingPropertyType.value || undefined
+  propertySubmitLoading.value = true
+  try {
+    const propertyData: Record<string, unknown> = {
+      name: nextName || target.propertyName,
+    }
+    // title 类型不传 type
+    if (target.propertyType !== 'title') {
+      propertyData.type = nextType || target.propertyType
+    }
+    await updateDatasourceProperty({
+      id: targetId,
+      property: propertyData,
+    })
+    AppleAlert.success('保存成功', '属性已更新')
+    const updated = properties.value.find(p => p.id === targetId)
+    if (updated) {
+      if (nextName) updated.propertyName = nextName
+      if (nextType) updated.propertyType = nextType
+    }
+    propertyConfirmVisible.value = false
+    resetPendingPropertyUpdate()
+  } catch (error: any) {
+    AppleAlert.error('保存失败', error.message || '无法修改属性')
+  } finally {
+    propertySubmitLoading.value = false
+  }
+}
+
+// ==================== 拖拽排序 ====================
+
+const handleDragStart = (event: DragEvent, index: number) => {
+  dragIndex.value = index
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+const handleDragEnter = (_event: DragEvent, index: number) => {
+  if (dragIndex.value === null) return
+  dragOverIndex.value = index
+}
+
+const handleDragLeave = (_event: DragEvent, _index: number) => {
+  // 鼠标准确离开时才清除
+  dragOverIndex.value = null
+}
+
+const handleDrop = async (event: DragEvent, index: number) => {
+  event.preventDefault()
+  const from = dragIndex.value
+  const to = index
+  dragIndex.value = null
+  dragOverIndex.value = null
+
+  if (from === null || from === to) return
+
+  // 本地重排
+  const list = [...properties.value]
+  const [moved] = list.splice(from, 1)
+  list.splice(to, 0, moved)
+  properties.value = list
+
+  // 保存排序到后端
+  await saveSortOrder()
+}
+
+const handleDragEnd = () => {
+  dragIndex.value = null
+  dragOverIndex.value = null
+}
+
+/** 将当前属性顺序保存到后端 */
+const saveSortOrder = async () => {
+  const list = properties.value
+  for (let i = 0; i < list.length; i++) {
+    const property = list[i]
+    if (property.sort !== i) {
+      try {
+        await updateDatasourceProperty({ id: property.id, sort: i })
+        property.sort = i
+      } catch {
+        // 静默失败，不影响后续
+      }
+    }
+  }
+}
+
+// ==================== 添加属性 ====================
+
+const startAddProperty = () => {
+  addingProperty.value = true
+  newPropertyName.value = ''
+  newPropertyType.value = undefined
+  newPropertyOptions.value = []
+  nextTick(() => {
+    const input = document.querySelector<HTMLInputElement>('.property-add-form-name')
+    input?.focus()
+  })
+}
+
+const cancelAddProperty = () => {
+  addingProperty.value = false
+  newPropertyName.value = ''
+  newPropertyType.value = undefined
+  newPropertyOptions.value = []
+  newPropertyPrefix.value = ''
+  newPropertyRelationMode.value = undefined
+  newPropertyTargetDatasourceId.value = undefined
+  newPropertyDualPropertyName.value = ''
+  targetDatasourceList.value = []
+  expandedPropertyId.value = null
+}
+
+const handleAddProperty = async () => {
+  const name = newPropertyName.value.trim()
+  const type = newPropertyType.value
+  if (!name || !type) return
+  if (!currentDatasource.value) return
+  newPropertySubmitting.value = true
+  try {
+    await addDatasourceProperty({
+      datasourceId: currentDatasource.value.id,
+      property: {
+        name,
+        type,
+        ...(type === 'unique_id' && newPropertyPrefix.value.trim()
+          ? { prefix: newPropertyPrefix.value.trim() }
+          : {}),
+        ...(SELECT_TYPES.has(type) && newPropertyOptions.value.length
+          ? { options: newPropertyOptions.value.filter(o => o.name.trim()) }
+          : {}),
+        ...(type === 'relation' && newPropertyRelationMode.value && newPropertyTargetDatasourceId.value
+          ? { relation: { relationMode: newPropertyRelationMode.value, datasourceId: newPropertyTargetDatasourceId.value, ...(newPropertyRelationMode.value === 'dual_property' && newPropertyDualPropertyName.value.trim() ? { dualPropertyName: newPropertyDualPropertyName.value.trim() } : {}) } }
+          : {})
+      }
+    })
+    AppleAlert.success('添加成功', `属性「${name}」已添加`)
+    cancelAddProperty()
+    await refreshProperties()
+  } catch (error: any) {
+    AppleAlert.error('添加失败', error.message || '无法添加属性')
+  } finally {
+    newPropertySubmitting.value = false
+  }
+}
+
+const refreshProperties = async () => {
+  if (!currentDatasource.value) return
+  propertyLoading.value = true
+  try {
+    const res = await getDatasourceProperties(currentDatasource.value.id)
+    properties.value = res.data || []
+  } catch {
+    // 静默失败
+  } finally {
+    propertyLoading.value = false
+  }
 }
 
 const clearSelection = () => {
@@ -875,6 +1732,7 @@ const selectWorkspace = (workspaceId: string) => {
   clearCurrentDatasource()
   clearSelection()
   propertyDrawerVisible.value = false
+  targetDatasourceList.value = []
   fetchData()
 }
 
@@ -1036,6 +1894,27 @@ const executeDelete = async () => {
   }
 }
 
+const confirmPropertyDelete = (property: NotionDatasourceProperty) => {
+  propertyDeleteTarget.value = property
+  propertyDeleteVisible.value = true
+}
+
+const executePropertyDelete = async () => {
+  const target = propertyDeleteTarget.value
+  if (!target) return
+  propertyDeleteLoading.value = true
+  try {
+    await deleteDatasourceProperty(target.id)
+    AppleAlert.success('删除成功', `属性「${target.propertyName || '未命名'}」已删除`)
+    propertyDeleteVisible.value = false
+    await refreshProperties()
+  } catch (error: any) {
+    AppleAlert.error('删除失败', error.message || '无法删除属性')
+  } finally {
+    propertyDeleteLoading.value = false
+  }
+}
+
 const startInlineTitleEdit = (record: Datasource) => {
   if (titleSubmitLoading.value) return
   editingTitleId.value = record.id
@@ -1119,6 +1998,13 @@ const openProperties = async (record: Datasource) => {
   propertyDrawerVisible.value = true
   propertyLoading.value = true
   properties.value = []
+
+  // 首次打开时加载属性类型中文字典和关联模式字典
+  if (Object.keys(propertyTypeDict.value).length === 0) {
+    await loadPropertyTypeDict()
+    await loadRelationModeDict()
+  }
+
   try {
     const res = await getDatasourceProperties(record.id)
     properties.value = res.data || []
@@ -2175,7 +3061,7 @@ onMounted(async () => {
   object-fit: cover;
 }
 
-/* ==================== 字段配置统计卡片（苹果毛玻璃风格） ==================== */
+/* ==================== 属性配置统计卡片（苹果毛玻璃风格） ==================== */
 
 .drawer-summary {
   display: grid;
@@ -2317,11 +3203,61 @@ onMounted(async () => {
 }
 
 .property-config-card {
+  position: relative;
   overflow: hidden;
-  border-radius: 14px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  isolation: isolate;
+
+  /* 毛玻璃基底层：局部亮点 + 整体半透明 */
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,0.28) 0%, transparent 100%),
+    color-mix(in srgb, var(--card-bg, #ffffff) 68%, transparent);
+
+  /* 毛玻璃模糊 + 饱和度 */
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+
+  /* 玻璃边缘：极细半透明边框 */
+  border: 0.5px solid rgba(0, 0, 0, 0.09);
+
+  /* 多层深度阴影系统 */
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.03),
+    0 2px 6px rgba(0, 0, 0, 0.03),
+    0 8px 22px rgba(0, 0, 0, 0.05),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* 玻璃表面左上角斜向光斑 */
+.property-config-card::before {
+  content: '';
+  position: absolute;
+  top: -35%;
+  left: -25%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 玻璃边缘光折射渐变 */
+.property-config-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(
+    140deg,
+    rgba(255,255,255,0.08) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.02) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
 .property-config-head {
@@ -2357,57 +3293,49 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 0 18px;
+  padding: 14px 18px 0;
 }
 
 .property-item {
   position: relative;
-  min-height: 86px;
-  padding: 18px 0;
+  min-height: 66px;
+  padding: 14px 34px 14px 0;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.09);
   box-sizing: border-box;
-  transition: background 0.2s ease, padding-left 0.2s ease;
-}
-
-.property-item::before {
-  content: '';
-  position: absolute;
-  left: -18px;
-  top: 14px;
-  bottom: 14px;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--apple-blue, #0A84FF);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.property-item:hover {
-  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 2%, transparent);
-  padding-left: 6px;
-}
-
-.property-item:hover::before {
-  opacity: 1;
 }
 
 .property-type-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--type-text);
-  background: var(--type-bg);
-  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-  font-size: 20px;
+  background: linear-gradient(
+    135deg,
+    var(--type-bg, #f5f5f5) 0%,
+    color-mix(in srgb, var(--type-bg, #f5f5f5) 55%, #ffffff) 100%
+  );
+  border: 0.5px solid color-mix(in srgb, currentColor 18%, transparent);
+  box-shadow:
+    0 1px 4px color-mix(in srgb, currentColor 10%, transparent),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.property-item:hover .property-type-icon {
+  transform: scale(1.08);
+  box-shadow:
+    0 2px 8px color-mix(in srgb, currentColor 14%, transparent),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.85);
 }
 
 .property-main {
@@ -2415,7 +3343,7 @@ onMounted(async () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
 }
 
 .property-main strong,
@@ -2432,74 +3360,568 @@ onMounted(async () => {
   line-height: 1.25;
 }
 
+/* 属性名编辑按钮复用标题编辑样式，稍作尺寸适配 */
+.property-name-btn {
+  width: 100%;
+  height: auto;
+  line-height: 1.25;
+}
+.property-name-btn span {
+  font-size: 16px;
+  font-weight: 760;
+}
+.property-name-btn svg {
+  font-size: 13px;
+}
+
+/* 属性名编辑输入框复用标题输入框样式，宽度撑满 */
+.property-main .inline-title-input {
+  width: 100%;
+  max-width: none;
+}
+
+/* 属性类型下拉选择 — a-select */
+.property-type-select {
+  min-width: 130px;
+  height: 30px;
+}
+.property-type-select :deep(.ant-select-selector) {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 24px 0 10px !important;
+  border: 1px solid color-mix(in srgb, var(--apple-blue, #0A84FF) 36%, transparent) !important;
+  border-radius: 9px !important;
+  background: var(--content-bg, #ffffff) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent) !important;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.property-type-select :deep(.ant-select-selector:hover) {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 18%, transparent) !important;
+  border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 60%, transparent) !important;
+}
+.property-type-select :deep(.ant-select-selection-item) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 13px !important;
+  color: var(--text-muted) !important;
+  line-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.property-type-select :deep(.ant-select-selection-placeholder) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 13px !important;
+  color: var(--text-muted, #a1a1aa) !important;
+}
+.property-type-select :deep(.ant-select-arrow) {
+  right: 8px !important;
+  font-size: 11px !important;
+  color: var(--text-muted) !important;
+}
+
 .property-main small {
   color: var(--text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
 }
 
-/* ==================== 属性类型标签 ==================== */
-
-.property-type-clickable {
-  border: none;
+/* 属性类型可点击标签 */
+.property-type-label.is-editable {
   cursor: pointer;
-  user-select: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  transition: color 0.15s;
+}
+.property-type-label.is-editable:hover {
+  color: var(--apple-blue, #0A84FF);
 }
 
-.property-type-clickable:hover {
-  transform: translateY(-1px);
-  filter: saturate(1.05);
-  box-shadow: 0 2px 8px color-mix(in srgb, currentColor 16%, transparent);
-}
-
-.type-link-icon {
-  margin-left: 4px;
-  font-size: 9px;
-  opacity: 0.7;
-}
-
-.property-more-btn {
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 8px;
+/* ==================== 拖拽手柄 ==================== */
+.property-drag-handle {
   flex: none;
-  display: inline-flex;
+  width: 22px;
+  height: 36px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease;
+  cursor: grab;
+  color: var(--text-muted, #a1a1aa);
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.property-item:hover .property-drag-handle {
+  opacity: 0.48;
+}
+.property-item:hover .property-drag-handle:hover {
+  opacity: 1;
+  color: var(--text-main, #1d1d1f);
 }
 
-.property-more-btn:hover {
-  color: var(--text-main);
-  background: color-mix(in srgb, var(--text-main) 6%, transparent);
+/* 拖拽状态 */
+.property-item.is-dragging {
+  opacity: 0.4;
+}
+.property-item.is-drag-over {
+  border-bottom: 2px solid var(--apple-blue, #0A84FF);
 }
 
-.property-add-btn {
-  width: calc(100% - 36px);
-  height: 44px;
-  margin: 18px;
-  border-radius: 9px;
-  display: inline-flex;
+/* ==================== 添加属性容器 ==================== */
+.property-add-section {
+  padding: 0 18px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================== 添加属性 — 触发行 ==================== */
+.property-add-trigger {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: color-mix(in srgb, var(--apple-blue, #0A84FF) 84%, var(--text-main));
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--apple-blue, #0A84FF) 56%, var(--border-color));
+  height: 36px;
+  padding: 0 14px;
+  margin: 24px auto 2px;
+  width: fit-content;
+  cursor: pointer;
+  border-radius: 12px;
+  border: none;
   font-size: 14px;
   font-weight: 650;
-  cursor: not-allowed;
-  opacity: 0.86;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  white-space: nowrap;
+  background: #1d1d1f;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s;
+  user-select: none;
+}
+.property-add-trigger:hover {
+  background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+.property-add-trigger:focus-visible {
+  outline: 2px solid var(--apple-blue, #0A84FF);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+.property-add-trigger-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.property-add-trigger-text {
+  font-size: 14px;
+  font-weight: 650;
 }
 
-.property-add-btn:hover {
-  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 4%, transparent);
+/* ==================== 添加属性 — 表单行 ==================== */
+.property-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  background: var(--content-bg, #ffffff);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 14px;
+  animation: addFormIn 0.25s ease;
+}
+@keyframes addFormIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.property-add-form-icon {
+  color: var(--apple-blue, #0A84FF);
+  font-size: 18px;
+}
+.property-add-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.property-add-form-name {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  outline: none;
+  background: var(--add-form-bg, #ffffff);
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.property-add-form-name::placeholder {
+  color: #a1a1aa;
+  opacity: 1;
+}
+.property-add-form-name:focus {
+  border-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent);
+}
+.property-add-form-type {
+  min-width: 0;
+  height: 36px;
+}
+.property-add-form-type :deep(.ant-select-selector) {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 26px 0 12px !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: 10px !important;
+  background: var(--add-form-bg, #ffffff) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.property-add-form-type :deep(.ant-select-selector:hover) {
+  border-color: rgba(0, 0, 0, 0.24) !important;
+}
+/* 聚焦状态与名称输入框一致 */
+.property-add-form-type :deep(.ant-select-focused .ant-select-selector) {
+  border-color: var(--apple-blue, #0A84FF) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #0A84FF) 12%, transparent) !important;
+}
+.property-add-form-type :deep(.ant-select-selection-item) {
+  font-size: 14px !important;
+  color: var(--text-main) !important;
+  line-height: 34px !important;
+}
+.property-add-form-type :deep(.ant-select-selection-placeholder) {
+  font-size: 14px !important;
+  color: #a1a1aa !important;
+}
+.property-add-form-type :deep(.ant-select-arrow) {
+  font-size: 11px !important;
+  color: var(--text-muted) !important;
+}
+
+/* select 下拉面板背景与输入框一致 */
+.property-add-form-fields :deep(.ant-select-dropdown) {
+  background: var(--add-form-bg, #ffffff) !important;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+}
+.property-add-form-fields :deep(.ant-select-item-option) {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: background 0.15s;
+}
+.property-add-form-fields :deep(.ant-select-item-option-active) {
+  background: rgba(0, 0, 0, 0.04);
+}
+.property-add-form-fields :deep(.ant-select-item-option-selected) {
+  font-weight: 600;
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ==================== 添加属性 — 选项配置 ==================== */
+.add-option-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 0 4px 0;
+  margin-top: 2px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+.add-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: var(--add-form-bg, #ffffff);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0,0,0,0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.add-option-row:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.14),
+    0 4px 14px rgba(0,0,0,0.06);
+}
+.add-option-row.is-removed {
+  opacity: 0.5;
+  pointer-events: auto;
+}
+.add-option-row.is-removed .add-option-name.display {
+  text-decoration: line-through;
+}
+.add-option-row.is-removed:hover {
+  transform: none;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0,0,0,0.04);
+}
+.add-option-color-palette {
+  display: flex;
+  gap: 3px;
+  flex: none;
+  padding: 1px;
+  align-self: center;
+}
+.add-option-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+  flex: none;
+  box-sizing: border-box;
+}
+.add-option-swatch:hover {
+  transform: scale(1.25);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+.add-option-swatch.active {
+  border-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--apple-blue, #0A84FF) 22%, transparent);
+  transform: scale(1.15);
+}
+.add-option-name {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  padding: 4px 0;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 650;
+  font-family: inherit;
+  line-height: 1.3;
+}
+.add-option-name::placeholder {
+  color: #a1a1aa;
+  opacity: 1;
+}
+.add-option-name.display {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.option-info-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  padding-left: 4px;
+}
+.add-option-desc {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.4);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.dark .add-option-desc {
+  color: rgba(255, 255, 255, 0.3);
+}
+.option-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.add-option-desc-input {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.55);
+}
+.add-option-desc-input::placeholder {
+  color: #c0c0c4;
+  opacity: 1;
+}
+html.dark .add-option-desc-input {
+  color: rgba(255, 255, 255, 0.5);
+}
+html.dark .add-option-desc-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+.add-option-remove {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+  flex: none;
+  align-self: center;
+}
+.add-option-remove:hover:not(:disabled) {
+  background: rgba(255, 69, 58, 0.12);
+  color: #ff453a;
+}
+.add-option-remove:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.add-option-btn {
+  height: 32px;
+  padding: 0 14px;
+  margin-top: 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: var(--add-form-bg, #ffffff);
+  color: var(--text-secondary, #6e6e73);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+.add-option-btn:hover:not(:disabled) {
+  border-color: var(--apple-blue, #0A84FF);
+  color: var(--apple-blue, #0A84FF);
+  background: color-mix(in srgb, var(--apple-blue, #0A84FF) 6%, transparent);
+  transform: translateY(-1px);
+}
+.add-option-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.property-add-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* 添加按钮 — 与触发按钮/同步按钮风格一致 */
+.property-add-form-save {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #1d1d1f;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s;
+}
+.property-add-form-save:hover:not(:disabled) {
+  background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+.property-add-form-save:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.property-add-form-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 取消按钮 — Apple 文字链接风格 */
+.property-add-form-cancel {
+  height: 36px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+.property-add-form-cancel:hover:not(:disabled) {
+  color: var(--text-main);
+}
+
+/* 选项配置按钮（属性项后方） */
+.property-option-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-main);
+  flex: none;
+  transition: all 0.2s;
+}
+
+.property-option-btn:hover {
+  background: var(--card-bg);
+  border-color: color-mix(in srgb, var(--text-main) 20%, transparent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.property-option-btn.is-expanded {
+  background: color-mix(in srgb, var(--text-main) 6%, transparent);
+  border-color: color-mix(in srgb, var(--text-main) 25%, transparent);
+}
+
+.property-delete-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex: none;
+  transition: all 0.2s;
+}
+.property-delete-btn:hover {
+  background: rgba(255, 69, 58, 0.12);
+  color: #FF453A;
 }
 
 /* ==================== 选项标签 ==================== */
@@ -2535,176 +3957,183 @@ onMounted(async () => {
   box-shadow: 0 2px 8px color-mix(in srgb, currentColor 22%, transparent);
 }
 
-/* ==================== 属性详情抽屉 ==================== */
+/* ==================== 属性选项内联展开 ==================== */
 
-.detail-panel-title {
-  color: var(--text-main);
-  font-size: 14px;
-  font-weight: 700;
+.property-options-expand {
+  padding: 10px 34px 12px 34px;
+  overflow: hidden;
 }
 
-.detail-inspector {
+.expand-option-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 6px;
 }
 
-.detail-name-panel,
-.detail-type-panel,
-.detail-options-panel {
-  padding: 16px;
-  border-radius: 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-}
-
-.detail-label {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.detail-name-panel h3 {
-  margin: 0;
-  color: var(--text-main);
-  font-size: 22px;
-  font-weight: 760;
-  line-height: 1.28;
-  word-break: break-word;
-}
-
-.detail-type-card {
+.expand-option-actions {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-}
-
-.detail-type-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  color: var(--type-text);
-  background: var(--type-bg);
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  font-size: 17px;
-}
-
-.detail-type-name {
-  min-width: 0;
-  color: var(--text-main);
-  font-size: 15px;
-  font-weight: 750;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.detail-options-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.detail-options-head .detail-label {
-  margin-bottom: 0;
-}
-
-.detail-count {
-  min-width: 24px;
-  height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-text, var(--text-muted));
-  background: color-mix(in srgb, var(--accent-bg, #f0f0f0) 48%, var(--card-bg));
-  border: 1px solid color-mix(in srgb, var(--accent-text, #555555) 10%, var(--border-color));
-  font-size: 11px;
-  font-weight: 750;
-  flex: none;
-}
-
-.detail-option-grid {
-  display: flex;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
-  max-height: 320px;
-  overflow-y: auto;
-  padding-right: 2px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
+  margin-top: 10px;
 }
 
-.detail-option-grid::-webkit-scrollbar {
-  width: 4px;
+.property-confirm-btn,
+.property-cancel-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.detail-option-grid::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+.property-confirm-btn {
+  background: #1d1d1f;
+  color: #fff;
+}
+.property-confirm-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.property-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+:global(html.dark .property-confirm-btn) {
+  background: #fff;
+  color: #1d1d1f;
+}
+:global(html.dark .property-confirm-btn:hover:not(:disabled)) {
+  filter: brightness(0.92);
+}
+
+.property-cancel-btn {
+  background: var(--subtle-gray, rgba(0, 0, 0, 0.06));
+  color: var(--text-secondary, #666);
+}
+.property-cancel-btn:hover:not(:disabled) {
+  background: var(--subtle-gray-hover, rgba(0, 0, 0, 0.1));
+}
+.property-cancel-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.expand-relation-config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.expand-relation-config :deep(.property-add-form-type) {
+  width: 100%;
+}
+.expand-relation-config :deep(.property-add-form-name) {
+  width: 100%;
+  max-width: none;
+}
+
+.prefix-config-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--add-form-bg, #ffffff);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+.prefix-config-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: none;
+}
+.prefix-config-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+}
+.prefix-config-value.is-empty {
+  color: var(--text-muted);
+  font-family: inherit;
+  font-weight: 400;
+}
+
+/* 关联配置只读展示 */
+.relation-readonly-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--add-form-bg, #ffffff);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+.relation-readonly-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex: none;
+}
+.relation-readonly-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+.relation-readonly-value.is-empty {
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
 .detail-option-pill {
-  max-width: 100%;
-  min-height: 30px;
-  padding: 0 11px;
-  border-radius: 8px;
-  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: flex;
   align-items: center;
-  gap: 7px;
-  color: var(--opt-text);
-  background: var(--opt-bg);
-  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-  animation: detailOptionIn 0.2s ease both;
+  gap: 12px;
+  border: none;
+  box-sizing: border-box;
+  box-shadow:
+    inset 0 0 0 0.5px color-mix(in srgb, currentColor 14%, transparent),
+    0 1px 3px rgba(0,0,0,0.04);
+  animation: detailOptionIn 0.25s ease both;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: default;
 }
 
 .detail-option-pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px color-mix(in srgb, currentColor 16%, transparent);
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, currentColor 20%, transparent),
+              0 4px 14px color-mix(in srgb, currentColor 16%, transparent),
+              0 8px 24px rgba(0,0,0,0.06);
 }
 
 .detail-option-color {
-  width: 7px;
-  height: 7px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: currentColor;
   flex: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 14%, transparent);
 }
 
 .detail-option-name {
   min-width: 0;
+  flex: 1;
   color: currentColor;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.detail-empty-state {
-  min-height: 72px;
-  border-radius: 10px;
-  border: 1px dashed var(--border-color);
-  background: color-mix(in srgb, var(--card-bg) 70%, var(--layout-bg, #f5f5f7));
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
 }
 
 @keyframes detailOptionIn {
@@ -2712,62 +4141,14 @@ onMounted(async () => {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.property-type {
-  flex: none;
-  max-width: 150px;
-  height: 32px;
-  padding: 0 13px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--type-text);
-  background: var(--type-bg);
-  font-size: 13px;
-  font-weight: 750;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1;
-}
-
 /* ==================== 空状态 ==================== */
 
 .property-empty {
   min-height: 280px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  text-align: center;
-}
-
-.property-empty-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  background: var(--card-bg);
-  border: 1px dashed var(--border-color);
-  font-size: 24px;
-  margin-bottom: 2px;
-}
-
-.property-empty strong {
-  color: var(--text-main);
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.property-empty small {
-  color: var(--text-muted);
-  font-size: 13px;
-  max-width: 260px;
-  line-height: 1.5;
+  padding: 24px;
 }
 
 /* ==================== Drawer 全局覆盖 ==================== */
@@ -2813,6 +4194,40 @@ onMounted(async () => {
 
 :global(.dark) .modern-empty-card {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Drawer 内空状态暗黑适配（drawer teleport 到 body，脱离 .apple-layout-root 的 CSS 变量） */
+:global(html.dark .datasource-property-drawer .neo-empty-state) {
+  background:
+    radial-gradient(circle at top right, rgba(10, 132, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at bottom left, rgba(10, 132, 255, 0.02) 0%, transparent 50%);
+}
+:global(html.dark .datasource-property-drawer .modern-empty-card) {
+  background: #1e1e1c;
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+:global(html.dark .datasource-property-drawer .modern-empty-title) {
+  color: rgba(255, 255, 255, 0.92);
+}
+:global(html.dark .datasource-property-drawer .modern-empty-desc) {
+  color: rgba(255, 255, 255, 0.48);
+}
+:global(html.dark .datasource-property-drawer .mockup-window) {
+  background: #252523;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+:global(html.dark .datasource-property-drawer .mockup-dot) {
+  background: rgba(255, 255, 255, 0.07);
+}
+:global(html.dark .datasource-property-drawer .mockup-line) {
+  background: rgba(255, 255, 255, 0.06);
+}
+:global(html.dark .datasource-property-drawer .mockup-star) {
+  color: rgba(255, 255, 255, 0.07);
+}
+:global(html.dark .datasource-property-drawer .mockup-avatar) {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 :global(.dark) .summary-stat,
@@ -2866,9 +4281,42 @@ onMounted(async () => {
   color: rgba(255, 255, 255, 0.92);
 }
 
+:global(.dark) .summary-stat-label,
+:global(.theme-dark) .summary-stat-label {
+  color: rgba(255, 255, 255, 0.48);
+}
+
 :global(.dark) .property-config-card,
 :global(.theme-dark) .property-config-card {
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 100%),
+    color-mix(in srgb, var(--card-bg, #1c1c1e) 90%, transparent);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.03),
+    0 2px 8px rgba(0,0,0,0.3),
+    0 8px 28px rgba(0,0,0,0.35),
+    inset 0 0.5px 0 rgba(255,255,255,0.04),
+    inset 0 -0.5px 0 rgba(0,0,0,0.25);
+}
+:global(.dark) .property-config-card::before,
+:global(.theme-dark) .property-config-card::before {
+  background: radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+:global(.dark) .property-config-card::after,
+:global(.theme-dark) .property-config-card::after {
+  background: linear-gradient(
+    140deg,
+    rgba(255,255,255,0.02) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.08) 100%
+  );
+}
+
+:global(.dark) .property-item,
+:global(.theme-dark) .property-item {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 :global(.dark) .property-config-head,
@@ -2905,6 +4353,34 @@ onMounted(async () => {
 
 :global(.dark) .page-btn:disabled {
   background: rgba(255, 255, 255, 0.02);
+}
+
+/* 暗黑模式：添加属性按钮 & 选项配置按钮 */
+:global(.dark) .property-add-btn,
+:global(.theme-dark) .property-add-btn {
+  background: #ffffff !important;
+  color: #1d1d1f !important;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.08);
+}
+
+:global(.dark) .property-add-btn:hover:not(:disabled),
+:global(.theme-dark) .property-add-btn:hover:not(:disabled) {
+  background: #f5f5f7 !important;
+  color: #000000 !important;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.12);
+}
+
+:global(.dark) .property-option-btn,
+:global(.theme-dark) .property-option-btn {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:global(.dark) .property-option-btn:hover,
+:global(.theme-dark) .property-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 1180px) {
@@ -2964,17 +4440,14 @@ onMounted(async () => {
 
 <!-- 非 scoped：Drawer 滚动条伪元素在 Vue 3 scoped :deep() 中可能编译异常 -->
 <style>
-.datasource-property-drawer .ant-drawer-body,
-.property-detail-drawer .ant-drawer-body {
+.datasource-property-drawer .ant-drawer-body {
   scrollbar-width: thin;
   scrollbar-color: var(--border-color, rgba(0,0,0,0.08)) transparent;
 }
-.datasource-property-drawer .ant-drawer-body::-webkit-scrollbar,
-.property-detail-drawer .ant-drawer-body::-webkit-scrollbar {
+.datasource-property-drawer .ant-drawer-body::-webkit-scrollbar {
   width: 4px;
 }
-.datasource-property-drawer .ant-drawer-body::-webkit-scrollbar-thumb,
-.property-detail-drawer .ant-drawer-body::-webkit-scrollbar-thumb {
+.datasource-property-drawer .ant-drawer-body::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
@@ -3017,5 +4490,457 @@ html.dark .summary-stat:first-child .summary-stat-value {
 }
 html.dark .summary-stat:last-child .summary-stat-value {
   color: rgba(255, 255, 255, 0.92);
+}
+html.dark .summary-stat-label {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+/* 暗黑模式：属性卡片文本色彩（显式色值，确保 Drawer teleport 场景生效） */
+html.dark .property-config-card {
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 100%),
+    #1c1c1e !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.03),
+    0 2px 8px rgba(0,0,0,0.3),
+    0 8px 28px rgba(0,0,0,0.35),
+    inset 0 0.5px 0 rgba(255,255,255,0.04),
+    inset 0 -0.5px 0 rgba(0,0,0,0.25) !important;
+}
+html.dark .property-config-card::before {
+  background: radial-gradient(ellipse at 0% 0%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+html.dark .property-config-card::after {
+  background: linear-gradient(
+    140deg,
+    rgba(255,255,255,0.02) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0,0,0,0.08) 100%
+  );
+}
+html.dark .property-item {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+html.dark .property-main strong {
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .property-main small {
+  color: rgba(255, 255, 255, 0.48);
+}
+html.dark .property-name-btn,
+html.dark .property-name-btn span {
+  color: rgba(255, 255, 255, 0.85);
+}
+html.dark .property-name-btn:hover span {
+  color: var(--apple-blue, #4DA6FF);
+}
+html.dark .property-name-btn svg {
+  color: rgba(255, 255, 255, 0.38);
+}
+html.dark .property-name-btn:hover svg {
+  color: var(--apple-blue, #4DA6FF);
+}
+html.dark .property-main .inline-title-input {
+  background: #2c2c2e;
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .property-type-select .ant-select-selector {
+  background: #2c2c2e !important;
+  border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 38%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #0A84FF) 14%, transparent) !important;
+}
+html.dark .property-type-select .ant-select-selector:hover {
+  border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 64%, transparent) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 22%, transparent) !important;
+}
+html.dark .property-type-select .ant-select-selection-item {
+  color: rgba(255, 255, 255, 0.56) !important;
+}
+html.dark .property-drag-handle {
+  color: rgba(255, 255, 255, 0.24);
+}
+html.dark .property-item:hover .property-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+html.dark .property-item.is-drag-over {
+  border-bottom-color: var(--apple-blue, #4DA6FF);
+}
+
+html.dark .property-add-trigger {
+  background: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.08);
+}
+html.dark .property-add-trigger:hover {
+  background: #f5f5f7;
+  color: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.12);
+}
+html.dark .property-add-trigger-icon {
+  background: transparent;
+}
+html.dark .property-add-trigger:hover .property-add-trigger-icon {
+  background: color-mix(in srgb, var(--apple-blue, #4DA6FF) 12%, transparent);
+}
+
+html.dark .property-add-form {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+html.dark .property-add-form-icon {
+  color: #ffffff;
+}
+html.dark .property-add-form-name {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .property-add-form-name::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  opacity: 1;
+}
+html.dark .property-add-form-name:focus {
+  border-color: var(--apple-blue, #4DA6FF);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #4DA6FF) 10%, transparent);
+}
+html.dark .property-add-form-type .ant-select-selector {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .property-add-form-type .ant-select-selector:hover {
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+html.dark .property-add-form-type.ant-select-focused .ant-select-selector {
+  border-color: var(--apple-blue, #4DA6FF) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #4DA6FF) 10%, transparent) !important;
+}
+html.dark .property-add-form-type .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+html.dark .property-add-form-save {
+  background: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.08);
+}
+html.dark .property-add-form-save:hover:not(:disabled) {
+  background: #f5f5f7;
+  color: #000000;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.12);
+}
+
+/* 暗色 — 添加属性选项配置 */
+html.dark .add-option-label {
+  color: rgba(255, 255, 255, 0.48);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+html.dark .add-option-row {
+  background: var(--add-form-bg, #3a3a3c);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+    0 1px 3px rgba(0,0,0,0.2);
+}
+html.dark .add-option-row:hover {
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+    0 4px 14px rgba(0,0,0,0.25);
+}
+html.dark .add-option-row.is-removed {
+  opacity: 0.4;
+}
+html.dark .add-option-row.is-removed:hover {
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+    0 1px 3px rgba(0,0,0,0.2);
+}
+html.dark .add-option-swatch {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+html.dark .add-option-swatch:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+html.dark .add-option-swatch.active {
+  border-color: var(--apple-blue, #4DA6FF);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--apple-blue, #4DA6FF) 22%, transparent);
+}
+html.dark .add-option-name {
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .add-option-name::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  opacity: 1;
+}
+html.dark .add-option-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #2c2c2e;
+  color: rgba(255, 255, 255, 0.55);
+}
+html.dark .add-option-btn:hover:not(:disabled) {
+  border-color: var(--apple-blue, #4DA6FF);
+  color: var(--apple-blue, #4DA6FF);
+  background: color-mix(in srgb, var(--apple-blue, #4DA6FF) 8%, transparent);
+}
+html.dark .add-option-remove {
+  color: rgba(255, 255, 255, 0.65);
+}
+html.dark .add-option-remove:hover:not(:disabled) {
+  background: rgba(255, 69, 58, 0.15);
+  color: #ff453a;
+}
+
+html.dark .prefix-config-row {
+  background: var(--add-form-bg, #3a3a3c);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+html.dark .prefix-config-label {
+  color: rgba(255, 255, 255, 0.48);
+}
+html.dark .prefix-config-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .prefix-config-value.is-empty {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+html.dark .relation-readonly-row {
+  background: var(--add-form-bg, #3a3a3c);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+html.dark .relation-readonly-label {
+  color: rgba(255, 255, 255, 0.48);
+}
+html.dark .relation-readonly-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .relation-readonly-value.is-empty {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+html.dark .property-add-form-cancel {
+  color: rgba(255, 255, 255, 0.42);
+}
+html.dark .property-add-form-cancel:hover:not(:disabled) {
+  color: rgba(255, 255, 255, 0.85);
+}
+html.dark .property-option-btn {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+html.dark .property-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+html.dark .property-delete-btn {
+  color: rgba(255, 255, 255, 0.48);
+}
+html.dark .property-delete-btn:hover {
+  background: rgba(255, 69, 58, 0.15);
+  color: #FF453A;
+}
+html.dark .property-item {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+html.dark .property-main strong {
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .property-main small {
+  color: rgba(255, 255, 255, 0.48);
+}
+html.dark .property-name-btn,
+html.dark .property-name-btn span {
+  color: rgba(255, 255, 255, 0.85);
+}
+html.dark .property-name-btn:hover span {
+  color: var(--apple-blue, #4DA6FF);
+}
+html.dark .property-name-btn svg {
+  color: rgba(255, 255, 255, 0.38);
+}
+html.dark .property-name-btn:hover svg {
+  color: var(--apple-blue, #4DA6FF);
+}
+html.dark .property-main .inline-title-input {
+  background: #2c2c2e;
+  color: rgba(255, 255, 255, 0.92);
+}
+html.dark .property-type-select .ant-select-selector {
+  background: #2c2c2e !important;
+  border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 38%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #0A84FF) 14%, transparent) !important;
+}
+html.dark .property-type-select .ant-select-selector:hover {
+  border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 64%, transparent) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--apple-blue, #0A84FF) 22%, transparent) !important;
+}
+html.dark .property-type-select .ant-select-selection-item {
+  color: rgba(255, 255, 255, 0.56) !important;
+}
+html.dark .property-add-btn {
+  background: #ffffff;
+  color: #1d1d1f;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.08);
+}
+html.dark .property-add-btn:hover:not(:disabled) {
+  background: #f5f5f7;
+  color: #000000;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.12);
+}
+
+/* 选择器背景与名称输入框一致 — 通过自定义属性保证两者始终相同 */
+.property-add-form {
+  --add-form-bg: #ffffff;
+}
+.dark .property-add-form {
+  --add-form-bg: #3a3a3c;
+}
+.property-add-form-name {
+  background: var(--add-form-bg) !important;
+}
+.property-add-form-type.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background: var(--add-form-bg) !important;
+}
+
+/* 添加属性表单 — 下拉面板（通过 dropdown-class-name 绑定，不受 scoped 限制） */
+.property-add-form-dropdown {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 10px !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+}
+.property-add-form-dropdown .ant-select-item-option {
+  font-size: 14px;
+  color: #a1a1aa;
+}
+.property-add-form-dropdown .ant-select-item-option-active {
+  background: rgba(0, 0, 0, 0.04);
+}
+.property-add-form-dropdown .ant-select-item-option-selected {
+  font-weight: 600;
+  color: #1d1d1f;
+  background: rgba(0, 0, 0, 0.06);
+}
+html.dark .property-add-form-dropdown {
+  background: #3a3a3c !important;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+html.dark .property-add-form-dropdown .ant-select-item-option {
+  color: rgba(255, 255, 255, 0.48);
+}
+html.dark .property-add-form-dropdown .ant-select-item-option-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+html.dark .property-add-form-dropdown .ant-select-item-option-selected {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== 下拉面板滚动条（挂载到 body，需在非 scoped 块中定义） ===== */
+.property-add-form-dropdown,
+.property-type-select-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+.property-add-form-dropdown::-webkit-scrollbar,
+.property-type-select-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+.property-add-form-dropdown::-webkit-scrollbar-thumb,
+.property-type-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.property-add-form-dropdown::-webkit-scrollbar-track,
+.property-type-select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+html.dark .property-add-form-dropdown,
+html.dark .property-type-select-dropdown {
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+html.dark .property-add-form-dropdown::-webkit-scrollbar-thumb,
+html.dark .property-type-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== 下拉加载中骨架屏（挂载到 body，需在非 scoped 块中定义） ===== */
+.select-loading-state {
+  position: relative;
+  overflow: hidden;
+}
+.select-loading-shimmer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--apple-blue, #007aff) 50%,
+    transparent 100%
+  );
+  animation: select-shimmer-slide 1.2s ease-in-out infinite;
+  opacity: 0.5;
+}
+@keyframes select-shimmer-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.select-loading-skeleton {
+  padding: 8px 12px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  animation: skeleton-fade-in 0.3s ease-out forwards;
+  opacity: 0;
+}
+@keyframes skeleton-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  animation: skeleton-shine 1.6s ease-in-out infinite;
+}
+.skeleton-row:nth-child(1) .skeleton-bar { width: 72%; }
+.skeleton-row:nth-child(2) .skeleton-bar { width: 58%; }
+.skeleton-row:nth-child(3) .skeleton-bar { width: 65%; }
+@keyframes skeleton-shine {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.select-loading-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px 14px;
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+.select-loading-hint .fa-spinner {
+  color: rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+}
+html.dark .select-loading-hint {
+  color: rgba(255, 255, 255, 0.3);
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+html.dark .select-loading-hint .fa-spinner {
+  color: rgba(255, 255, 255, 0.2);
+}
+html.dark .skeleton-bar {
+  background: rgba(255, 255, 255, 0.06);
 }
 </style>

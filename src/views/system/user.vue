@@ -292,7 +292,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { getUserPage, deleteUserBatch, batchUpdateStatus, assignUserRoles } from '@/api/user.ts'
 import { getRoleList } from '@/api/role.ts'
-import { getDictDataByDictCode } from '@/api/dict'
+import { getDictDataByDictCodeEnable } from '@/api/dict'
 import type { SysUser, SysRole, DictData, BatchDeleteResult } from '@/types'
 import type { TablePaginationConfig } from 'ant-design-vue'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
@@ -519,7 +519,7 @@ const fetchData = async () => {
 
 const fetchCommonStatus = async () => {
   try {
-    const res = await getDictDataByDictCode('sys_common_status')
+    const res = await getDictDataByDictCodeEnable('sys_common_status')
     commonStatusDict.value = res.data || []
   } catch (error) {
     console.warn('获取 sys_common_status 字典失败', error)
