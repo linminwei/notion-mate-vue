@@ -303,6 +303,9 @@
                       <span v-else class="cell-label">{{ record.title || '未命名数据源' }}</span>
                       <span class="cell-muted">{{ record.workspaceName || activeWorkspace?.name || '-' }}</span>
                     </span>
+                    <a v-if="record.url" :href="record.url" target="_blank" class="datasource-jump-icon" :title="record.url" @click.stop>
+                      <font-awesome-icon :icon="['fas', 'arrow-up-right-from-square']" />
+                    </a>
                   </div>
                 </template>
 
@@ -1267,12 +1270,12 @@ const saveExpandConfig = async (property: NotionDatasourceProperty) => {
         .filter(opt => !pendingRemovedOptionIds.value.has(opt.id))
         .map(opt => ({ name: opt.name, color: opt.color, description: opt.description }))
       const added = editingOptions.value.map(opt => ({ name: opt.name, color: opt.color, description: opt.description }))
-      propertyData.options = isTypeChange ? added : [...existing, ...added]
+      propertyData.str = isTypeChange ? added : [...existing, ...added]
     } else if (nextType === 'unique_id') {
-      propertyData.prefix = editingPrefix.value || undefined
+      propertyData.str = editingPrefix.value ? { prefix: editingPrefix.value } : undefined
     } else if (nextType === 'relation') {
       if (editingRelationMode.value && editingTargetDatasourceId.value) {
-        propertyData.relation = {
+        propertyData.str = {
           relationMode: editingRelationMode.value,
           datasourceId: editingTargetDatasourceId.value,
           ...(editingRelationMode.value === 'dual_property' && editingDualPropertyName.value.trim()
@@ -1620,13 +1623,13 @@ const handleAddProperty = async () => {
         name,
         type,
         ...(type === 'unique_id' && newPropertyPrefix.value.trim()
-          ? { prefix: newPropertyPrefix.value.trim() }
+          ? { str: { prefix: newPropertyPrefix.value.trim() } }
           : {}),
         ...(SELECT_TYPES.has(type) && newPropertyOptions.value.length
-          ? { options: newPropertyOptions.value.filter(o => o.name.trim()) }
+          ? { str: newPropertyOptions.value.filter(o => o.name.trim()) }
           : {}),
         ...(type === 'relation' && newPropertyRelationMode.value && newPropertyTargetDatasourceId.value
-          ? { relation: { relationMode: newPropertyRelationMode.value, datasourceId: newPropertyTargetDatasourceId.value, ...(newPropertyRelationMode.value === 'dual_property' && newPropertyDualPropertyName.value.trim() ? { dualPropertyName: newPropertyDualPropertyName.value.trim() } : {}) } }
+          ? { str: { relationMode: newPropertyRelationMode.value, datasourceId: newPropertyTargetDatasourceId.value, ...(newPropertyRelationMode.value === 'dual_property' && newPropertyDualPropertyName.value.trim() ? { dualPropertyName: newPropertyDualPropertyName.value.trim() } : {}) } }
           : {})
       }
     })
@@ -1645,7 +1648,38 @@ const refreshProperties = async () => {
   propertyLoading.value = true
   try {
     const res = await getDatasourceProperties(currentDatasource.value.id)
-    properties.value = res.data || []
+    const data = res.data || []
+    // 后端统一用 str (JSON 字符串) 返回配置数据，归一化到 typed fields 供模板使用
+    for (const p of data) {
+      if (p.str == null) continue
+      let parsed: any
+      if (typeof p.str === 'string' && p.str.length > 0) {
+        try { parsed = JSON.parse(p.str) } catch { continue }
+      } else {
+        parsed = p.str
+      }
+      if (parsed == null) continue
+      switch (p.propertyType) {
+        case 'select':
+        case 'multi_select':
+        case 'status':
+          if (!p.options) p.options = Array.isArray(parsed) ? parsed : []
+          break
+        case 'unique_id':
+          if (!p.prefix && typeof parsed === 'object' && parsed.prefix) p.prefix = parsed.prefix
+          break
+        case 'relation':
+          if (!p.relation && typeof parsed === 'object' && parsed.datasourceId) {
+            p.relation = {
+              relationMode: parsed.relationMode,
+              datasourceId: parsed.datasourceId,
+              dualPropertyName: parsed.dualPropertyName,
+            }
+          }
+          break
+      }
+    }
+    properties.value = data
   } catch {
     // 静默失败
   } finally {
@@ -2005,14 +2039,7 @@ const openProperties = async (record: Datasource) => {
     await loadRelationModeDict()
   }
 
-  try {
-    const res = await getDatasourceProperties(record.id)
-    properties.value = res.data || []
-  } catch (error: any) {
-    AppleAlert.error('字段读取失败', error.message || '请稍后重试')
-  } finally {
-    propertyLoading.value = false
-  }
+  await refreshProperties()
 }
 
 onMounted(async () => {
@@ -2972,6 +2999,38 @@ onMounted(async () => {
   max-width: 100%;
 }
 
+
+.datasource-jump-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border-radius: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--text-muted);
+  font-size: 12px;
+  background: transparent;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.datasource-jump-icon:hover {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.06);
+  border-color: rgba(22, 119, 255, 0.2);
+}
+
+html.dark .datasource-jump-icon {
+  color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html.dark .datasource-jump-icon:hover {
+  color: #4799eb;
+  background: rgba(71, 153, 235, 0.1);
+  border-color: rgba(71, 153, 235, 0.25);
+}
+
 .time-cell {
   color: var(--text-muted);
   font-size: 13px;
@@ -3317,12 +3376,8 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--type-text);
-  background: linear-gradient(
-    135deg,
-    var(--type-bg, #f5f5f5) 0%,
-    color-mix(in srgb, var(--type-bg, #f5f5f5) 55%, #ffffff) 100%
-  );
+  color: #1d1d1f;
+  background: #f0f0f0;
   border: 0.5px solid color-mix(in srgb, currentColor 18%, transparent);
   box-shadow:
     0 1px 4px color-mix(in srgb, currentColor 10%, transparent),
@@ -4040,13 +4095,13 @@ html.dark .add-option-desc-input::placeholder {
   min-height: 34px;
   padding: 0 14px;
   border-radius: 10px;
-  background: var(--add-form-bg, #ffffff);
+  background: #f0f0f0;
   box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
 }
 .prefix-config-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: rgba(0, 0, 0, 0.48);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   flex: none;
@@ -4054,13 +4109,18 @@ html.dark .add-option-desc-input::placeholder {
 .prefix-config-value {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-main);
+  color: rgba(0, 0, 0, 0.92);
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
 }
 .prefix-config-value.is-empty {
-  color: var(--text-muted);
+  color: rgba(0, 0, 0, 0.35);
   font-family: inherit;
   font-weight: 400;
+}
+.prefix-config-row .add-option-name {
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 4px 8px;
 }
 
 /* 关联配置只读展示 */
@@ -4071,22 +4131,22 @@ html.dark .add-option-desc-input::placeholder {
   min-height: 34px;
   padding: 0 14px;
   border-radius: 10px;
-  background: var(--add-form-bg, #ffffff);
+  background: #f0f0f0;
   box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
 }
 .relation-readonly-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: rgba(0, 0, 0, 0.48);
   flex: none;
 }
 .relation-readonly-value {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-main);
+  color: rgba(0, 0, 0, 0.92);
 }
 .relation-readonly-value.is-empty {
-  color: var(--text-muted);
+  color: rgba(0, 0, 0, 0.35);
   font-weight: 400;
 }
 
@@ -4546,6 +4606,10 @@ html.dark .property-main .inline-title-input {
   background: #2c2c2e;
   color: rgba(255, 255, 255, 0.92);
 }
+html.dark .property-type-icon {
+  background: #2c2c2e;
+  color: rgba(255, 255, 255, 0.9);
+}
 html.dark .property-type-select .ant-select-selector {
   background: #2c2c2e !important;
   border-color: color-mix(in srgb, var(--apple-blue, #0A84FF) 38%, transparent) !important;
@@ -4689,8 +4753,11 @@ html.dark .add-option-remove:hover:not(:disabled) {
 }
 
 html.dark .prefix-config-row {
-  background: var(--add-form-bg, #3a3a3c);
+  background: #2c2c2e;
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+html.dark .prefix-config-row .add-option-name {
+  background: #2c2c2e;
 }
 html.dark .prefix-config-label {
   color: rgba(255, 255, 255, 0.48);
@@ -4703,7 +4770,7 @@ html.dark .prefix-config-value.is-empty {
 }
 
 html.dark .relation-readonly-row {
-  background: var(--add-form-bg, #3a3a3c);
+  background: #2c2c2e;
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
 }
 html.dark .relation-readonly-label {
@@ -4763,6 +4830,10 @@ html.dark .property-name-btn:hover svg {
 html.dark .property-main .inline-title-input {
   background: #2c2c2e;
   color: rgba(255, 255, 255, 0.92);
+}
+html.dark .property-type-icon {
+  background: #2c2c2e;
+  color: rgba(255, 255, 255, 0.9);
 }
 html.dark .property-type-select .ant-select-selector {
   background: #2c2c2e !important;

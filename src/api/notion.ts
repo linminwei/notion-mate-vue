@@ -60,11 +60,11 @@ export const getDatasourceProperties = (id: string) =>
   request.get<NotionDatasourceProperty[]>(`/datasource/${id}/properties`)
 
 // 修改数据源属性
-export const updateDatasourceProperty = (data: { id: string; property?: { name?: string; type?: string; options?: { name: string; color: string }[]; prefix?: string; relation?: { relationMode: string; datasourceId: string; dualPropertyName?: string } }; sort?: number }) =>
+export const updateDatasourceProperty = (data: { id: string; property?: { name?: string; type?: string; str?: any }; sort?: number }) =>
   request.put('/datasource/property/update', data)
 
 // 新增数据源属性
-export const addDatasourceProperty = (data: { datasourceId: string; property: { name: string; type: string; prefix?: string; options?: { name: string; color: string }[]; relation?: { relationMode: string; datasourceId: string; dualPropertyName?: string } } }) =>
+export const addDatasourceProperty = (data: { datasourceId: string; property: { name: string; type: string; str?: any } }) =>
   request.post('/datasource/add', data)
 
 // 删除数据源属性

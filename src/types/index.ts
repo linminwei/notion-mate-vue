@@ -178,6 +178,7 @@ export interface DatasourceVo {
   datasourceId: string
   icon: string
   title: string
+  url: string
 }
 
 // Notion 数据源属性
@@ -190,6 +191,8 @@ export interface NotionDatasourceProperty {
   datasourceId: string
   sysDatasourceId: string
   workspaceId: string
+  /** 通用配置数据（后端统一返回，替代 options/prefix/relation） */
+  str?: any
   /** 选项列表（仅 select / multi_select / status 有效） */
   options?: NotionOption[]
   /** 唯一标识符前缀（仅 unique_id 有效） */
