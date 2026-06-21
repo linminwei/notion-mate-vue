@@ -818,8 +818,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/user.ts'
+import { useAppStore } from '@/stores/app.ts'
 import {
   getCurrentUserWorkspaces,
   getDatasourcePage,

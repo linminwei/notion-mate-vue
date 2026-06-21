@@ -13,6 +13,13 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value)
 
+  // 是否为普通用户（所有角色均为 USER）
+  const isRegularUser = computed(() => {
+    const roles = userInfo.value?.roles || []
+    if (roles.length === 0) return false
+    return roles.every(r => r.roleCode === 'USER')
+  })
+
   // 登录
   async function login(form: LoginForm) {
     const res = await loginApi(form)
@@ -67,6 +74,7 @@ export const useUserStore = defineStore('user', () => {
     menus,
     permissions,
     isLoggedIn,
+    isRegularUser,
     login,
     loginByPhone,
     register,

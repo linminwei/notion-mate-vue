@@ -1137,8 +1137,10 @@ const handleLogin = async () => {
           const redirect = route.query.redirect as string
           if (redirect && redirect !== '/') {
             router.push(redirect)
+          } else if (userStore.isRegularUser) {
+            router.push('/portal')
           } else {
-            window.location.reload()
+            router.push('/dashboard')
           }
         }, 400)
       }, 800)
@@ -1274,8 +1276,10 @@ const handlePhoneLogin = async () => {
           const redirect = route.query.redirect as string
           if (redirect && redirect !== '/') {
             router.push(redirect)
+          } else if (userStore.isRegularUser) {
+            router.push('/portal')
           } else {
-            window.location.reload()
+            router.push('/dashboard')
           }
         }, 400)
       }, 800)

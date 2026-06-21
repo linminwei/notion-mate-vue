@@ -264,3 +264,94 @@ export interface DeleteDetail {
   success: boolean
   reason: string | null
 }
+
+// ==================== 网址管理 ====================
+
+/** 网站分页查询参数 */
+export interface PageWebsiteParams {
+  name?: string
+  category?: string
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 网站 VO */
+export interface WebsiteVo {
+  id: string
+  pageId: string
+  icon: string
+  name: string
+  description: string
+  category: string
+  url: string
+  webImg: string
+}
+
+/** 成人网站分页查询参数 */
+export interface PageWebsitePornParams {
+  name?: string
+  category?: string
+  country?: string
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 成人网站 VO */
+export interface WebsitePornVo {
+  id: string
+  pageId: string
+  icon: string
+  name: string
+  description: string
+  category: string
+  country: string
+  url: string
+  webImg: string
+}
+
+// ==================== 扩展管理 ====================
+
+// ==================== 软件管理 ====================
+
+/** 软件分页查询参数 */
+export interface PageAppParams {
+  name?: string
+  category?: string
+  device?: string
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 软件 VO */
+export interface AppVo {
+  id: string
+  pageId: string
+  icon: string
+  name: string
+  description: string
+  category: string
+  devices: string[]
+}
+
+// ==================== 扩展管理 ====================
+
+/** 扩展分页查询参数 */
+export interface PageExtensionParams {
+  name?: string
+  category?: string
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 扩展 VO */
+export interface ExtensionVo {
+  id: string
+  pageId: string
+  icon: string
+  name: string
+  description: string
+  category: string
+  platforms: string[]
+  url: string
+  webImg: string
+}

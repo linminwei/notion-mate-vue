@@ -1693,12 +1693,12 @@ html.dark .workspace-form-panel {
 html.dark .workspace-icon-panel::before,
 html.dark .workspace-form-panel::before {
   background:
-    radial-gradient(circle at 14% 4%, color-mix(in srgb, var(--step-accent) 22%, transparent) 0, transparent 32%),
-    radial-gradient(circle at 86% -10%, color-mix(in srgb, var(--step-accent) 16%, transparent) 0, transparent 36%),
-    linear-gradient(145deg,
-      color-mix(in srgb, var(--step-accent) 13%, transparent) 0%,
-      color-mix(in srgb, var(--step-accent) 6%, transparent) 48%,
-      transparent 100%);
+    radial-gradient(circle at 14% 4%, color-mix(in srgb, var(--step-accent) 42%, #111827) 0, transparent 32%),
+    radial-gradient(circle at 86% -10%, color-mix(in srgb, var(--step-accent) 24%, #111827) 0, transparent 36%),
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--step-accent) 42%, #111827) 0%,
+      color-mix(in srgb, var(--step-accent) 24%, #111827) 48%,
+      color-mix(in srgb, var(--step-accent) 11%, #111827) 100%);
 }
 
 html.dark .workspace-state-pill,
