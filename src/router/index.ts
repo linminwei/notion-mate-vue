@@ -80,6 +80,12 @@ const constantRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/system/app.vue'),
         meta: { title: ' 软件管理 ', icon: 'AppleOutlined', permission: 'app:list' }
       },
+      {
+        path: 'book',
+        name: 'BookList',
+        component: () => import('@/views/system/book.vue'),
+        meta: { title: ' 书籍管理 ', icon: 'ReadOutlined' }
+      },
     ]
   },
   {

@@ -206,7 +206,7 @@
           <a-input v-model:value="formState.path" placeholder="如：user" />
         </a-form-item>
 
-        <a-form-item v-if="formState.menuType === 3" name="permission" :rules="[{ required: true, message: '请输入权限标识', trigger: 'blur' }]">
+        <a-form-item v-if="formState.menuType === 3" name="permission">
           <template #label>
             权限标识
             <a-tooltip title="权限控制字符，如：`system:user:add`">
@@ -228,7 +228,7 @@
           <a-input v-model:value="formState.component" placeholder="如：system/user/index" />
         </a-form-item>
 
-        <a-form-item name="permission" :rules="[{ required: true, message: '请输入权限标识', trigger: 'blur' }]">
+        <a-form-item name="permission">
           <template #label>
             权限标识
             <a-tooltip title="权限控制字符，如：`system:user:add`">

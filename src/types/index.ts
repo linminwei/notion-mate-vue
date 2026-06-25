@@ -355,3 +355,56 @@ export interface ExtensionVo {
   url: string
   webImg: string
 }
+
+// ==================== 书籍管理 ====================
+
+/** 书籍分页查询参数 */
+export interface PageBookParams {
+  title?: string
+  isbn?: string
+  category?: string
+  author?: string
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 书籍 VO */
+export interface BookVo {
+  pageId: string
+  title: string
+  cover: string
+  category: string
+  authorName: string
+  authorAvatar: string
+  publisher: string
+  pubDate: string
+  isbn: string
+  rating: number
+  summary: string
+}
+
+// ==================== 豆瓣图书 ====================
+
+/** 豆瓣搜索图书 VO */
+export interface DoubanSearchBookVo {
+  doubanId: string
+  cover: string
+  title: string
+  rating: number
+  author: string
+  publisher: string
+  pubDate: string
+  bookUrl: string
+}
+
+/** 豆瓣图书详情 VO */
+export interface DoubanBookDetailVo {
+  title: string
+  cover: string
+  author: string
+  publisher: string
+  pubDate: string
+  isbn: string
+  rating: number
+  summary: string
+}
