@@ -385,6 +385,15 @@ export interface BookVo {
 
 // ==================== 豆瓣图书 ====================
 
+/** 图书作者 VO */
+export interface BookAuthorVo {
+  pageId: string
+  name: string
+  country: string
+  avatar: string
+  summary: string
+}
+
 /** 豆瓣搜索图书 VO */
 export interface DoubanSearchBookVo {
   doubanId: string
@@ -401,10 +410,11 @@ export interface DoubanSearchBookVo {
 export interface DoubanBookDetailVo {
   title: string
   cover: string
-  author: string
+  author: BookAuthorVo | null
   publisher: string
   pubDate: string
   isbn: string
   rating: number
   summary: string
+  inLibrary: boolean
 }

@@ -216,75 +216,66 @@
           <div class="detail-info-section">
             <h1 class="detail-title">{{ bookDetail.title }}</h1>
 
-            <div class="detail-meta-grid">
-              <div class="meta-item" v-if="bookDetail.author || editState.field === 'author'">
-                <span class="meta-label">作者</span>
-                <input
-                  v-if="editState.field === 'author'"
-                  v-model="editState.value"
-                  class="meta-input"
-                  @blur="saveEdit('author')"
-                  @keyup.enter="saveEdit('author')"
-                  @vue:mounted="($el as HTMLInputElement).focus()"
-                />
-                <span v-else class="meta-value author-link editable" @click="startEdit('author', bookDetail.author)">{{ bookDetail.author || '点击添加' }}</span>
+            <!-- 作者卡片 —— 全宽横向 -->
+            <div class="author-card-wide" v-if="bookDetail.author">
+              <div class="author-avatar-wrap" @click="triggerAvatarUpload" title="点击更换头像">
+                <img v-if="bookDetail.author?.avatar" :src="bookDetail.author.avatar" class="author-avatar-lg" />
+                <font-awesome-icon v-else :icon="['fas', 'user']" class="author-avatar-placeholder" />
+                <div class="avatar-upload-overlay"><font-awesome-icon :icon="['fas', 'camera']" /></div>
+                <input type="file" ref="avatarInput" accept="image/*" style="display:none" @change="onAvatarChange" />
               </div>
-              <div class="meta-item" v-if="bookDetail.publisher || editState.field === 'publisher'">
-                <span class="meta-label">出版社</span>
-                <input
-                  v-if="editState.field === 'publisher'"
-                  v-model="editState.value"
-                  class="meta-input"
-                  @blur="saveEdit('publisher')"
-                  @keyup.enter="saveEdit('publisher')"
-                  @vue:mounted="($el as HTMLInputElement).focus()"
-                />
-                <span v-else class="meta-value editable" @click="startEdit('publisher', bookDetail.publisher)">{{ bookDetail.publisher || '点击添加' }}</span>
-              </div>
-              <div class="meta-item" v-if="bookDetail.pubDate">
-                <span class="meta-label">出版日期</span>
-                <span class="meta-value">{{ formatDate(bookDetail.pubDate) }}</span>
-              </div>
-              <div class="meta-item" v-if="bookDetail.isbn">
-                <span class="meta-label">ISBN</span>
-                <span class="meta-value">{{ bookDetail.isbn }}</span>
+              <div class="author-fields">
+                <div class="author-field-row">
+                  <input v-if="editState.field === 'authorName'" v-model="editState.value" class="author-inline-input" placeholder="作者名" @blur="saveAuthorField('name')" @keyup.enter="saveAuthorField('name')" :ref="autoFocusInput" />
+                  <span v-else class="author-field-value name" @click="startEditField('authorName', bookDetail.author?.name)">{{ bookDetail.author?.name || '添加作者名' }}</span>
+                  <input v-if="editState.field === 'authorCountry'" v-model="editState.value" class="author-inline-input country" placeholder="国家" @blur="saveAuthorField('country')" @keyup.enter="saveAuthorField('country')" :ref="autoFocusInput" />
+                  <span v-else-if="bookDetail.author?.country" class="author-field-value country" @click="startEditField('authorCountry', bookDetail.author?.country)">{{ bookDetail.author.country }}</span>
+                  <span v-else class="author-field-value country empty" @click="startEditField('authorCountry', '')">+ 国家</span>
+                </div>
+                <div class="author-field-row">
+                  <textarea v-if="editState.field === 'authorSummary'" v-model="editState.value" class="author-inline-textarea" placeholder="作者简介" rows="2" @blur="saveAuthorField('summary')" @input="autoResize" :ref="autoFocusInput" />
+                  <p v-else-if="bookDetail.author?.summary" class="author-field-value summary" @click="startEditField('authorSummary', bookDetail.author?.summary)">{{ bookDetail.author.summary }}</p>
+                  <p v-else class="author-field-value summary empty" @click="startEditField('authorSummary', '')">+ 添加作者简介</p>
+                </div>
               </div>
             </div>
 
-            <div class="detail-rating-banner" v-if="bookDetail.rating">
-              <div class="rating-score">
-                {{ formatRating(bookDetail.rating) }}
-                <font-awesome-icon :icon="['fas', 'star']" class="rating-star-big" />
+            <!-- 数据统计行：评分 / 出版社 / 出版日期 / ISBN -->
+            <div class="detail-stats-row">
+              <div class="stat-item" v-if="bookDetail.rating">
+                <span class="stat-value star"><font-awesome-icon :icon="['fas', 'star']" /> {{ formatRating(bookDetail.rating) }}</span>
+                <span class="stat-label">豆瓣评分</span>
               </div>
-              <div class="rating-label">豆瓣评分</div>
+              <div class="stat-item">
+                <input v-if="editState.field === 'publisher'" v-model="editState.value" class="stat-inline-input" placeholder="出版社" @blur="saveEdit('publisher')" @keyup.enter="saveEdit('publisher')" :ref="autoFocusInput" />
+                <span v-else-if="bookDetail.publisher" class="stat-value editable" @click="startEdit('publisher', bookDetail.publisher)">{{ bookDetail.publisher }}</span>
+                <span v-else class="stat-value empty" @click="startEdit('publisher', '')">+ 出版社</span>
+                <span class="stat-label">出版社</span>
+              </div>
+              <div class="stat-item" v-if="bookDetail.pubDate">
+                <span class="stat-value">{{ formatDate(bookDetail.pubDate) }}</span>
+                <span class="stat-label">出版日期</span>
+              </div>
+              <div class="stat-item" v-if="bookDetail.isbn">
+                <span class="stat-value mono">{{ bookDetail.isbn }}</span>
+                <span class="stat-label">ISBN</span>
+              </div>
             </div>
 
+            <!-- 内容简介 -->
             <div class="detail-summary" v-if="bookDetail.summary || editState.field === 'summary'">
               <h3>内容简介</h3>
-              <textarea
-                v-if="editState.field === 'summary'"
-                v-model="editState.value"
-                class="summary-textarea"
-                rows="5"
-                @blur="saveEdit('summary')"
-                @vue:mounted="($el as HTMLTextAreaElement).focus()"
-              />
+              <textarea v-if="editState.field === 'summary'" v-model="editState.value" class="summary-textarea" @blur="saveEdit('summary')" @input="autoResize" :ref="autoFocusTextarea" />
               <p v-else class="editable-summary" @click="startEdit('summary', bookDetail.summary)">{{ bookDetail.summary || '点击添加简介' }}</p>
             </div>
 
             <!-- 操作按钮区 -->
             <div class="detail-actions">
-              <button class="neo-btn-solid primary large-btn"
-                :class="{ 'is-collected': collectedBookIds.has(currentDoubanId) }"
-                @click="toggleCollect(currentDoubanId)">
-                <font-awesome-icon :icon="[collectedBookIds.has(currentDoubanId) ? 'fas' : 'far', collectedBookIds.has(currentDoubanId) ? 'check-circle' : 'bookmark']" />
-                {{ collectedBookIds.has(currentDoubanId) ? '已收藏' : '入库收藏' }}
+              <button class="neo-btn-solid primary large-btn" :class="{ 'is-collected': bookDetail?.inLibrary }" @click="toggleCollect(currentDoubanId)">
+                <font-awesome-icon :icon="[bookDetail?.inLibrary ? 'fas' : 'far', bookDetail?.inLibrary ? 'check-circle' : 'bookmark']" />
+                {{ bookDetail?.inLibrary ? '已收藏' : '入库收藏' }}
               </button>
-              <a v-if="currentDoubanId"
-                 :href="`https://book.douban.com/subject/${currentDoubanId}`"
-                 target="_blank"
-                 class="douban-link-btn"
-                 title="在豆瓣查看">
+              <a v-if="currentDoubanId" :href="`https://book.douban.com/subject/${currentDoubanId}`" target="_blank" class="douban-link-btn" title="在豆瓣查看">
                 <img src="/豆瓣网.png" alt="豆瓣" />
                 <span>在豆瓣查看</span>
               </a>
@@ -324,10 +315,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { getBookPage } from '@/api/book.ts'
 import { searchBook, getBookDetail } from '@/api/douban.ts'
-import type { BookVo, DoubanSearchBookVo, DoubanBookDetailVo } from '@/types'
+import type { BookVo, DoubanSearchBookVo, DoubanBookDetailVo, BookAuthorVo } from '@/types'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
 
 // ==================== 视图状态 ====================
@@ -394,28 +385,47 @@ const handleDoubanSearch = async () => {
 const detailLoading = ref(false)
 const bookDetail = ref<DoubanBookDetailVo | null>(null)
 const currentDoubanId = ref('')
-const collectedBookIds = ref(new Set<string>())
-
 const toggleCollect = (id: string) => {
-  if (!id) return
-  const s = new Set(collectedBookIds.value)
-  if (s.has(id)) { s.delete(id); AppleAlert.info('提示', '已取消收藏') }
-  else { s.add(id); AppleAlert.success('收藏成功', '图书已加入你的书架') }
-  collectedBookIds.value = s
+  if (!bookDetail.value || !id) return
+  bookDetail.value.inLibrary = !bookDetail.value.inLibrary
 }
 
 // ==================== 内联编辑 ====================
 const editState = reactive({ field: '' as string, value: '' })
-const startEdit = (field: string, val: string) => {
-  editState.field = field
-  editState.value = val || ''
+const avatarInput = ref<HTMLInputElement | null>(null)
+
+const startEdit = (field: string, val: string) => { editState.field = field; editState.value = val || '' }
+const startEditField = (field: string, val?: string) => { editState.field = field; editState.value = val || '' }
+
+const saveAuthorField = (prop: string) => {
+  if (!bookDetail.value?.author) return
+  if (prop === 'name') bookDetail.value.author.name = editState.value
+  if (prop === 'country') bookDetail.value.author.country = editState.value
+  if (prop === 'summary') bookDetail.value.author.summary = editState.value
+  editState.field = ''
 }
+
+const triggerAvatarUpload = () => avatarInput.value?.click()
+const onAvatarChange = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file || !bookDetail.value?.author) return
+  const reader = new FileReader()
+  reader.onload = () => { if (bookDetail.value?.author) bookDetail.value.author.avatar = reader.result as string }
+  reader.readAsDataURL(file)
+}
+
 const saveEdit = (field: string) => {
   if (!bookDetail.value) return
-  if (field === 'author') bookDetail.value.author = editState.value
   if (field === 'publisher') bookDetail.value.publisher = editState.value
   if (field === 'summary') bookDetail.value.summary = editState.value
   if (editState.field === field) editState.field = ''
+}
+const autoFocusInput = (el: any) => { if (el) nextTick(() => el.focus()) }
+const autoFocusTextarea = (el: any) => { if (el) nextTick(() => { el.focus(); autoResize({ target: el }) }) }
+const autoResize = (e: Event) => {
+  const el = e.target as HTMLTextAreaElement
+  el.style.height = 'auto'
+  el.style.height = Math.max(80, el.scrollHeight) + 'px'
 }
 
 const openDetail = async (doubanId: string) => {
@@ -1086,7 +1096,7 @@ onMounted(() => fetchData())
 /* ── 右侧信息区 ── */
 .detail-info-section { flex: 1; min-width: 0; }
 .detail-title {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 800;
   color: var(--text-main, #1d1d1f);
   margin: 0 0 24px;
@@ -1094,12 +1104,64 @@ onMounted(() => fetchData())
   letter-spacing: -0.01em;
 }
 
-.detail-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
+/* 元数据标签图标 */
+
+/* ── 作者全宽卡片 ── */
+.author-card-wide {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  background: var(--hover-bg, #f5f5f7);
+  border-radius: 14px;
+  margin-bottom: 16px;
 }
+
+/* ── 数据统计行 ── */
+.detail-stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-item {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  background: var(--hover-bg, #f5f5f7);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main, #1d1d1f);
+}
+.stat-value.star { color: #f5a623; }
+.stat-value.empty { color: var(--text-muted, #b0b0b8); font-style: italic; cursor: pointer; }
+.stat-value.editable { cursor: text; }
+.stat-value.mono { font-family: inherit; font-size: 15px; letter-spacing: 0.02em; }
+.stat-label { font-size: 12px; color: var(--text-secondary, #86868b); font-weight: 500; }
+.stat-inline-input {
+  width: 100%;
+  text-align: center;
+  border: 1.5px solid var(--apple-blue, #007AFF);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--card-bg, #fff);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #007AFF) 10%, transparent);
+}
+
+/* ── 旧网格（移除） ── */
+.detail-meta-grid { display: none; }
+.meta-item-author { display: none; }
 .meta-item {
   display: flex;
   flex-direction: column;
@@ -1111,19 +1173,6 @@ onMounted(() => fetchData())
 .meta-label { font-size: 12px; color: var(--text-secondary, #86868b); font-weight: 500; }
 .meta-value { font-size: 14px; color: var(--text-main, #1d1d1f); font-weight: 600; letter-spacing: 0.03em; }
 .author-link { color: var(--apple-blue, #007AFF); }
-
-.detail-rating-banner {
-  display: inline-flex;
-  flex-direction: column;
-  padding: 14px 22px;
-  background: linear-gradient(135deg, #fffaf0 0%, #fff0d4 100%);
-  border: 1px solid #ffe6b3;
-  border-radius: 14px;
-  margin-bottom: 24px;
-}
-.rating-score { font-size: 26px; font-weight: 800; color: #f5a623; display: flex; align-items: baseline; gap: 8px; line-height: 1; }
-.rating-star-big { font-size: 18px; }
-.rating-label { font-size: 12px; color: #d48806; margin-top: 4px; font-weight: 500; }
 
 .detail-summary { margin-bottom: 32px; }
 .detail-summary h3 { font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0 0 12px; }
@@ -1160,6 +1209,7 @@ onMounted(() => fetchData())
 }
 .summary-textarea {
   width: 100%;
+  min-height: 80px;
   padding: 10px 14px;
   border: 1.5px solid var(--apple-blue, #007AFF);
   border-radius: 10px;
@@ -1168,9 +1218,111 @@ onMounted(() => fetchData())
   color: var(--text-main);
   background: var(--card-bg, #fff);
   outline: none;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   font-family: inherit;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #007AFF) 12%, transparent);
+}
+
+/* ── 作者卡片 ── */
+.author-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+/* 头像区域 */
+.author-avatar-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--hover-bg, #e8e8ed) 0%, var(--border-color, #ddd) 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.author-avatar-wrap .author-avatar-lg { width: 100%; height: 100%; object-fit: cover; }
+.author-avatar-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; color: var(--text-muted, #b0b0b8);
+}
+.avatar-upload-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 20px;
+  opacity: 0; transition: opacity 0.2s;
+}
+.author-avatar-wrap:hover .avatar-upload-overlay { opacity: 1; }
+
+/* 右侧信息区 */
+.author-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding-top: 2px; }
+.author-field-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* 可编辑值 —— 默认态 */
+.author-field-value {
+  cursor: text;
+  border-radius: 6px;
+  padding: 3px 7px;
+  margin: -3px -7px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.author-field-value:hover {
+  background: color-mix(in srgb, var(--apple-blue, #007AFF) 6%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--apple-blue, #007AFF) 15%, transparent);
+}
+
+/* 作者名 */
+.author-field-value.name { font-size: 18px; font-weight: 700; color: var(--text-main, #1d1d1f); line-height: 1.3; }
+
+/* 国家标签 */
+.author-field-value.country {
+  font-size: 13px; color: var(--text-secondary, #666);
+  background: var(--hover-bg, #f0f0f3);
+  border-radius: 20px; padding: 3px 12px; margin: 0;
+  font-weight: 500;
+}
+.author-field-value.country:hover { background: color-mix(in srgb, var(--apple-blue, #007AFF) 8%, transparent); }
+.author-field-value.country.empty { color: var(--text-muted, #b0b0b8); font-style: italic; font-weight: 400; }
+
+/* 简介 */
+.author-field-value.summary {
+  font-size: 14px; color: var(--text-secondary, #555);
+  line-height: 1.65;
+}
+.author-field-value.summary.empty { color: var(--text-muted, #b0b0b8); font-style: italic; }
+
+/* 编辑态输入框 */
+.author-inline-input {
+  border: 1.5px solid var(--apple-blue, #007AFF);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--card-bg, #fff);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #007AFF) 10%, transparent);
+  width: 160px;
+}
+.author-inline-input.country { font-size: 13px; font-weight: 500; width: 100px; }
+.author-inline-textarea {
+  width: 100%;
+  border: 1.5px solid var(--apple-blue, #007AFF);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-main);
+  background: var(--card-bg, #fff);
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  font-family: inherit;
+  line-height: 1.6;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #007AFF) 10%, transparent);
 }
 
 /* ── 操作按钮区 ── */
@@ -1227,7 +1379,6 @@ onMounted(() => fetchData())
 :global(.dark) .book-spine { background: linear-gradient(to right, #4a4a50 0%, #5a5a62 30%, #4a4a50 60%, #3a3a42 100%); box-shadow: -2px 0 4px rgba(0,0,0,0.2); }
 :global(.dark) .book-pages { background: repeating-linear-gradient(90deg, #3a3a42 0px, #2e2e35 1px, #3d3d45 2px, #33333a 3px); }
 :global(.dark) .meta-item { background: rgba(255,255,255,0.04); }
-:global(.dark) .detail-rating-banner { background: linear-gradient(135deg, rgba(245, 166, 35, 0.1) 0%, rgba(245, 166, 35, 0.05) 100%); border-color: rgba(245, 166, 35, 0.2); }
 :global(.dark) .detail-summary p { color: #a1a1aa; }
 
 /* 响应式调整 */
@@ -1326,7 +1477,6 @@ onMounted(() => fetchData())
 .dark .book-spine { background: linear-gradient(to right, #4a4a50 0%, #5a5a62 30%, #4a4a50 60%, #3a3a42 100%); box-shadow: -2px 0 4px rgba(0,0,0,0.2); }
 .dark .book-pages { background: repeating-linear-gradient(90deg, #3a3a42 0px, #2e2e35 1px, #3d3d45 2px, #33333a 3px); }
 .dark .meta-item { background: rgba(255,255,255,0.04); }
-.dark .detail-rating-banner { background: linear-gradient(135deg, rgba(245, 166, 35, 0.1) 0%, rgba(245, 166, 35, 0.05) 100%); border-color: rgba(245, 166, 35, 0.2); }
 .dark .detail-summary p { color: #a1a1aa; }
 
 /* ── 新增元素暗黑适配 ── */
