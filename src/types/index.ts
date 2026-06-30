@@ -389,7 +389,6 @@ export interface BookVo {
 export interface BookAuthorVo {
   pageId: string
   name: string
-  country: string
   avatar: string
   summary: string
 }
@@ -416,5 +415,6 @@ export interface DoubanBookDetailVo {
   isbn: string
   rating: number
   summary: string
+  category?: string
   inLibrary: boolean
 }

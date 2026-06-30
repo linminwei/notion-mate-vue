@@ -205,6 +205,11 @@
                 <div v-else class="no-cover"><font-awesome-icon :icon="['fas', 'book']" /></div>
                 <!-- 封面高光 -->
                 <div class="cover-shine"></div>
+                <!-- 评分角标 -->
+                <div class="cover-rating-capsule" v-if="bookDetail.rating">
+                  <font-awesome-icon :icon="['fas', 'star']" />
+                  <span>{{ formatRating(bookDetail.rating) }}</span>
+                </div>
               </div>
               <!-- 书页厚度 -->
               <div class="book-pages"></div>
@@ -228,9 +233,6 @@
                 <div class="author-field-row">
                   <input v-if="editState.field === 'authorName'" v-model="editState.value" class="author-inline-input" placeholder="作者名" @blur="saveAuthorField('name')" @keyup.enter="saveAuthorField('name')" :ref="autoFocusInput" />
                   <span v-else class="author-field-value name" @click="startEditField('authorName', bookDetail.author?.name)">{{ bookDetail.author?.name || '添加作者名' }}</span>
-                  <input v-if="editState.field === 'authorCountry'" v-model="editState.value" class="author-inline-input country" placeholder="国家" @blur="saveAuthorField('country')" @keyup.enter="saveAuthorField('country')" :ref="autoFocusInput" />
-                  <span v-else-if="bookDetail.author?.country" class="author-field-value country" @click="startEditField('authorCountry', bookDetail.author?.country)">{{ bookDetail.author.country }}</span>
-                  <span v-else class="author-field-value country empty" @click="startEditField('authorCountry', '')">+ 国家</span>
                 </div>
                 <div class="author-field-row">
                   <textarea v-if="editState.field === 'authorSummary'" v-model="editState.value" class="author-inline-textarea" placeholder="作者简介" rows="2" @blur="saveAuthorField('summary')" @input="autoResize" :ref="autoFocusInput" />
@@ -240,25 +242,38 @@
               </div>
             </div>
 
-            <!-- 数据统计行：评分 / 出版社 / 出版日期 / ISBN -->
-            <div class="detail-stats-row">
-              <div class="stat-item" v-if="bookDetail.rating">
-                <span class="stat-value star"><font-awesome-icon :icon="['fas', 'star']" /> {{ formatRating(bookDetail.rating) }}</span>
-                <span class="stat-label">豆瓣评分</span>
+            <!-- 元数据 2×2 网格 -->
+            <div class="detail-meta-grid-2x2">
+              <div class="meta-grid-item">
+                <span class="meta-grid-label">出版社</span>
+                <input v-if="editState.field === 'publisher'" v-model="editState.value" class="meta-grid-input" placeholder="出版社" @blur="saveEdit('publisher')" @keyup.enter="saveEdit('publisher')" :ref="autoFocusInput" />
+                <span v-else-if="bookDetail.publisher" class="meta-grid-value editable" @click="startEdit('publisher', bookDetail.publisher)">{{ bookDetail.publisher }}</span>
+                <span v-else class="meta-grid-value empty" @click="startEdit('publisher', '')">—</span>
               </div>
-              <div class="stat-item">
-                <input v-if="editState.field === 'publisher'" v-model="editState.value" class="stat-inline-input" placeholder="出版社" @blur="saveEdit('publisher')" @keyup.enter="saveEdit('publisher')" :ref="autoFocusInput" />
-                <span v-else-if="bookDetail.publisher" class="stat-value editable" @click="startEdit('publisher', bookDetail.publisher)">{{ bookDetail.publisher }}</span>
-                <span v-else class="stat-value empty" @click="startEdit('publisher', '')">+ 出版社</span>
-                <span class="stat-label">出版社</span>
+              <div class="meta-grid-item">
+                <span class="meta-grid-label">出版日期</span>
+                <span class="meta-grid-value">{{ bookDetail.pubDate ? formatDate(bookDetail.pubDate) : '—' }}</span>
               </div>
-              <div class="stat-item" v-if="bookDetail.pubDate">
-                <span class="stat-value">{{ formatDate(bookDetail.pubDate) }}</span>
-                <span class="stat-label">出版日期</span>
+              <div class="meta-grid-item">
+                <span class="meta-grid-label">ISBN</span>
+                <span class="meta-grid-value mono">{{ bookDetail.isbn || '—' }}</span>
               </div>
-              <div class="stat-item" v-if="bookDetail.isbn">
-                <span class="stat-value mono">{{ bookDetail.isbn }}</span>
-                <span class="stat-label">ISBN</span>
+              <div class="meta-grid-item">
+                <span class="meta-grid-label">类目</span>
+                <a-select
+                  v-if="categoryDict.length"
+                  :value="bookDetail.category"
+                  placeholder="选择类目"
+                  :bordered="false"
+                  class="meta-grid-category-select"
+                  @change="onCategoryChange"
+                  allowClear
+                >
+                  <a-select-option v-for="c in categoryDict" :key="c.dictValue" :value="c.dictValue">
+                    {{ c.dictLabel }}
+                  </a-select-option>
+                </a-select>
+                <span v-else class="meta-grid-value empty">—</span>
               </div>
             </div>
 
@@ -318,7 +333,8 @@
 import { ref, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { getBookPage } from '@/api/book.ts'
 import { searchBook, getBookDetail } from '@/api/douban.ts'
-import type { BookVo, DoubanSearchBookVo, DoubanBookDetailVo, BookAuthorVo } from '@/types'
+import { getDictDataByDictCodeEnable } from '@/api/dict.ts'
+import type { BookVo, DoubanSearchBookVo, DoubanBookDetailVo, BookAuthorVo, DictData } from '@/types'
 import { AppleAlert } from '@/components/common/AppleAlert.ts'
 
 // ==================== 视图状态 ====================
@@ -400,7 +416,6 @@ const startEditField = (field: string, val?: string) => { editState.field = fiel
 const saveAuthorField = (prop: string) => {
   if (!bookDetail.value?.author) return
   if (prop === 'name') bookDetail.value.author.name = editState.value
-  if (prop === 'country') bookDetail.value.author.country = editState.value
   if (prop === 'summary') bookDetail.value.author.summary = editState.value
   editState.field = ''
 }
@@ -446,7 +461,17 @@ const onKeydown = (e: KeyboardEvent) => { if (e.key === 'Escape' && previewImg.v
 watch(previewImg, (val) => { if (val) document.addEventListener('keydown', onKeydown); else document.removeEventListener('keydown', onKeydown) })
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
-onMounted(() => fetchData())
+// ==================== 类目字典 ====================
+const categoryDict = ref<DictData[]>([])
+const fetchCategoryDict = async () => {
+  try { const res = await getDictDataByDictCodeEnable('book_category'); categoryDict.value = res.data || [] }
+  catch { categoryDict.value = [] }
+}
+const onCategoryChange = (value: string) => {
+  if (bookDetail.value) { bookDetail.value.category = value || undefined }
+}
+
+onMounted(() => { fetchData(); fetchCategoryDict() })
 </script>
 
 <style scoped>
@@ -1061,6 +1086,30 @@ onMounted(() => fetchData())
   50%      { left: 120%; }
 }
 
+/* 书封评分胶囊 */
+.cover-rating-capsule {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f5a623;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  z-index: 3;
+  pointer-events: none;
+}
+.cover-rating-capsule .fa-star {
+  font-size: 11px;
+}
+
 /* 书页厚度 */
 .book-pages {
   position: absolute;
@@ -1118,46 +1167,96 @@ onMounted(() => fetchData())
 }
 
 /* ── 数据统计行 ── */
-.detail-stats-row {
-  display: flex;
-  gap: 12px;
+.detail-stats-row { display: none; }
+
+/* ── 元数据 2×2 网格面板 ── */
+.detail-meta-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
   margin-bottom: 20px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, rgba(0,0,0,0.06));
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-.stat-item {
-  flex: 1;
-  min-width: 0;
-  padding: 12px 16px;
-  background: var(--hover-bg, #f5f5f7);
-  border-radius: 10px;
+.meta-grid-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 4px;
+  gap: 5px;
+  padding: 16px 18px;
+  background: var(--hover-bg, #f5f5f7);
 }
-.stat-value {
-  font-size: 15px;
+.meta-grid-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #b0b0b8);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.meta-grid-value {
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #1d1d1f);
 }
-.stat-value.star { color: #f5a623; }
-.stat-value.empty { color: var(--text-muted, #b0b0b8); font-style: italic; cursor: pointer; }
-.stat-value.editable { cursor: text; }
-.stat-value.mono { font-family: inherit; font-size: 15px; letter-spacing: 0.02em; }
-.stat-label { font-size: 12px; color: var(--text-secondary, #86868b); font-weight: 500; }
-.stat-inline-input {
+.meta-grid-value.empty {
+  color: var(--text-muted, #b0b0b8);
+  cursor: pointer;
+}
+.meta-grid-value.editable {
+  cursor: text;
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  transition: background 0.15s ease;
+}
+.meta-grid-value.editable:hover {
+  background: color-mix(in srgb, var(--apple-blue, #007AFF) 6%, transparent);
+}
+.meta-grid-value.mono {
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+.meta-grid-input {
   width: 100%;
-  text-align: center;
   border: 1.5px solid var(--apple-blue, #007AFF);
-  border-radius: 5px;
-  padding: 2px 6px;
-  font-size: 15px;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-main);
   background: var(--card-bg, #fff);
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #007AFF) 10%, transparent);
 }
+
+/* 类目选择器 */
+.meta-grid-category-select {
+  width: 100%;
+}
+.meta-grid-category-select :deep(.ant-select-selector) {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main, #1d1d1f);
+  height: auto !important;
+  min-height: 22px;
+}
+.meta-grid-category-select :deep(.ant-select-selection-placeholder) {
+  color: var(--text-muted, #b0b0b8);
+}
+.meta-grid-category-select :deep(.ant-select-arrow) {
+  color: var(--text-muted, #b0b0b8);
+}
+
+/* ── 旧统计行隐藏 ── */
+.stat-item { display: none; }
+.stat-value { display: none; }
+.stat-label { display: none; }
+.stat-inline-input { display: none; }
 
 /* ── 旧网格（移除） ── */
 .detail-meta-grid { display: none; }
@@ -1278,16 +1377,6 @@ onMounted(() => fetchData())
 /* 作者名 */
 .author-field-value.name { font-size: 18px; font-weight: 700; color: var(--text-main, #1d1d1f); line-height: 1.3; }
 
-/* 国家标签 */
-.author-field-value.country {
-  font-size: 13px; color: var(--text-secondary, #666);
-  background: var(--hover-bg, #f0f0f3);
-  border-radius: 20px; padding: 3px 12px; margin: 0;
-  font-weight: 500;
-}
-.author-field-value.country:hover { background: color-mix(in srgb, var(--apple-blue, #007AFF) 8%, transparent); }
-.author-field-value.country.empty { color: var(--text-muted, #b0b0b8); font-style: italic; font-weight: 400; }
-
 /* 简介 */
 .author-field-value.summary {
   font-size: 14px; color: var(--text-secondary, #555);
@@ -1308,7 +1397,6 @@ onMounted(() => fetchData())
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--apple-blue, #007AFF) 10%, transparent);
   width: 160px;
 }
-.author-inline-input.country { font-size: 13px; font-weight: 500; width: 100px; }
 .author-inline-textarea {
   width: 100%;
   border: 1.5px solid var(--apple-blue, #007AFF);
@@ -1477,6 +1565,7 @@ onMounted(() => fetchData())
 .dark .book-spine { background: linear-gradient(to right, #4a4a50 0%, #5a5a62 30%, #4a4a50 60%, #3a3a42 100%); box-shadow: -2px 0 4px rgba(0,0,0,0.2); }
 .dark .book-pages { background: repeating-linear-gradient(90deg, #3a3a42 0px, #2e2e35 1px, #3d3d45 2px, #33333a 3px); }
 .dark .meta-item { background: rgba(255,255,255,0.04); }
+.dark .meta-grid-item { background: rgba(255,255,255,0.04); }
 .dark .detail-summary p { color: #a1a1aa; }
 
 /* ── 新增元素暗黑适配 ── */
@@ -1486,5 +1575,15 @@ onMounted(() => fetchData())
 .dark .douban-link-btn:hover { border-color: #00b51a; color: #00b51a; background: color-mix(in srgb, #00b51a 10%, rgba(30,30,30,0.8)); }
 .dark .cover-rating-badge {
   background: rgba(30,30,30,0.85);
+}
+
+/* ── 元数据网格暗黑 ── */
+.dark .detail-meta-grid-2x2 {
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ── 书封评分胶囊暗黑 ── */
+.dark .cover-rating-capsule {
+  background: rgba(30, 30, 30, 0.7);
 }
 </style>
