@@ -358,6 +358,31 @@ export interface ExtensionVo {
 
 // ==================== 书籍管理 ====================
 
+/** 新增书籍 DTO — 对应后端 AddBookDTO */
+export interface AddBookDTO {
+  book: NotionBookPayload
+  author: NotionBookAuthorPayload
+}
+
+/** NotionBook 对应字段（仅传 Notion 属性值） */
+export interface NotionBookPayload {
+  cover?: string[]  // Notion 文件上传后的 fileId 列表
+  title: string
+  isbn?: string
+  category?: string
+  publisher?: string
+  pubDate?: string
+  rating?: number
+  summary?: string
+}
+
+/** NotionBookAuthor 对应字段 */
+export interface NotionBookAuthorPayload {
+  name: string
+  avatar?: string[] // Notion 文件上传后的 fileId 列表
+  summary?: string
+}
+
 /** 书籍分页查询参数 */
 export interface PageBookParams {
   title?: string
@@ -368,33 +393,99 @@ export interface PageBookParams {
   pageSize?: number
 }
 
+/** 更新书籍 DTO — 对应后端 UpdateBookDTO */
+export interface UpdateBookDTO {
+  id: string
+  title: string
+  category?: string
+  publisher?: string
+  summary?: string
+  authorAvatar?: string
+  authorName: string
+  authorSummary?: string
+}
+
+/** 更新作家 DTO — 对应后端 UpdateBookAuthorDTO */
+export interface UpdateBookAuthorDTO {
+  id: string
+  name: string
+  avatar?: string
+  summary?: string
+}
+
+/**
+ * 作家分页展示对象
+ */
+export interface BookAuthorPageVo {
+  id: string
+  name: string
+  avatar: string
+  summary: string
+  createTime: string
+}
+
+/**
+ * 作家详情展示对象
+ */
+export interface BookAuthorDetailVo {
+  workspaceId: string
+  id: string
+  avatar: string
+  name: string
+  summary: string
+  books: BookPageVo[]
+}
+
+/**
+ * 书籍分页展示对象
+ */
+export interface BookPageVo {
+  id: string
+  cover: string
+  title: string
+  category: string
+  isbn: string
+  rating: number
+  publisher: string
+  pubDate: string
+  createTime: string
+  summary: string
+  author: BookAuthorPageVo | null
+}
+
 /** 书籍 VO */
 export interface BookVo {
+  workspaceId: string
+  id: string
   pageId: string
   title: string
   cover: string
   category: string
-  authorName: string
-  authorAvatar: string
+  author: BookAuthorVo | null
   publisher: string
   pubDate: string
   isbn: string
   rating: number
   summary: string
+  createTime: string
+  inLibrary: boolean
 }
 
 // ==================== 豆瓣图书 ====================
 
 /** 图书作者 VO */
 export interface BookAuthorVo {
+  workspaceId: string
+  id: string
   pageId: string
   name: string
   avatar: string
   summary: string
+  books: BookVo[]
 }
 
-/** 豆瓣搜索图书 VO */
-export interface DoubanSearchBookVo {
+/** 豆瓣图书 VO */
+export interface DoubanBookVo {
   doubanId: string
   cover: string
   title: string
@@ -402,19 +493,17 @@ export interface DoubanSearchBookVo {
   author: string
   publisher: string
   pubDate: string
-  bookUrl: string
 }
 
-/** 豆瓣图书详情 VO */
-export interface DoubanBookDetailVo {
-  title: string
-  cover: string
-  author: BookAuthorVo | null
-  publisher: string
-  pubDate: string
-  isbn: string
-  rating: number
-  summary: string
-  category?: string
-  inLibrary: boolean
+/** 搜索豆瓣图书结果 VO（游标分页） */
+export interface SearchDoubanBookVo {
+  startCursor: number
+  total: number
+  books: DoubanBookVo[]
+}
+
+/** 搜索豆瓣图书 DTO */
+export interface SearchDoubanBookDTO {
+  keyword: string
+  startCursor?: number
 }

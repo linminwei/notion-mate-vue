@@ -42,6 +42,26 @@
           row-key="id"
           @change="handleTableChange"
       >
+        <template #emptyText>
+          <div class="data-empty-container">
+            <div class="modern-empty-card">
+              <div class="modern-empty-illus">
+                <div class="mockup-window">
+                  <div class="mockup-header"><div class="mockup-dot"></div><div class="mockup-line short"></div></div>
+                  <div class="mockup-row"><div class="mockup-avatar"></div><div class="mockup-line"></div><div class="mockup-line shorter"></div></div>
+                  <div class="mockup-row"><div class="mockup-avatar"></div><div class="mockup-line"></div><div class="mockup-line shorter"></div></div>
+                </div>
+              </div>
+              <div class="modern-empty-content">
+                <h3 class="modern-empty-title">暂无角色数据</h3>
+                <p class="modern-empty-desc">点击下方按钮创建第一个角色</p>
+                <button class="modern-empty-btn" v-permission="'system:role:add'" @click="handleAdd">
+                  <font-awesome-icon :icon="['fas', 'plus']" /> 新增角色
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
         <template #bodyCell="{ column, record }">
 
           <!-- 状态列 (分段开关，无权限仅展示，SUPER_ADMIN禁用态) -->
@@ -222,16 +242,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import { getRolePage, addRole, updateRole, deleteRole } from '@/api/role.ts'
-import { getMenuList, assignMenu, getRoleMenuTree } from '@/api/menu.ts'
-import { getDictDataByDictCodeEnable } from '@/api/dict'
-import type { SysRole, DictData } from '@/types'
-import type { Rule } from 'ant-design-vue/es/form'
+import {computed, onMounted, reactive, ref} from 'vue'
+import {addRole, deleteRole, getRolePage, updateRole} from '@/api/role.ts'
+import {assignMenu, getMenuList, getRoleMenuTree} from '@/api/menu.ts'
+import {getDictDataByDictCodeEnable} from '@/api/dict'
+import type {DictData, SysRole} from '@/types'
+import type {Rule} from 'ant-design-vue/es/form'
 import NeoFormModal from '@/components/common/NeoFormModal.vue'
 import AppleConfirmModal from '@/components/common/AppleConfirmModal.vue'
-import { AppleAlert } from '@/components/common/AppleAlert.ts'
-import { useUserStore } from '@/stores/user'
+import {AppleAlert} from '@/components/common/AppleAlert.ts'
+import {useUserStore} from '@/stores/user'
 
 const userStore = useUserStore()
 const canEditStatus = computed(() => userStore.hasPermission('system:role:edit'))

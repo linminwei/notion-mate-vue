@@ -334,6 +334,11 @@ const toggleTheme = () => {
 const previewAvatar = ref<string | null>(null)
 const userInfo = computed(() => userStore.userInfo)
 
+// 同步用户头像
+watch(() => userStore.userInfo?.avatar, (avatar) => {
+  if (avatar) previewAvatar.value = avatar
+}, { immediate: true })
+
 // 头像加载失败时回退显示首字母
 const onAvatarError = () => {
   previewAvatar.value = null

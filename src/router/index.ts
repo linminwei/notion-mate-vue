@@ -81,10 +81,16 @@ const constantRoutes: RouteRecordRaw[] = [
         meta: { title: ' 软件管理 ', icon: 'AppleOutlined', permission: 'app:list' }
       },
       {
-        path: 'book',
+        path: 'book/library',
         name: 'BookList',
         component: () => import('@/views/system/book.vue'),
-        meta: { title: ' 书籍管理 ', icon: 'ReadOutlined' }
+        meta: { title: ' 书籍库 ', icon: 'ReadOutlined' }
+      },
+      {
+        path: 'book/author',
+        name: 'BookAuthorList',
+        component: () => import('@/views/system/bookAuthor.vue'),
+        meta: { title: ' 作家管理 ', icon: 'UserOutlined' }
       },
     ]
   },

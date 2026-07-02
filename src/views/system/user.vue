@@ -70,6 +70,23 @@
           row-key="id"
           @change="handleTableChange"
       >
+        <template #emptyText>
+          <div class="data-empty-container">
+            <div class="modern-empty-card">
+              <div class="modern-empty-illus">
+                <div class="mockup-window">
+                  <div class="mockup-header"><div class="mockup-dot"></div><div class="mockup-line short"></div></div>
+                  <div class="mockup-row"><div class="mockup-avatar"></div><div class="mockup-line"></div><div class="mockup-line shorter"></div></div>
+                  <div class="mockup-row"><div class="mockup-avatar"></div><div class="mockup-line"></div><div class="mockup-line shorter"></div></div>
+                </div>
+              </div>
+              <div class="modern-empty-content">
+                <h3 class="modern-empty-title">暂无匹配的用户数据</h3>
+                <p class="modern-empty-desc">未找到匹配的角色数据</p>
+              </div>
+            </div>
+          </div>
+        </template>
         <template #bodyCell="{ column, record }">
 
           <!-- 用户信息列 -->

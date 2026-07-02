@@ -1108,3 +1108,222 @@
 .result-confirm-btn:active {
   transform: scale(0.95);
 }
+
+/* ================================================================
+   15. 现代插画卡片空状态（全站统一）
+   ================================================================ */
+
+.data-empty-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 32px 0;
+}
+
+.modern-empty-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.modern-empty-illus {
+  width: 100%;
+  height: 140px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--apple-blue, #007AFF) 40%, transparent), color-mix(in srgb, var(--apple-blue, #007AFF) 5%, transparent));
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 40px;
+  box-sizing: border-box;
+}
+
+.mockup-window {
+  width: 100%;
+  height: 100px;
+  background: var(--content-bg, #f5f5f7);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.mockup-header { display: flex; align-items: center; gap: 8px; }
+.mockup-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-color, rgba(0,0,0,0.1)); }
+.mockup-line { height: 6px; border-radius: 3px; background: var(--hover-bg, #e8e8ed); flex: 1; }
+.mockup-line.short { width: 60%; flex: none; }
+.mockup-line.shorter { width: 40%; flex: none; }
+.mockup-row { display: flex; align-items: center; gap: 10px; }
+.mockup-avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--hover-bg, #e8e8ed); }
+
+.modern-empty-content {
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.modern-empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.3px;
+}
+
+.modern-empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.dark .modern-empty-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.dark .mockup-window {
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+}
+
+/* 空状态胶囊按钮 */
+.modern-empty-btn {
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 20px;
+  background: var(--text-main);
+  color: var(--bg-base);
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.modern-empty-btn:hover {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+.modern-empty-desc:has(+ .modern-empty-btn) {
+  margin-bottom: 24px !important;
+}
+
+/* ================================================================
+   16. 苹果原生风格加载动画（全站通用）
+   ================================================================ */
+
+.neo-table-wrapper {
+  position: relative;
+  min-height: 200px;
+}
+
+.neo-table-overlay {
+  position: absolute;
+  inset: -24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(242,242,247,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  border-radius: 16px;
+}
+
+.neo-loading-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.neo-loading-glass {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 48px 32px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.45) 60%, rgba(255,255,255,0.55) 100%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 24px;
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.02),
+    0 12px 40px rgba(0,0,0,0.08),
+    inset 0 0.5px 0 rgba(255,255,255,0.8);
+}
+
+.neo-spinner-wrap {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  margin-bottom: 22px;
+}
+
+.neo-spinner-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.03);
+}
+
+.neo-spinner-fill {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--apple-blue, #007AFF);
+  border-right-color: color-mix(in srgb, var(--apple-blue, #007AFF) 35%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--apple-blue, #007AFF) 8%, transparent);
+  animation: appleSpin 0.85s linear infinite;
+}
+@keyframes appleSpin { to { transform: rotate(360deg); } }
+
+.neo-loading-text {
+  font-size: 14px;
+  font-weight: 590;
+  color: var(--text-main, #1d1d1f);
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.neo-loading-dots { display: flex; gap: 6px; }
+.neo-loading-dots span {
+  width: 3.5px; height: 3.5px; border-radius: 50%;
+  background: var(--text-muted, #a1a1aa);
+  animation: appleDotPulse 1.2s ease-in-out infinite both;
+}
+.neo-loading-dots span:nth-child(2) { animation-delay: 0.18s; }
+.neo-loading-dots span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes appleDotPulse {
+  0%, 30%   { opacity: 0.2; transform: scale(0.65); }
+  50%       { opacity: 0.7; transform: scale(0.95); }
+  80%, 100% { opacity: 0.2; transform: scale(0.65); }
+}
+
+.dark .neo-table-overlay { background: rgba(20,20,22,0.55); }
+.dark .neo-loading-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 60%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(255,255,255,0.04);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15), 0 12px 40px rgba(0,0,0,0.45), inset 0 0.5px 0 rgba(255,255,255,0.06);
+}
+.dark .neo-spinner-track { border-color: rgba(255,255,255,0.04); }
+.dark .neo-loading-text { color: rgba(255,255,255,0.85); }
+.dark .neo-loading-dots span { background: rgba(255,255,255,0.4); }
